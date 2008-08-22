@@ -86,6 +86,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	6. Tips and Tricks........................: |TwitVim-tips|
 	6.1. Timeline Hotkeys.....................: |TwitVim-hotkeys|
 	6.2. Switching between services...........: |TwitVim-switch|
+	6.3. Line length in status line...........: |TwitVim-line-length|
 	7. History................................: |TwitVim-history|
 	8. Credits................................: |TwitVim-credits|
 
@@ -662,6 +663,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	may also use this technique to switch between different user accounts
 	on the same service.
 
+
+------------------------------------------------------------------------------
+6.3. Line length in status line				*TwitVim-line-length*
+
+	Add the following to your |'statusline'| to display the length of the
+	current line:
+
+		%{strlen(getline('.'))}
+	
+	This is useful if you compose tweets in a separate buffer and post
+	them with |:CPosttoTwitter|. With the line length in your status line,
+	you will know when you've reached the 140-character boundary.
 
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
