@@ -352,9 +352,18 @@ function! s:launch_browser(url)
 
     redraw
     echo "Launching web browser..."
-    silent execute startcmd g:twitvim_browser_cmd url endcmd
-    redraw
-    echo "Web browser launched."
+    let v:errmsg = ""
+    silent! execute startcmd g:twitvim_browser_cmd url endcmd
+    if v:errmsg == ""
+	redraw
+	echo "Web browser launched."
+    else
+	execute "normal \<Esc>"
+	redraw
+	echohl ErrorMsg
+	echomsg 'Error launching browser:' v:errmsg
+	echohl None
+    endif
 endfunction
 
 " Launch web browser with the URL at the cursor position. If possible, this
