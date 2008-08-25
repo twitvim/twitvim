@@ -196,8 +196,10 @@ function! s:add_update(output)
 	let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
 	if twit_bufnr > 0
 	    execute twit_bufnr . "wincmd w"
+	    set modifiable
 	    call append(2, name.': '.s:convert_entity(text).' |'.date.'|')
 	    normal 1G
+	    set nomodifiable
 	    wincmd p
 	endif
     endif
@@ -209,13 +211,18 @@ function! s:url_encode(str)
 endfunction
 
 " Common code to post a message to Twitter.
-function! s:post_twitter(mesg)
+function! s:post_twitter(mesg, inreplyto)
     " Get user-config variables twitvim_proxy and twitvim_login.
     " We get these variables every time before posting to Twitter so that the
     " user can change them on the fly.
     let rc = s:get_config()
     if rc < 0
 	return -1
+    endif
+
+    let inreply = ''
+    if a:inreplyto != 0
+	let inreply = '-d in_reply_to_status_id='.s:url_encode(a:inreplyto)
     endif
 
     let mesg = a:mesg
@@ -244,7 +251,7 @@ function! s:post_twitter(mesg)
 	redraw
 	echo "Sending update to Twitter..."
 
-	let output = system("curl -s ".s:proxy." ".s:login.' -d status="'.s:url_encode(mesg).'" '.s:get_api_root()."/statuses/update.xml?source=twitvim")
+	let output = system("curl -s ".s:proxy." ".s:login." ".inreply.' -d status="'.s:url_encode(mesg).'" '.s:get_api_root()."/statuses/update.xml?source=twitvim")
 	if v:shell_error != 0
 	    redraw
 	    echohl ErrorMsg
@@ -262,7 +269,7 @@ endfunction
 
 " Prompt user for tweet and then post it.
 " If initstr is given, use that as the initial input.
-function! s:CmdLine_Twitter(initstr)
+function! s:CmdLine_Twitter(initstr, inreplyto)
     " Do this here too to check for twitvim_login. This is to avoid having the
     " user type in the message only to be told that his configuration is
     " incomplete.
@@ -274,7 +281,7 @@ function! s:CmdLine_Twitter(initstr)
     call inputsave()
     let mesg = input("Your Twitter: ", a:initstr)
     call inputrestore()
-    call s:post_twitter(mesg)
+    call s:post_twitter(mesg, a:inreplyto)
 endfunction
 
 " Extract the user name from a line in the timeline.
@@ -288,7 +295,7 @@ endfunction
 function! s:Quick_Reply()
     let username = s:get_user_name(getline('.'))
     if username != ""
-	call s:CmdLine_Twitter('@'.username.' ')
+	call s:CmdLine_Twitter('@'.username.' ', get(s:statuses, line('.')))
     endif
 endfunction
 
@@ -297,32 +304,32 @@ endfunction
 function! s:Quick_DM()
     let username = s:get_user_name(getline('.'))
     if username != ""
-	call s:CmdLine_Twitter('d '.username.' ')
+	call s:CmdLine_Twitter('d '.username.' ', 0)
     endif
 endfunction
 
 
 " Prompt user for tweet.
 if !exists(":PosttoTwitter")
-    command PosttoTwitter :call <SID>CmdLine_Twitter('')
+    command PosttoTwitter :call <SID>CmdLine_Twitter('', 0)
 endif
 
-nnoremenu Plugin.TwitVim.Post\ from\ cmdline :call <SID>CmdLine_Twitter('')<cr>
+nnoremenu Plugin.TwitVim.Post\ from\ cmdline :call <SID>CmdLine_Twitter('', 0)<cr>
 
 " Post current line to Twitter.
 if !exists(":CPosttoTwitter")
-    command CPosttoTwitter :call <SID>post_twitter(getline('.'))
+    command CPosttoTwitter :call <SID>post_twitter(getline('.'), 0)
 endif
 
-nnoremenu Plugin.TwitVim.Post\ current\ line :call <SID>post_twitter(getline('.'))<cr>
+nnoremenu Plugin.TwitVim.Post\ current\ line :call <SID>post_twitter(getline('.'), 0)<cr>
 
 " Post entire buffer to Twitter.
 if !exists(":BPosttoTwitter")
-    command BPosttoTwitter :call <SID>post_twitter(join(getline(1, "$")))
+    command BPosttoTwitter :call <SID>post_twitter(join(getline(1, "$")), 0)
 endif
 
 " Post visual selection to Twitter.
-noremap <SID>Visual y:call <SID>post_twitter(@")<cr>
+noremap <SID>Visual y:call <SID>post_twitter(@", 0)<cr>
 noremap <unique> <script> <Plug>TwitvimVisual <SID>Visual
 if !hasmapto('<Plug>TwitvimVisual')
     vmap <unique> <A-t> <Plug>TwitvimVisual
@@ -494,12 +501,16 @@ endfunction
 function! s:twitter_wintext(text)
     call s:twitter_win()
 
+    set modifiable
+
     " Overwrite the entire buffer.
     " Need to use 'silent' or a 'No lines in buffer' message will appear.
     " Delete to the blackhole register "_ so that we don't affect registers.
     silent %delete _
     call setline('.', a:text)
     normal 1G
+
+    set nomodifiable
 
     wincmd p
 endfunction
@@ -936,7 +947,7 @@ function! s:GetShortURL(tweetmode, url, shortfn)
     let shorturl = call(function("s:".a:shortfn), [url])
     if shorturl != ""
 	if a:tweetmode == "cmdline"
-	    call s:CmdLine_Twitter(shorturl." ")
+	    call s:CmdLine_Twitter(shorturl." ", 0)
 	elseif a:tweetmode == "append"
 	    execute "normal a".shorturl."\<esc>"
 	else
