@@ -252,7 +252,8 @@ function! s:post_twitter(mesg, inreplyto)
 	redraw
 	echo "Sending update to Twitter..."
 
-	let output = system("curl -s ".s:proxy." ".s:login." ".inreply.' -d status="'.s:url_encode(mesg).'" '.s:get_api_root()."/statuses/update.xml?source=twitvim")
+	let s:updatecmd = "curl -s ".s:proxy." ".s:login." ".inreply.' -d status="'.s:url_encode(mesg).'" '.s:get_api_root()."/statuses/update.xml?source=twitvim"
+	let output = system(s:updatecmd)
 	if v:shell_error != 0
 	    redraw
 	    echohl ErrorMsg
@@ -560,6 +561,7 @@ function! s:show_timeline(timeline, page)
 endfunction
 
 command! TwitVimShowStatuses :echo s:statuses
+command! TwitVimShowLastUpdate :echo s:updatecmd
 
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
