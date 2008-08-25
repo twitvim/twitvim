@@ -220,11 +220,8 @@ function! s:post_twitter(mesg, inreplyto)
 	return -1
     endif
 
-    " Add in_reply_to_status_id if that information is available.
-    let inreply = ''
-    if a:inreplyto != 0
-	let inreply = '-d in_reply_to_status_id='.s:url_encode(a:inreplyto)
-    endif
+    " Add in_reply_to_status_id if status ID is available.
+    let inreply = a:inreplyto == 0 ? '' : '-d in_reply_to_status_id='.s:url_encode(a:inreplyto)
 
     let mesg = a:mesg
 
@@ -560,8 +557,15 @@ function! s:show_timeline(timeline, page)
     call s:twitter_wintext(text)
 endfunction
 
-command! TwitVimShowStatuses :echo s:statuses
-command! TwitVimShowLastUpdate :echo s:updatecmd
+" For debugging. Show list of status IDs.
+if !exists(":TwitVimShowStatuses")
+    command TwitVimShowStatuses :echo s:statuses
+endif
+
+" For debugging. Show cURL command for the last update.
+if !exists(":TwitVimShowLastUpdate")
+    command TwitVimShowLastUpdate :echo s:updatecmd
+endif
 
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
