@@ -2,7 +2,7 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.2.22
+" Version: 0.2.23
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
@@ -220,6 +220,7 @@ function! s:post_twitter(mesg, inreplyto)
 	return -1
     endif
 
+    " Add in_reply_to_status_id if that information is available.
     let inreply = ''
     if a:inreplyto != 0
 	let inreply = '-d in_reply_to_status_id='.s:url_encode(a:inreplyto)
@@ -295,6 +296,8 @@ endfunction
 function! s:Quick_Reply()
     let username = s:get_user_name(getline('.'))
     if username != ""
+	" If the status ID is not available, get() will return 0 and
+	" post_twitter() won't add in_reply_to_status_id to the update.
 	call s:CmdLine_Twitter('@'.username.' ', get(s:statuses, line('.')))
     endif
 endfunction

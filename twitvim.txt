@@ -679,6 +679,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.2.23 : 2008-08-25 * Support in_reply_to_status_id parameter.
+			    * Added tip on line length in statusline.
+			    * Report browser launch errors.
+			    * Set syntax highlighting on every timeline refresh.
 	0.2.22 : 2008-08-13 * Rewrote time conversion code in Vim script
 			      so we don't need Perl or Python any more.
 			    * Do not URL-encode digits 0 to 9.
