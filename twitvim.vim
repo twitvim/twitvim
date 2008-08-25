@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 13, 2008
+" Last updated: August 25, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -185,6 +185,9 @@ function! s:add_update(output)
 	let date = s:time_filter(s:xml_get_element(a:output, 'created_at'))
 	let text = s:xml_get_element(a:output, 'text')
 	let name = s:xml_get_element(a:output, 'screen_name')
+
+	" Add the status ID to the current buffer's statuses list.
+	call insert(s:statuses, s:xml_get_element(a:output, 'id'), 3)
 
 	if text == ""
 	    return
@@ -506,6 +509,9 @@ function! s:show_timeline(timeline, page)
     let matchcount = 1
     let text = []
 
+    " Index of first status will be 3 to match line numbers in timeline display.
+    let s:statuses = [0, 0, 0]
+
     let channel = s:xml_remove_elements(a:timeline, 'item')
     let title = s:xml_get_element(channel, 'title')
 
@@ -528,12 +534,18 @@ function! s:show_timeline(timeline, page)
 	let title = s:xml_get_element(item, 'title')
 	let pubdate = s:time_filter(s:xml_get_element(item, 'pubDate'))
 
+	" Parse and save the status ID.
+	let status = substitute(s:xml_get_element(item, 'guid'), '^.*/', '', '')
+	call add(s:statuses, status)
+
 	call add(text, s:convert_entity(title).' |'.pubdate.'|')
 
 	let matchcount += 1
     endwhile
     call s:twitter_wintext(text)
 endfunction
+
+command! TwitVimShowStatuses :echo s:statuses
 
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
@@ -589,6 +601,9 @@ endfunction
 function! s:show_dm_xml(sent_or_recv, timeline, page)
     let matchcount = 1
     let text = []
+
+    "No status IDs in direct messages.
+    let s:statuses = []
 
     let title = 'Direct messages '.a:sent_or_recv
 
@@ -1015,6 +1030,9 @@ function! s:show_summize(searchres)
     let text = []
     let matchcount = 1
 
+    " Index of first status will be 3 to match line numbers in timeline display.
+    let s:statuses = [0, 0, 0]
+
     let channel = s:xml_remove_elements(a:searchres, 'entry')
     let title = s:xml_get_element(channel, 'title')
 
@@ -1033,6 +1051,10 @@ function! s:show_summize(searchres)
 	let title = s:xml_get_element(item, 'title')
 	let pubdate = s:time_filter(s:xml_get_element(item, 'updated'))
 	let sender = substitute(s:xml_get_element(item, 'uri'), 'http://twitter.com/', '', '')
+
+	" Parse and save the status ID.
+	let status = substitute(s:xml_get_element(item, 'id'), '^.*:', '', '')
+	call add(s:statuses, status)
 
 	call add(text, sender.": ".s:convert_entity(title).' |'.pubdate.'|')
 
