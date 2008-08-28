@@ -43,10 +43,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	4.3. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
+	     Reply Feature........................: |TwitVim-reply|
 	     Alt-R................................: |TwitVim-A-r|
 	     <Leader>r............................: |TwitVim-Leader-r|
+	     Retweet Feature......................: |TwitVim-retweet|
+	     <Leader>R............................: |TwitVim-Leader-S-r|
+	     twitvim_retweet_format...............: |twitvim_retweet_format|
+	     Direct Message Feature...............: |TwitVim-direct-message|
 	     Alt-D................................: |TwitVim-A-d|
 	     <Leader>d............................: |TwitVim-Leader-d|
+	     Goto Feature.........................: |TwitVim-goto|
 	     Alt-G................................: |TwitVim-A-g|
 	     <Leader>g............................: |TwitVim-Leader-g|
 	     twitvim_browser_cmd..................: |twitvim_browser_cmd|
@@ -312,14 +318,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 4.3. Mappings						*TwitVim-mappings*
 
 	Alt-T						*TwitVim-A-t*
+	Ctrl-T						*TwitVim-C-t*
 
 	In visual mode, Alt-T posts the highlighted text to Twitter.
 
-	Ctrl-T						*TwitVim-C-t*
+	Ctrl-T is an alternative to the Alt-T mapping. If the menu bar is
+	enabled, Alt-T pulls down the Tools menu. So use Ctrl-T instead.
 
-	This is an alternative to the Alt-T mapping. If the menu bar is
-	enabled, Alt-T pulls down the Tools menu. So use this mapping instead.
 
+							*TwitVim-reply*
 	Alt-R						*TwitVim-A-r*
 	<Leader>r					*TwitVim-Leader-r*
 
@@ -331,6 +338,37 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	alternative. The <Leader> character defaults to \ (backslash) but see
 	|mapleader| for information on customizing that.
 
+
+							*TwitVim-retweet*	
+	<Leader>R					*TwitVim-Leader-S-r*
+
+	This mapping (Note: uppercase 'R' instead of 'r'.) is local to the
+	timeline buffer. It is similar to the retweet feature in popular
+	Twitter clients. In the timeline buffer, it sends the current line to
+	the command line so that you can repost this line as a new tweet.
+
+						    *twitvim_retweet_format*
+	By default, TwitVim retweets tweets in the following format:
+
+		Retweeting @user: text of the tweet
+
+	You can customize the retweet format by adding the following to your
+	vimrc, for example:
+
+		let twitvim_retweet_format = 'Retweet from %s: %t'
+
+	or:
+
+		let twitvim_retweet_format = '%t (retweeted from %s)'
+
+	When you retweet a tweet, TwitVim will replace "%s" in
+	twitvim_retweet_format with the user name of the original poster and
+	"%t" with the text of the tweet.
+
+	The default setting of twitvim_retweet_format is "Retweeting %s: %t"
+
+
+							*TwitVim-direct-message*
 	Alt-D						*TwitVim-A-d*
 	<Leader>d					*TwitVim-Leader-d*
 
@@ -342,6 +380,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	alternative. The <Leader> character defaults to \ (backslash) but see
 	|mapleader| for information on customizing that.
 
+
+							*TwitVim-goto*
 	Alt-G						*TwitVim-A-g*
 	<Leader>g					*TwitVim-Leader-g*
 
@@ -679,6 +719,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.2.24 : 2008-08-28 * Added retweet feature. See |TwitVim-retweet|
 	0.2.23 : 2008-08-25 * Support in_reply_to_status_id parameter.
 			    * Added tip on line length in statusline.
 			    * Report browser launch errors.

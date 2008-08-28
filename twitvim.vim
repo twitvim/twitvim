@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.2.23
+" Version: 0.2.24
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 25, 2008
+" Last updated: August 28, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -34,6 +34,11 @@ let s:char_limit = 246
 " Twitter-compatible API.
 function! s:get_api_root()
     return exists('g:twitvim_api_root') ? g:twitvim_api_root : "http://twitter.com"
+endfunction
+
+" Allow user to set the format for retweets.
+function! s:get_retweet_fmt()
+    return exists('g:twitvim_retweet_format') ? g:twitvim_retweet_format : "Retweeting %s: %t"
 endfunction
 
 function! s:get_config_proxy()
@@ -309,6 +314,22 @@ function! s:Quick_DM()
     endif
 endfunction
 
+" Extract the tweet text from a timeline buffer line.
+function! s:get_tweet(line)
+    let line = substitute(a:line, '^\w\+:\s\+', '', '')
+    return substitute(line, '\s\+|[^|]\+|$', '', '')
+endfunction
+
+" Retweet is for replicating a tweet from another user.
+function! s:Retweet()
+    let line = getline('.')
+    let username = s:get_user_name(line)
+    if username != ""
+	let retweet = substitute(s:get_retweet_fmt(), '%s', '@'.username, '')
+	let retweet = substitute(retweet, '%t', s:get_tweet(line), '')
+	call s:CmdLine_Twitter(retweet, 0)
+    endif
+endfunction
 
 " Prompt user for tweet.
 if !exists(":PosttoTwitter")
@@ -493,6 +514,9 @@ function! s:twitter_win()
 	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword()<cr>
 	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
 	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
+
+	" Retweet feature for replicating another user's tweet.
+	nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
     endif
 
     call s:twitter_win_syntax()
