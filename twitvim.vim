@@ -56,6 +56,11 @@ function! s:get_enable_ruby()
     return exists('g:twitvim_enable_ruby') ? g:twitvim_enable_ruby : 0
 endfunction
 
+" Allow user to enable Tcl code by setting twitvim_enable_tcl.
+function! s:get_enable_tcl()
+    return exists('g:twitvim_enable_tcl') ? g:twitvim_enable_tcl : 0
+endfunction
+
 " Get proxy setting from twitvim_proxy in .vimrc or _vimrc.
 " Format is proxysite:proxyport
 function! s:get_proxy()
@@ -440,8 +445,91 @@ when Net::HTTPSuccess
     output.gsub!(/'/, "''")
     VIM.command("let output='#{output}'")
 else
-    VIM.command("let error='#{res.code} #{res.message}'")
+    error = "#{res.code} #{res.message}"
+    error.gsub!(/'/, "''")
+    VIM.command("let error='#{error}'")
 end
+EOF
+
+    return [error, output]
+endfunction
+
+function! s:check_tcl()
+    let can_tcl = 1
+    tcl <<EOF
+if [catch {
+    package require http
+    package require uri
+    package require base64
+} result] {
+    ::vim::command "let can_tcl = 0"
+}
+EOF
+    return can_tcl
+endfunction
+
+" Use Tcl to fetch a web page.
+function! s:tcl_curl(url, login, proxy, proxylogin, parms)
+    let error = ""
+    let output = ""
+
+    tcl << EOF
+package require http
+package require uri
+package require base64
+
+set url [::vim::expr a:url]
+
+set headers [list]
+
+set proxy [::vim::expr a:proxy]
+if { $proxy != "" } {
+    set purl [uri::split "http://$proxy"]
+    array set prox $purl
+    ::http::config -proxyhost $prox(host)
+    ::http::config -proxyport $prox(port)
+}
+
+set proxylogin [::vim::expr a:proxylogin]
+if { $proxylogin != "" } {
+    set colonpos [string first : $proxylogin]
+    if { $colonpos >= 0 } {
+	set proxylogin [base64::encode $proxylogin]
+    }
+    lappend headers "Proxy-Authorization" "Basic $proxylogin"
+}
+
+set login [::vim::expr a:login]
+if { $login != "" } {
+    set colonpos [string first : $login]
+    if { $colonpos >= 0 } {
+	set login [base64::encode $login]
+    }
+    lappend headers "Authorization" "Basic $login"
+}
+
+set parms [list]
+set keystr [::vim::expr "keys(a:parms)"]
+set keys [split $keystr "\n"]
+if { [llength $keys] > 0 } {
+    foreach key $keys {
+	lappend parms $key [::vim::expr "a:parms\['$key']"]
+    }
+    set query [eval [concat ::http::formatQuery $parms]]
+    set res [::http::geturl $url -headers $headers -query $query]
+} else {
+    set res [::http::geturl $url -headers $headers]
+}
+
+upvar #0 $res state
+
+if { $state(status) == "ok" } {
+    set output [string map {' ''} $state(body)]
+    ::vim::command "let output = '$output'"
+} else {
+    set error [string map {' ''} $state(error)]
+    ::vim::command "let error = '$error'"
+}
 EOF
 
     return [error, output]
@@ -463,6 +551,10 @@ function! s:get_curl_method()
 	elseif s:get_enable_ruby() && has('ruby')
 	    if s:check_ruby()
 		let s:curl_method = 'ruby'
+	    endif
+	elseif s:get_enable_tcl() && has('tcl')
+	    if s:check_tcl()
+		let s:curl_method = 'tcl'
 	    endif
 	endif
     endif
