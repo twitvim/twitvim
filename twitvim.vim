@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 9, 2008
+" Last updated: September 11, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -49,6 +49,11 @@ endfunction
 " Allow user to enable Perl networking code by setting twitvim_enable_perl.
 function! s:get_enable_perl()
     return exists('g:twitvim_enable_perl') ? g:twitvim_enable_perl : 0
+endfunction
+
+" Allow user to enable Ruby code by setting twitvim_enable_ruby.
+function! s:get_enable_ruby()
+    return exists('g:twitvim_enable_ruby') ? g:twitvim_enable_ruby : 0
 endfunction
 
 " Get proxy setting from twitvim_proxy in .vimrc or _vimrc.
@@ -365,6 +370,83 @@ EOF
     return [ error, output ]
 endfunction
 
+function! s:check_ruby()
+    let can_ruby = 1
+    ruby <<EOF
+begin
+    require 'net/http'
+    require 'uri'
+    require 'Base64'
+rescue LoadError
+    VIM.command('let can_ruby = 0')
+end
+EOF
+    return can_ruby
+endfunction
+
+" Use Ruby to fetch a web page.
+function! s:ruby_curl(url, login, proxy, proxylogin, parms)
+    let error = ""
+    let output = ""
+
+    ruby <<EOF
+require 'net/http'
+require 'uri'
+require 'Base64'
+
+def make_base64(s)
+    s =~ /:/ ? Base64.encode64(s) : s
+end
+
+proxy = VIM.evaluate('a:proxy')
+if proxy != ''
+    prox = URI.parse("http://#{proxy}")
+    net = Net::HTTP::Proxy(prox.host, prox.port)
+else
+    net = Net::HTTP
+end
+
+parms = {}
+keys = VIM.evaluate('keys(a:parms)')
+keys.split(/\n/).each { |k|
+    parms[k] = VIM.evaluate("a:parms['#{k}']")
+}
+
+url = URI.parse(VIM.evaluate('a:url'))
+res = net.start(url.host, url.port) { |http| 
+    path = "#{url.path}?#{url.query}"
+    if parms == {}
+	req = Net::HTTP::Get.new(path)
+    else
+	req = Net::HTTP::Post.new(path)
+	req.set_form_data(parms)
+    end
+
+    login = VIM.evaluate('a:login')
+    if login != ''
+	req.add_field 'Authorization', "Basic #{make_base64(login)}"
+    end
+
+    proxylogin = VIM.evaluate('a:proxylogin')
+    if proxylogin != ''
+	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
+    end
+
+    http.request(req)
+}
+case res
+when Net::HTTPSuccess
+    output = res.body
+    output.gsub!(/'/, "''")
+    VIM.command("let output='#{output}'")
+else
+    VIM.command("let error='#{res.code} #{res.message}'")
+end
+EOF
+
+    return [error, output]
+endfunction
+
 " Find out which method we can use to fetch a web page.
 function! s:get_curl_method()
     if !exists('s:curl_method')
@@ -377,6 +459,10 @@ function! s:get_curl_method()
 	elseif s:get_enable_python() && has('python')
 	    if s:check_python()
 		let s:curl_method = 'python'
+	    endif
+	elseif s:get_enable_ruby() && has('ruby')
+	    if s:check_ruby()
+		let s:curl_method = 'ruby'
 	    endif
 	endif
     endif
