@@ -79,6 +79,22 @@ function! s:get_proxy_login()
     endif
 endfunction
 
+" Display an error message in the message area.
+function! s:errormsg(msg)
+    redraw
+    echohl ErrorMsg
+    echomsg a:msg
+    echohl None
+endfunction
+
+" Display a warning message in the message area.
+function! s:warnmsg(msg)
+    redraw
+    echohl WarningMsg
+    echo a:msg
+    echohl None
+endfunction
+
 " Get Twitter login info from twitvim_login in .vimrc or _vimrc.
 " Format is username:password
 " If twitvim_login_b64 exists, use that instead. This is the user:password
@@ -91,10 +107,7 @@ function! s:get_twitvim_login()
     else
 	" Beep and error-highlight 
 	execute "normal \<Esc>"
-	redraw
-	echohl ErrorMsg
-	echomsg 'Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"'
-	echohl None
+	call s:errormsg('Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"')
 	return ''
     endif
 endfunction
@@ -655,15 +668,9 @@ function! s:post_twitter(mesg, inreplyto)
     " URL-encoding the special characters because URL-encoding increases the
     " string length.
     if strlen(mesg) > s:char_limit
-	redraw
-	echohl WarningMsg
-	echo "Your tweet has" strlen(mesg) - s:char_limit "too many characters. It was not sent."
-	echohl None
+	call s:warnmsg("Your tweet has ".(strlen(mesg) - s:char_limit)." too many characters. It was not sent.")
     elseif strlen(mesg) < 1
-	redraw
-	echohl WarningMsg
-	echo "Your tweet was empty. It was not sent."
-	echohl None
+	call s:warnmsg("Your tweet was empty. It was not sent.")
     else
 	redraw
 	echo "Sending update to Twitter..."
@@ -674,10 +681,7 @@ function! s:post_twitter(mesg, inreplyto)
 	let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
 	if error != ''
-	    redraw
-	    echohl ErrorMsg
-	    echomsg "Error posting your tweet: ".error
-	    echohl None
+	    call s:errormsg("Error posting your tweet: ".error)
 	else
 	    call s:add_update(output)
 	    redraw
@@ -783,11 +787,7 @@ function! s:launch_browser(url)
     if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
 	" Beep and error-highlight 
 	execute "normal \<Esc>"
-	redraw
-	echohl ErrorMsg
-	echomsg 'Browser cmd not set.'
-	    \ 'Please add to .vimrc: let twitvim_browser_cmd="browsercmd"'
-	echohl None
+	call s:errormsg('Browser cmd not set. Please add to .vimrc: let twitvim_browser_cmd="browsercmd"')
 	return -1
     endif
 
@@ -805,11 +805,7 @@ function! s:launch_browser(url)
 	redraw
 	echo "Web browser launched."
     else
-	execute "normal \<Esc>"
-	redraw
-	echohl ErrorMsg
-	echomsg 'Error launching browser:' v:errmsg
-	echohl None
+	call s:errormsg('Error launching browser: '.v:errmsg)
     endif
 endfunction
 
@@ -1032,10 +1028,7 @@ function! s:get_timeline(tline_name, username, page)
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error getting Twitter" a:tline_name "timeline: ".error
-	echohl None
+	call s:errormsg("Error getting Twitter ".a:tline_name." timeline: ".error)
 	return
     endif
 
@@ -1108,10 +1101,7 @@ function! s:Direct_Messages(page)
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error getting Twitter direct messages: ".error
-	echohl None
+	call s:errormsg("Error getting Twitter direct messages: ".error)
 	return
     endif
 
@@ -1142,10 +1132,7 @@ function! s:Direct_Messages_Sent(page)
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error getting Twitter direct messages sent timeline: ".error
-	echohl None
+	call s:errormsg("Error getting Twitter direct messages sent timeline: ".error)
 	return
     endif
 
@@ -1190,10 +1177,7 @@ function! s:call_tweetburner(url)
     let [error, output] = s:run_curl('http://tweetburner.com/links', '', s:get_proxy(), s:get_proxy_login(), {'link[url]' : a:url})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling Tweetburner API: ".error
-	echohl None
+	call s:errormsg("Error calling Tweetburner API: ".error)
 	return ""
     else
 	redraw
@@ -1212,10 +1196,7 @@ function! s:call_snipurl(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling SnipURL API: ".error
-	echohl None
+	call s:errormsg("Error calling SnipURL API: ".error)
 	return ""
     else
 	redraw
@@ -1233,10 +1214,7 @@ function! s:call_metamark(url)
     let [error, output] = s:run_curl('http://metamark.net/api/rest/simple', '', s:get_proxy(), s:get_proxy_login(), {'long_url' : a:url})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling Metamark API: ".error
-	echohl None
+	call s:errormsg("Error calling Metamark API: ".error)
 	return ""
     else
 	redraw
@@ -1254,10 +1232,7 @@ function! s:call_tinyurl(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling TinyURL API: ".error
-	echohl None
+	call s:errormsg("Error calling TinyURL API: ".error)
 	return ""
     else
 	redraw
@@ -1275,10 +1250,7 @@ function! s:call_urltea(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling urlTea API: ".error
-	echohl None
+	call s:errormsg("Error calling urlTea API: ".error)
 	return ""
     else
 	redraw
@@ -1296,10 +1268,7 @@ function! s:call_bitly(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling bit.ly API: ".error
-	echohl None
+	call s:errormsg("Error calling bit.ly API: ".error)
 	return ""
     else
 	redraw
@@ -1317,12 +1286,7 @@ function! s:call_isgd(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling is.gd API: ".error
-	echomsg "Output:"
-	echomsg output
-	echohl None
+	call s:errormsg("Error calling is.gd API: ".error)
 	return ""
     else
 	redraw
@@ -1348,18 +1312,12 @@ function! s:call_urlborg(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error calling urlBorg API: ".error
-	echohl None
+	call s:errormsg("Error calling urlBorg API: ".error)
 	return ""
     else
 	let matchres = matchlist(output, '^http')
 	if matchres == []
-	    redraw
-	    echohl ErrorMsg
-	    echomsg "urlBorg error: ".output
-	    echohl None
+	    call s:errormsg("urlBorg error: ".output)
 	    return ""
 	else
 	    redraw
@@ -1384,10 +1342,7 @@ function! s:GetShortURL(tweetmode, url, shortfn)
     endif
 
     if url == ""
-	redraw
-	echohl WarningMsg
-	echo "No URL provided."
-	echohl None
+	call s:warnmsg("No URL provided.")
 	return
     endif
 
@@ -1530,10 +1485,7 @@ function! s:get_summize(query)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	redraw
-	echohl ErrorMsg
-	echomsg "Error querying Twitter Search: ".error
-	echohl None
+	call s:errormsg("Error querying Twitter Search: ".error)
 	return
     endif
 
@@ -1556,10 +1508,7 @@ function! s:Summize(query)
     endif
 
     if query == ""
-	redraw
-	echohl WarningMsg
-	echo "No query provided for Twitter Search."
-	echohl None
+	call s:warnmsg("No query provided for Twitter Search.")
 	return
     endif
 
