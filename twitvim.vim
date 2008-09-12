@@ -248,6 +248,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     return [ error, output ]
 endfunction
 
+" Check if we can use Python.
 function! s:check_python()
     let can_python = 1
     python <<EOF
@@ -305,6 +306,7 @@ EOF
     return [ error, output ]
 endfunction
 
+" Check if we can use Perl.
 function! s:check_perl()
     let can_perl = 1
     perl <<EOF
@@ -375,6 +377,15 @@ EOF
     return [ error, output ]
 endfunction
 
+" Check if we can use Ruby.
+"
+" Note: Before the networking code will function in Ruby under Windows, you
+" need the patch from here:
+" http://www.mail-archive.com/vim_dev@googlegroups.com/msg03693.html
+"
+" and Bram's correction to the patch from here:
+" http://www.mail-archive.com/vim_dev@googlegroups.com/msg03713.html
+"
 function! s:check_ruby()
     let can_ruby = 1
     ruby <<EOF
@@ -454,6 +465,12 @@ EOF
     return [error, output]
 endfunction
 
+" Check if we can use Tcl.
+"
+" Note: ActiveTcl 8.5 doesn't include Tcllib in the download. You need to run the following after installing ActiveTcl:
+"
+"    teacup install tcllib
+"
 function! s:check_tcl()
     let can_tcl = 1
     tcl <<EOF
