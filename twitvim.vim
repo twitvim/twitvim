@@ -452,12 +452,10 @@ res = net.start(url.host, url.port) { |http|
 }
 case res
 when Net::HTTPSuccess
-    output = res.body
-    output.gsub!(/'/, "''")
+    output = res.body.gsub("'", "''")
     VIM.command("let output='#{output}'")
 else
-    error = "#{res.code} #{res.message}"
-    error.gsub!(/'/, "''")
+    error = "#{res.code} #{res.message}".gsub("'", "''")
     VIM.command("let error='#{error}'")
 end
 EOF
@@ -495,39 +493,36 @@ package require http
 package require uri
 package require base64
 
+proc make_base64 {s} {
+    if { [string first : $s] >= 0 } {
+	return [base64::encode $s]
+    }
+    return $s
+}
+
 set url [::vim::expr a:url]
 
 set headers [list]
 
 set proxy [::vim::expr a:proxy]
 if { $proxy != "" } {
-    set purl [uri::split "http://$proxy"]
-    array set prox $purl
+    array set prox [uri::split "http://$proxy"]
     ::http::config -proxyhost $prox(host)
     ::http::config -proxyport $prox(port)
 }
 
 set proxylogin [::vim::expr a:proxylogin]
 if { $proxylogin != "" } {
-    set colonpos [string first : $proxylogin]
-    if { $colonpos >= 0 } {
-	set proxylogin [base64::encode $proxylogin]
-    }
-    lappend headers "Proxy-Authorization" "Basic $proxylogin"
+    lappend headers "Proxy-Authorization" "Basic [make_base64 $proxylogin]"
 }
 
 set login [::vim::expr a:login]
 if { $login != "" } {
-    set colonpos [string first : $login]
-    if { $colonpos >= 0 } {
-	set login [base64::encode $login]
-    }
-    lappend headers "Authorization" "Basic $login"
+    lappend headers "Authorization" "Basic [make_base64 $login]"
 }
 
 set parms [list]
-set keystr [::vim::expr "keys(a:parms)"]
-set keys [split $keystr "\n"]
+set keys [split [::vim::expr "keys(a:parms)"] "\n"]
 if { [llength $keys] > 0 } {
     foreach key $keys {
 	lappend parms $key [::vim::expr "a:parms\['$key']"]
