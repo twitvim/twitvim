@@ -1241,24 +1241,6 @@ function! s:call_tinyurl(url)
     endif
 endfunction
 
-" Call urlTea API to shorten a URL.
-function! s:call_urltea(url)
-    redraw
-    echo "Sending request to urlTea..."
-    
-    let url = 'http://urltea.com/api/text/?url='.s:url_encode(a:url)
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-	call s:errormsg("Error calling urlTea API: ".error)
-	return ""
-    else
-	redraw
-	echo "Received response from urlTea."
-	return output
-    endif
-endfunction
-
 " Call bit.ly API to shorten a URL.
 function! s:call_bitly(url)
     redraw
@@ -1396,16 +1378,6 @@ if !exists(":ATinyURL")
 endif
 if !exists(":PTinyURL")
     command -nargs=? PTinyURL :call <SID>GetShortURL("cmdline", <q-args>, "call_tinyurl")
-endif
-
-if !exists(":UrlTea")
-    command -nargs=? UrlTea :call <SID>GetShortURL("insert", <q-args>, "call_urltea")
-endif
-if !exists(":AUrlTea")
-    command -nargs=? AUrlTea :call <SID>GetShortURL("append", <q-args>, "call_urltea")
-endif
-if !exists(":PUrlTea")
-    command -nargs=? PUrlTea :call <SID>GetShortURL("cmdline", <q-args>, "call_urltea")
 endif
 
 if !exists(":BitLy")

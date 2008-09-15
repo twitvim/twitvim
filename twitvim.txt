@@ -74,9 +74,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :TinyURL.............................: |:TinyURL|
 	     :ATinyURL............................: |:ATinyURL|
 	     :PTinyURL............................: |:PTinyURL|
-	     :UrlTea..............................: |:UrlTea|
-	     :AUrlTea.............................: |:AUrlTea|
-	     :PUrlTea.............................: |:PUrlTea|
 	     :BitLy...............................: |:BitLy|
 	     :ABitLy..............................: |:ABitLy|
 	     :PBitLy..............................: |:PBitLy|
@@ -601,30 +598,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	the short URL already inserted.
 
 
-	:UrlTea						*:UrlTea*
-	:UrlTea {url}
-
-	UrlTea is a URL forwarding and shortening service. See
-	http://urltea.com
-
-	This command calls the UrlTea API to get a short URL in place of
-	<url>. If {url} is not provided on the command line, the command will
-	prompt you to enter a URL. The short URL is then inserted into the
-	current buffer at the current position.
-
-	:AUrlTea					*:AUrlTea*
-	:AUrlTea {url}
-
-	Same as :UrlTea but appends, i.e. inserts after the current
-	position instead of at the current position,  the short URL instead.
-
-	:PUrlTea					*:PUrlTea*
-	:PUrlTea {url}
-	
-	Same as :UrlTea but prompts for a tweet on the command line with
-	the short URL already inserted.
-
-
 	:BitLy						*:BitLy*
 	:BitLy {url}
 
@@ -817,6 +790,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	0.3.0 : 2008-09-12 * Added support for http networking through Vim's
 			     Perl, Python, Ruby, and Tcl interfaces, as
 			     alternatives to cURL.
+			   * Removed UrlTea support.
 	0.2.24 : 2008-08-28 * Added retweet feature. See |TwitVim-retweet|
 	0.2.23 : 2008-08-25 * Support in_reply_to_status_id parameter.
 			    * Added tip on line length in statusline.
