@@ -505,13 +505,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	<Leader>e					*TwitVim-Leader-e*
 
 	This mapping is local to the timeline buffer. It calls the LongURL API
-	to expand the short URL at the cursor position. A short URL is a URL
-	from a URL shortening service such as TinyURL, SnipURL, etc. Use this
-	feature if you wish to preview a URL before browsing to it with
-	|TwitVim-goto|.
+	(see http://longurl.org/) to expand the short URL at the cursor
+	position. A short URL is a URL from a URL shortening service such as
+	TinyURL, SnipURL, etc. Use this feature if you wish to preview a URL
+	before browsing to it with |TwitVim-goto|.
 	
-	If you visually select text before invoking this mapping, it calls
-	the LongURL API with the selected text as is.
+	If you visually select text before invoking this mapping, it calls the
+	LongURL API with the selected text as is.
 
 	If successful, TwitVim will display the result from LongURL in the
 	message area.
