@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.3.0
+" Version: 0.3.1
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 12, 2008
+" Last updated: September 17, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -842,6 +842,52 @@ function! s:launch_url_cword()
     call s:launch_browser(s)
 endfunction
 
+" Call LongURL API on a shorturl to expand it.
+function! s:call_longurl(url)
+    redraw
+    echo "Sending request to LongURL..."
+
+    let url = 'http://api.longurl.org/v1/expand?url='.s:url_encode(a:url)
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error calling LongURL API: ".error)
+	return ""
+    else
+	redraw
+	echo "Received response from LongURL."
+
+	let longurl = s:xml_get_element(output, 'long_url')
+	if longurl != ""
+	    return longurl
+	endif
+
+	let errormsg = s:xml_get_element(output, 'error')
+	if errormsg != ""
+	    call s:errormsg("LongURL error: ".errormsg)
+	    return ""
+	endif
+
+	call s:errormsg("Unknown response from LongURL: ".output)
+	return ""
+    endif
+endfunction
+
+" Call LongURL API on the given string. If no string is provided, use the
+" current word. In the latter case, this function will try to recognize a URL
+" within the word. Otherwise, it'll just use the whole word.
+function! s:do_longurl(s)
+    let s = a:s
+    if s == ""
+	let s = expand("<cWORD>")
+	let s = substitute(s, '.*\<\(\(http\|https\|ftp\)://\S\+\)', '\1', "")
+    endif
+    let result = s:call_longurl(s)
+    if result != ""
+	redraw
+	echo s.' expands to '.result
+    endif
+endfunction
+
 " Decode HTML entities. Twitter gives those to us a little weird. For example,
 " a '<' character comes to us as &amp;lt;
 function! s:convert_entity(str)
@@ -928,6 +974,10 @@ function! s:twitter_win()
 
 	" Retweet feature for replicating another user's tweet.
 	nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
+
+	" Call LongURL API on current word or selection.
+	nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
+	vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
     endif
 
     call s:twitter_win_syntax()

@@ -61,6 +61,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Alt-G................................: |TwitVim-A-g|
 	     <Leader>g............................: |TwitVim-Leader-g|
 	     twitvim_browser_cmd..................: |twitvim_browser_cmd|
+	     LongURL Feature......................: |TwitVim-LongURL|
+	     <Leader>e............................: |TwitVim-Leader-e|
 	4.4. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
@@ -480,7 +482,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This mapping is local to the timeline buffer. It launches the web
 	browser with the URL at the cursor position. If you visually select
 	text before invoking this mapping, it launches the web browser with
-	the selected text.
+	the selected text as is.
 
 	As a special case, if the cursor is on a word of the form @user or
 	user:, TwitVim will display that user's timeline in the timeline
@@ -497,6 +499,22 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		let twitvim_browser_cmd = 'firefox.exe'
 
 	Of course, replace firefox.exe with the browser of your choice.
+
+
+							*TwitVim-LongURL*
+	<Leader>e					*TwitVim-Leader-e*
+
+	This mapping is local to the timeline buffer. It calls the LongURL API
+	to expand the short URL at the cursor position. A short URL is a URL
+	from a URL shortening service such as TinyURL, SnipURL, etc. Use this
+	feature if you wish to preview a URL before browsing to it with
+	|TwitVim-goto|.
+	
+	If you visually select text before invoking this mapping, it calls
+	the LongURL API with the selected text as is.
+
+	If successful, TwitVim will display the result from LongURL in the
+	message area.
 
 
 ------------------------------------------------------------------------------
@@ -787,6 +805,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.3.1 : 2008-09-17 * Added support for LongURL.
 	0.3.0 : 2008-09-12 * Added support for http networking through Vim's
 			     Perl, Python, Ruby, and Tcl interfaces, as
 			     alternatives to cURL.
