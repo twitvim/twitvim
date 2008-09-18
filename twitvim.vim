@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 17, 2008
+" Last updated: September 18, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -215,9 +215,22 @@ endfunction
 
 " === Networking code ===
 
+function! s:url_encode_char(c)
+    let utf = iconv(a:c, &encoding, "utf-8")
+    if utf == ""
+	return a:c
+    else
+	let s = ""
+	for i in range(strlen(utf))
+	    let s .= printf("%%%02X", char2nr(utf[i]))
+	endfor
+	return s
+    endif
+endfunction
+
 " URL-encode a string.
 function! s:url_encode(str)
-    return substitute(a:str, '[^a-zA-Z0-9_-]', '\=printf("%%%02X", char2nr(submatch(0)))', 'g')
+    return substitute(a:str, '[^a-zA-Z0-9_-]', '\=s:url_encode_char(submatch(0))', 'g')
 endfunction
 
 " Use curl to fetch a web page.
@@ -641,6 +654,12 @@ function! s:add_update(output)
     endif
 endfunction
 
+" Count number of characters in a multibyte string. Use technique from
+" :help strlen().
+function! s:mbstrlen(s)
+    return strlen(substitute(a:s, ".", "x", "g"))
+endfunction
+
 " Common code to post a message to Twitter.
 function! s:post_twitter(mesg, inreplyto)
     let login = s:get_twitvim_login()
@@ -664,12 +683,14 @@ function! s:post_twitter(mesg, inreplyto)
     " Convert internal newlines to spaces.
     let mesg = substitute(mesg, '\n', ' ', "g")
 
+    let mesglen = s:mbstrlen(mesg)
+
     " Check tweet length. Note that the tweet length should be checked before
     " URL-encoding the special characters because URL-encoding increases the
     " string length.
-    if strlen(mesg) > s:char_limit
-	call s:warnmsg("Your tweet has ".(strlen(mesg) - s:char_limit)." too many characters. It was not sent.")
-    elseif strlen(mesg) < 1
+    if mesglen > s:char_limit
+	call s:warnmsg("Your tweet has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
+    elseif mesglen < 1
 	call s:warnmsg("Your tweet was empty. It was not sent.")
     else
 	redraw
@@ -685,7 +706,7 @@ function! s:post_twitter(mesg, inreplyto)
 	else
 	    call s:add_update(output)
 	    redraw
-	    echo "Your tweet was sent. You used" strlen(mesg) "characters."
+	    echo "Your tweet was sent. You used ".mesglen." characters."
 	endif
     endif
 endfunction
@@ -736,7 +757,12 @@ endfunction
 " Extract the tweet text from a timeline buffer line.
 function! s:get_tweet(line)
     let line = substitute(a:line, '^\w\+:\s\+', '', '')
-    return substitute(line, '\s\+|[^|]\+|$', '', '')
+    let line = substitute(line, '\s\+|[^|]\+|$', '', '')
+
+    " Remove newlines.
+    let line = substitute(line, "\n", '', 'g')
+
+    return line
 endfunction
 
 " Retweet is for replicating a tweet from another user.
@@ -1020,7 +1046,7 @@ function! s:show_timeline(timeline, page)
     " the title. Then the syntax highlighter hides the stars by coloring them
     " the same as the background. It is a bad hack.
     call add(text, title.'*')
-    call add(text, repeat('=', strlen(title)).'*')
+    call add(text, repeat('=', s:mbstrlen(title)).'*')
 
     while 1
 	let item = s:xml_get_nth(a:timeline, 'item', matchcount)
@@ -1111,7 +1137,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
     " the title. Then the syntax highlighter hides the stars by coloring them
     " the same as the background. It is a bad hack.
     call add(text, title.'*')
-    call add(text, repeat('=', strlen(title)).'*')
+    call add(text, repeat('=', s:mbstrlen(title)).'*')
 
     while 1
 	let item = s:xml_get_nth(a:timeline, 'direct_message', matchcount)

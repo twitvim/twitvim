@@ -805,7 +805,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.3.1 : 2008-09-17 * Added support for LongURL.
+	0.3.1 : 2008-09-18 * Added support for LongURL.
+			   * Added support for posting multibyte/Unicode
+			     tweets in cURL mode.
+			   * Remove newlines from text before retweeting.
 	0.3.0 : 2008-09-12 * Added support for http networking through Vim's
 			     Perl, Python, Ruby, and Tcl interfaces, as
 			     alternatives to cURL.
