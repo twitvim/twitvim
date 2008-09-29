@@ -1114,6 +1114,12 @@ function! s:get_timeline(tline_name, username, page)
 	return
     endif
 
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error getting Twitter ".a:tline_name." timeline: ".error)
+	return
+    endif
+
     call s:show_timeline(output, a:page)
     let s:twit_buftype = a:tline_name
     redraw
