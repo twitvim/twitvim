@@ -87,6 +87,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :AUrlBorg............................: |:AUrlBorg|
 	     :PUrlBorg............................: |:PUrlBorg|
 	     :SearchTwitter.......................: |:SearchTwitter|
+	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	5. Timeline Highlighting..................: |TwitVim-highlight|
 	   twitterUser............................: |hl-twitterUser|
 	   twitterTime............................: |hl-twitterTime|
@@ -710,6 +711,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	http://search.twitter.com/operators for a list of search operators.
 
 
+	:RateLimitTwitter				*:RateLimitTwitter*
+
+	This command calls the Twitter API to retrieve rate limit information.
+	It shows the current hourly limit, how many API calls you have
+	remaining, and when your quota will be reset. It is useful if you
+	think you've been temporarily locked out of Twitter for hitting the
+	rate limit. This command does not work on identi.ca.
+
+
 ==============================================================================
 5. Timeline Highlighting				*TwitVim-highlight*
 
@@ -805,6 +815,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.3.2 : 2008-09-29 * Added command to display rate limit info.
 	0.3.1 : 2008-09-18 * Added support for LongURL.
 			   * Added support for posting multibyte/Unicode
 			     tweets in cURL mode.

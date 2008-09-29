@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.3.1
+" Version: 0.3.2
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 18, 2008
+" Last updated: September 29, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -116,7 +116,7 @@ endfunction
 
 " Get the content of the n'th element in a series of elements.
 function! s:xml_get_nth(xmlstr, elem, n)
-    let matchres = matchlist(a:xmlstr, '<'.a:elem.'>\(.\{-}\)</'.a:elem.'>', -1, a:n)
+    let matchres = matchlist(a:xmlstr, '<'.a:elem.'\%( [^>]*\)\?>\(.\{-}\)</'.a:elem.'>', -1, a:n)
     return matchres == [] ? "" : matchres[1]
 endfunction
 
@@ -195,6 +195,12 @@ function! s:parse_time(str)
 	
     " This timestamp format is used by Twitter Search.
     let matchres = matchlist(a:str, '^\(\d\+\)-\(\d\+\)-\(\d\+\)T\(\d\+\):\(\d\+\):\(\d\+\)Z$')
+    if matchres != []
+	return s:timegm2(matchres, range(1, 6))
+    endif
+
+    " This timestamp format is used by Twitter Rate Limit.
+    let matchres = matchlist(a:str, '^\(\d\+\)-\(\d\+\)-\(\d\+\)T\(\d\+\):\(\d\+\):\(\d\+\)+00:00$')
     if matchres != []
 	return s:timegm2(matchres, range(1, 6))
     endif
@@ -1244,6 +1250,42 @@ nnoremenu Plugin.TwitVim.&Replies\ Timeline :call <SID>get_timeline("replies", '
 nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages(1)<cr>
 nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages_Sent(1)<cr>
 nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1)<cr>
+
+
+" Call Twitter API to get rate limit information.
+function! s:get_rate_limit()
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    redraw
+    echo "Querying Twitter for rate limit information..."
+
+    let url = s:get_api_root()."/account/rate_limit_status.xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error getting rate limit info: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error getting rate limit info: ".error)
+	return
+    endif
+
+    let remaining = s:xml_get_element(output, 'remaining-hits')
+    let resettime = s:time_filter(s:xml_get_element(output, 'reset-time'))
+    let limit = s:xml_get_element(output, 'hourly-limit')
+
+    redraw
+    echo "Rate limit: ".limit." Remaining: ".remaining." Reset at: ".resettime
+endfunction
+
+if !exists(":RateLimitTwitter")
+    command RateLimitTwitter :call <SID>get_rate_limit()
+endif
 
 " Call Tweetburner API to shorten a URL.
 function! s:call_tweetburner(url)
