@@ -483,10 +483,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Alt-G						*TwitVim-A-g*
 	<Leader>g					*TwitVim-Leader-g*
 
-	This mapping is local to the timeline buffer. It launches the web
-	browser with the URL at the cursor position. If you visually select
-	text before invoking this mapping, it launches the web browser with
-	the selected text as is.
+	This mapping is local to the timeline and user profile buffers. It
+	launches the web browser with the URL at the cursor position. If you
+	visually select text before invoking this mapping, it launches the web
+	browser with the selected text as is.
 
 	As a special case, if the cursor is on a word of the form @user or
 	user:, TwitVim will display that user's timeline in the timeline
@@ -508,12 +508,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*TwitVim-LongURL*
 	<Leader>e					*TwitVim-Leader-e*
 
-	This mapping is local to the timeline buffer. It calls the LongURL API
-	(see http://longurl.org/) to expand the short URL at the cursor
-	position. A short URL is a URL from a URL shortening service such as
-	TinyURL, SnipURL, etc. Use this feature if you wish to preview a URL
-	before browsing to it with |TwitVim-goto|.
-	
+	This mapping is local to the timeline and user profile buffers. It
+	calls the LongURL API (see http://longurl.org/) to expand the short
+	URL at the cursor position. A short URL is a URL from a URL shortening
+	service such as TinyURL, SnipURL, etc. Use this feature if you wish to
+	preview a URL before browsing to it with |TwitVim-goto|.
+
 	If you visually select text before invoking this mapping, it calls the
 	LongURL API with the selected text as is.
 
@@ -524,10 +524,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*TwitVim-profile*
 	<Leader>p					*TwitVim-Leader-p*
 
-	This mapping is local to the timeline buffer. It calls the Twitter API
-	to retrieve user profile information (e.g. name, location, bio, update
-	count) for the user name at the cursor position. It displays the user
-	profile information in its own buffer.
+	This mapping is local to the timeline and user profile buffers. It
+	calls the Twitter API to retrieve user profile information (e.g. name,
+	location, bio, update count) for the user name at the cursor position.
+	It displays the information in a user profile buffer.
 
 	If you visually select text before invoking this mapping, it uses the
 	selected text as is for the user name.
@@ -741,7 +741,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command calls the Twitter API to retrieve user profile
 	information (e.g. name, location, bio, update count) for the specified
-	user. It displays the user profile information in its own buffer.
+	user. It displays the information in a user profile buffer.
 
 	See also |TwitVim-Leader-p|.
 
@@ -841,7 +841,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.3.2 : 2008-09-29 * Added command to display rate limit info.
+	0.3.2 : 2008-09-30 * Added command to display rate limit info.
 			   * Improved error reporting for :UserTwitter.
 			   * Added command and mapping to display user
 			     profile information.

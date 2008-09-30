@@ -925,7 +925,7 @@ endfunction
 function! s:do_user_info(s)
     let s = a:s
     if s == ''
-	let s = expand("<cWORD>")
+	let s = expand("<cword>")
 	
 	" Handle @-replies.
 	let matchres = matchlist(s, '^@\(\w\+\)')
@@ -959,7 +959,7 @@ let s:twit_winname = "Twitter_".localtime()
 let s:twit_buftype = ""
 
 " Set syntax highlighting in timeline window.
-function! s:twitter_win_syntax()
+function! s:twitter_win_syntax(wintype)
     " Beautify the Twitter window with syntax highlighting.
     if has("syntax") && exists("g:syntax_on") && !has("syntax_items")
 
@@ -983,10 +983,12 @@ function! s:twitter_win_syntax()
 	" character.
 	syntax match twitterLink "\S\@<!#\w\+"
 
-	" Use the extra star at the end to recognize the title but hide the
-	" star.
-	syntax match twitterTitle /^.\+\*$/ contains=twitterTitleStar
-	syntax match twitterTitleStar /\*$/ contained
+	if a:wintype != "userinfo"
+	    " Use the extra star at the end to recognize the title but hide the
+	    " star.
+	    syntax match twitterTitle /^.\+\*$/ contains=twitterTitleStar
+	    syntax match twitterTitleStar /\*$/ contained
+	endif
 
 	highlight default link twitterUser Identifier
 	highlight default link twitterTime String
@@ -1000,12 +1002,14 @@ endfunction
 
 " Switch to the Twitter window if there is already one or open a new window for
 " Twitter.
-function! s:twitter_win()
-    let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
+function! s:twitter_win(wintype)
+    let winname = a:wintype == "userinfo" ? s:user_winname : s:twit_winname
+
+    let twit_bufnr = bufwinnr('^'.winname.'$')
     if twit_bufnr > 0
 	execute twit_bufnr . "wincmd w"
     else
-	execute "new " . s:twit_winname
+	execute "new " . winname
 	setlocal noswapfile
 	setlocal buftype=nofile
 	setlocal bufhidden=delete 
@@ -1013,38 +1017,42 @@ function! s:twitter_win()
 	setlocal nobuflisted
 	setlocal nospell
 
-	" Quick reply feature for replying from the timeline.
-	nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
-	nnoremap <buffer> <silent> <Leader>r :call <SID>Quick_Reply()<cr>
-
-	" Quick DM feature for direct messaging from the timeline.
-	nnoremap <buffer> <silent> <A-d> :call <SID>Quick_DM()<cr>
-	nnoremap <buffer> <silent> <Leader>d :call <SID>Quick_DM()<cr>
-
 	" Launch browser with URL in visual selection or at cursor position.
 	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword()<cr>
 	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword()<cr>
 	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
 	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
 
-	" Retweet feature for replicating another user's tweet.
-	nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
+	" Get user info for current word or selection.
+	nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info("")<cr>
+	vnoremap <buffer> <silent> <Leader>p y:call <SID>do_user_info(@")<cr>
 
 	" Call LongURL API on current word or selection.
 	nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
 	vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
 
-	" Get user info for current word or selection.
-	nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info("")<cr>
-	vnoremap <buffer> <silent> <Leader>p y:call <SID>do_user_info(@")<cr>
+	if a:wintype != "userinfo"
+
+	    " Quick reply feature for replying from the timeline.
+	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
+	    nnoremap <buffer> <silent> <Leader>r :call <SID>Quick_Reply()<cr>
+
+	    " Quick DM feature for direct messaging from the timeline.
+	    nnoremap <buffer> <silent> <A-d> :call <SID>Quick_DM()<cr>
+	    nnoremap <buffer> <silent> <Leader>d :call <SID>Quick_DM()<cr>
+
+	    " Retweet feature for replicating another user's tweet.
+	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
+
+	endif
     endif
 
-    call s:twitter_win_syntax()
+    call s:twitter_win_syntax(a:wintype)
 endfunction
 
 " Get a Twitter window and stuff text into it.
-function! s:twitter_wintext(text)
-    call s:twitter_win()
+function! s:twitter_wintext(text, wintype)
+    call s:twitter_win(a:wintype)
 
     set modifiable
 
@@ -1098,7 +1106,7 @@ function! s:show_timeline(timeline, page)
 
 	let matchcount += 1
     endwhile
-    call s:twitter_wintext(text)
+    call s:twitter_wintext(text, "timeline")
 endfunction
 
 " For debugging. Show list of status IDs.
@@ -1192,7 +1200,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 
 	let matchcount += 1
     endwhile
-    call s:twitter_wintext(text)
+    call s:twitter_wintext(text, "timeline")
 endfunction
 
 " Get direct messages sent to user.
@@ -1322,49 +1330,6 @@ endif
 
 let s:user_winname = "TwitterUserInfo_".localtime()
 
-" Switch to the user info window if there is already one or open a new window
-" for user info.
-function! s:user_info_win()
-    let twit_bufnr = bufwinnr('^'.s:user_winname.'$')
-    if twit_bufnr > 0
-	execute twit_bufnr . "wincmd w"
-    else
-	execute "new " . s:user_winname
-	setlocal noswapfile
-	setlocal buftype=nofile
-	setlocal bufhidden=delete 
-	setlocal foldcolumn=0
-	setlocal nobuflisted
-	setlocal nospell
-
-	" Launch browser with URL in visual selection or at cursor position.
-	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword()<cr>
-	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword()<cr>
-	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
-	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
-    endif
-
-    call s:twitter_win_syntax()
-endfunction
-
-" Get a Twitter window and stuff text into it.
-function! s:user_wintext(text)
-    call s:user_info_win()
-
-    set modifiable
-
-    " Overwrite the entire buffer.
-    " Need to use 'silent' or a 'No lines in buffer' message will appear.
-    " Delete to the blackhole register "_ so that we don't affect registers.
-    silent %delete _
-    call setline('.', a:text)
-    normal 1G
-
-    set nomodifiable
-
-    wincmd p
-endfunction
-
 " Process/format the user information.
 function! s:format_user_info(output)
     let text = []
@@ -1374,30 +1339,17 @@ function! s:format_user_info(output)
     let screen = s:xml_get_element(output, 'screen_name')
     call add(text, 'Name: '.screen.' ('.name.')')
 
-    let location = s:xml_get_element(output, 'location')
-    call add(text, 'Location: '.location)
-
-    let web = s:xml_get_element(output, 'url')
-    call add(text, 'Website: '.web)
-
-    let desc = s:xml_get_element(output, 'description')
-    call add(text, 'Bio: '.desc)
-
+    call add(text, 'Location: '.s:xml_get_element(output, 'location'))
+    call add(text, 'Website: '.s:xml_get_element(output, 'url'))
+    call add(text, 'Bio: '.s:xml_get_element(output, 'description'))
     call add(text, '')
-
-    let friends = s:xml_get_element(output, 'friends_count')
-    let followers = s:xml_get_element(output, 'followers_count')
-    let updates = s:xml_get_element(output, 'statuses_count')
-
-    call add(text, 'Following: '.friends)
-    call add(text, 'Followers: '.followers)
-    call add(text, 'Updates: '.updates)
-
+    call add(text, 'Following: '.s:xml_get_element(output, 'friends_count'))
+    call add(text, 'Followers: '.s:xml_get_element(output, 'followers_count'))
+    call add(text, 'Updates: '.s:xml_get_element(output, 'statuses_count'))
     call add(text, '')
 
     let status = s:xml_get_element(output, 'text')
     let pubdate = s:time_filter(s:xml_get_element(output, 'created_at'))
-
     call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
     return text
 endfunction
@@ -1430,7 +1382,7 @@ function! s:get_user_info(username)
 	return
     endif
 
-    call s:user_wintext(s:format_user_info(output))
+    call s:twitter_wintext(s:format_user_info(output), "userinfo")
 
     redraw
     echo "User information retrieved."
@@ -1717,7 +1669,7 @@ function! s:show_summize(searchres)
 
 	let matchcount += 1
     endwhile
-    call s:twitter_wintext(text)
+    call s:twitter_wintext(text, "timeline")
 endfunction
 
 " Query Twitter Search API and retrieve results
