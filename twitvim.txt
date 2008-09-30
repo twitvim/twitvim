@@ -88,6 +88,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_urlborg_key..................: |twitvim_urlborg_key|
 	     :AUrlBorg............................: |:AUrlBorg|
 	     :PUrlBorg............................: |:PUrlBorg|
+	     :Trim................................: |:Trim|
+	     twitvim_trim_login...................: |twitvim_trim_login|
+	     :ATrim...............................: |:ATrim|
+	     :PTrim...............................: |:PTrim|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
@@ -718,6 +722,46 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
+	:Trim						*:Trim*
+	:Trim {url}
+
+	tr.im is a URL forwarding and shortening service. See http://tr.im/
+
+	This command calls the tr.im API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	If you login to the tr.im API, tr.im will keep track
+	of URLs that you have shortened. In order to do that, add the
+	following to your vimrc:
+
+							*twitvim_trim_login*
+		let twitvim_trim_login = "trimuser:trimpassword"
+
+	Where trimuser and trimpassword are your tr.im account user name and
+	password.
+
+	You may also specify trimuser:trimpassword as a base64 encoded string:
+
+		let twitvim_trim_login = "base64string"
+
+	See |TwitVim-login-base64| for information on generating base64
+	strings.
+
+	:ATrim						*:ATrim*
+	:ATrim {url}
+
+	Same as :Trim but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PTrim						*:PTrim*
+	:PTrim {url}
+	
+	Same as :Trim but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
 	:SearchTwitter					*:SearchTwitter*
 	:SearchTwitter {query}
 	
@@ -862,6 +906,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     |TwitVim-Leader-p|
 			   * Added command for updating location.
 			     |:LocationTwitter|
+			   * Added support for tr.im. |:Trim|
 	0.3.1 : 2008-09-18 * Added support for LongURL. |TwitVim-LongURL|
 			   * Added support for posting multibyte/Unicode
 			     tweets in cURL mode.

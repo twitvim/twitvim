@@ -128,6 +128,35 @@ function! s:xml_remove_elements(xmlstr, elem)
     return substitute(a:xmlstr, '<'.a:elem.'>.\{-}</'.a:elem.'>', '', "g")
 endfunction
 
+" Get the attributes of the n'th element in a series of elements.
+function! s:xml_get_attr_nth(xmlstr, elem, n)
+    let matchres = matchlist(a:xmlstr, '<'.a:elem.'\s\+\([^>]*\)>', -1, a:n)
+    if matchres == []
+	return {}
+    endif
+
+    let matchcount = 1
+    let attrstr = matchres[1]
+    let attrs = {}
+
+    while 1
+	let matchres = matchlist(attrstr, '\(\w\+\)="\([^"]*\)"', -1, matchcount)
+	if matchres == []
+	    break
+	endif
+
+	let attrs[matchres[1]] = matchres[2]
+	let matchcount += 1
+    endwhile
+
+    return attrs
+endfunction
+
+" Get attributes of the specified element.
+function! s:xml_get_attr(xmlstr, elem)
+    return s:xml_get_attr_nth(a:xmlstr, a:elem, 1)
+endfunction
+
 " === End of XML helper functions ===
 
 " === Time parser ===
@@ -1564,6 +1593,39 @@ function! s:call_urlborg(url)
 endfunction
 
 
+" Get tr.im login info if configured by the user.
+function! s:get_trim_login()
+    return exists('g:twitvim_trim_login') ? g:twitvim_trim_login : ''
+endfunction
+
+" Call tr.im API to shorten a URL.
+function! s:call_trim(url)
+    let login = s:get_trim_login()
+
+    let url = 'http://tr.im/api/trim_url.xml?url='.s:url_encode(a:url)
+
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+
+    if error != ''
+	call s:errormsg("Error calling tr.im API: ".error)
+	return ""
+    endif
+
+    let statusattr = s:xml_get_attr(output, 'status')
+
+    let trimmsg = statusattr['code'].' '.statusattr['message']
+
+    if statusattr['result'] == "OK"
+	return s:xml_get_element(output, 'url')
+    elseif statusattr['result'] == "ERROR"
+	call s:errormsg("tr.im error: ".trimmsg)
+	return ""
+    else
+	call s:errormsg("Unknown result from tr.im: ".trimmsg)
+	return ""
+    endif
+endfunction
+
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
@@ -1662,6 +1724,16 @@ if !exists(":AUrlBorg")
 endif
 if !exists(":PUrlBorg")
     command -nargs=? PUrlBorg :call <SID>GetShortURL("cmdline", <q-args>, "call_urlborg")
+endif
+
+if !exists(":Trim")
+    command -nargs=? Trim :call <SID>GetShortURL("insert", <q-args>, "call_trim")
+endif
+if !exists(":ATrim")
+    command -nargs=? ATrim :call <SID>GetShortURL("append", <q-args>, "call_trim")
+endif
+if !exists(":PTrim")
+    command -nargs=? PTrim :call <SID>GetShortURL("cmdline", <q-args>, "call_trim")
 endif
 
 " Parse and format search results from Twitter Search API.
