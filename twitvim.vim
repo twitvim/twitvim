@@ -920,6 +920,29 @@ function! s:do_longurl(s)
     endif
 endfunction
 
+" Get info on the given user. If no user is provided, use the current word and
+" strip off the @ or : if the current word is @user or user:. 
+function! s:do_user_info(s)
+    let s = a:s
+    if s == ''
+	let s = expand("<cWORD>")
+	
+	" Handle @-replies.
+	let matchres = matchlist(s, '^@\(\w\+\)')
+	if matchres != []
+	    let s = matchres[1]
+	else
+	    " Handle username: at the beginning of the line.
+	    let matchres = matchlist(s, '^\(\w\+\):$')
+	    if matchres != []
+		let s = matchres[1]
+	    endif
+	endif
+    endif
+
+    call s:get_user_info(s)
+endfunction
+
 " Decode HTML entities. Twitter gives those to us a little weird. For example,
 " a '<' character comes to us as &amp;lt;
 function! s:convert_entity(str)
@@ -1010,6 +1033,10 @@ function! s:twitter_win()
 	" Call LongURL API on current word or selection.
 	nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
 	vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
+
+	" Get user info for current word or selection.
+	nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info("")<cr>
+	vnoremap <buffer> <silent> <Leader>p y:call <SID>do_user_info(@")<cr>
     endif
 
     call s:twitter_win_syntax()
@@ -1292,6 +1319,127 @@ endfunction
 if !exists(":RateLimitTwitter")
     command RateLimitTwitter :call <SID>get_rate_limit()
 endif
+
+let s:user_winname = "TwitterUserInfo_".localtime()
+
+" Switch to the user info window if there is already one or open a new window
+" for user info.
+function! s:user_info_win()
+    let twit_bufnr = bufwinnr('^'.s:user_winname.'$')
+    if twit_bufnr > 0
+	execute twit_bufnr . "wincmd w"
+    else
+	execute "new " . s:user_winname
+	setlocal noswapfile
+	setlocal buftype=nofile
+	setlocal bufhidden=delete 
+	setlocal foldcolumn=0
+	setlocal nobuflisted
+	setlocal nospell
+
+	" Launch browser with URL in visual selection or at cursor position.
+	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword()<cr>
+	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword()<cr>
+	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
+	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
+    endif
+
+    call s:twitter_win_syntax()
+endfunction
+
+" Get a Twitter window and stuff text into it.
+function! s:user_wintext(text)
+    call s:user_info_win()
+
+    set modifiable
+
+    " Overwrite the entire buffer.
+    " Need to use 'silent' or a 'No lines in buffer' message will appear.
+    " Delete to the blackhole register "_ so that we don't affect registers.
+    silent %delete _
+    call setline('.', a:text)
+    normal 1G
+
+    set nomodifiable
+
+    wincmd p
+endfunction
+
+" Process/format the user information.
+function! s:format_user_info(output)
+    let text = []
+    let output = a:output
+
+    let name = s:xml_get_element(output, 'name')
+    let screen = s:xml_get_element(output, 'screen_name')
+    call add(text, 'Name: '.screen.' ('.name.')')
+
+    let location = s:xml_get_element(output, 'location')
+    call add(text, 'Location: '.location)
+
+    let web = s:xml_get_element(output, 'url')
+    call add(text, 'Website: '.web)
+
+    let desc = s:xml_get_element(output, 'description')
+    call add(text, 'Bio: '.desc)
+
+    call add(text, '')
+
+    let friends = s:xml_get_element(output, 'friends_count')
+    let followers = s:xml_get_element(output, 'followers_count')
+    let updates = s:xml_get_element(output, 'statuses_count')
+
+    call add(text, 'Following: '.friends)
+    call add(text, 'Followers: '.followers)
+    call add(text, 'Updates: '.updates)
+
+    call add(text, '')
+
+    let status = s:xml_get_element(output, 'text')
+    let pubdate = s:time_filter(s:xml_get_element(output, 'created_at'))
+
+    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+    return text
+endfunction
+
+" Call Twitter API to get user's info.
+function! s:get_user_info(username)
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    if a:username == ''
+	call s:errormsg("Please specify a user name to retrieve info on.")
+	return
+    endif
+
+    redraw
+    echo "Querying Twitter for user information..."
+
+    let url = s:get_api_root()."/users/show/".a:username.".xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error getting user info: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error getting user info: ".error)
+	return
+    endif
+
+    call s:user_wintext(s:format_user_info(output))
+
+    redraw
+    echo "User information retrieved."
+endfunction
+
+if !exists(":ProfileTwitter")
+    command -nargs=1 ProfileTwitter :call <SID>get_user_info(<q-args>)
+endif
+
 
 " Call Tweetburner API to shorten a URL.
 function! s:call_tweetburner(url)

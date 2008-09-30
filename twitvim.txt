@@ -63,6 +63,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_browser_cmd..................: |twitvim_browser_cmd|
 	     LongURL Feature......................: |TwitVim-LongURL|
 	     <Leader>e............................: |TwitVim-Leader-e|
+	     User Profiles........................: |TwitVim-profile|
+	     <Leader>p............................: |TwitVim-Leader-p|
 	4.4. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
@@ -88,6 +90,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :PUrlBorg............................: |:PUrlBorg|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
+	     :ProfileTwitter......................: |:ProfileTwitter|
 	5. Timeline Highlighting..................: |TwitVim-highlight|
 	   twitterUser............................: |hl-twitterUser|
 	   twitterTime............................: |hl-twitterTime|
@@ -518,6 +521,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	message area.
 
 
+							*TwitVim-profile*
+	<Leader>p					*TwitVim-Leader-p*
+
+	This mapping is local to the timeline buffer. It calls the Twitter API
+	to retrieve user profile information (e.g. name, location, bio, update
+	count) for the user name at the cursor position. It displays the user
+	profile information in its own buffer.
+
+	If you visually select text before invoking this mapping, it uses the
+	selected text as is for the user name.
+
+	See also |:ProfileTwitter|.
+
+
 ------------------------------------------------------------------------------
 4.4. Utility Commands					*TwitVim-utility*
 
@@ -720,6 +737,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	rate limit. This command does not work on identi.ca.
 
 
+	:ProfileTwitter {username}			*:ProfileTwitter*
+
+	This command calls the Twitter API to retrieve user profile
+	information (e.g. name, location, bio, update count) for the specified
+	user. It displays the user profile information in its own buffer.
+
+	See also |TwitVim-Leader-p|.
+
+
 ==============================================================================
 5. Timeline Highlighting				*TwitVim-highlight*
 
@@ -817,6 +843,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	0.3.2 : 2008-09-29 * Added command to display rate limit info.
 			   * Improved error reporting for :UserTwitter.
+			   * Added command and mapping to display user
+			     profile information.
 	0.3.1 : 2008-09-18 * Added support for LongURL.
 			   * Added support for posting multibyte/Unicode
 			     tweets in cURL mode.
