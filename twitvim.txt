@@ -91,6 +91,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
+	     :LocationTwitter.....................: |:LocationTwitter|
 	5. Timeline Highlighting..................: |TwitVim-highlight|
 	   twitterUser............................: |hl-twitterUser|
 	   twitterTime............................: |hl-twitterTime|
@@ -732,8 +733,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command calls the Twitter API to retrieve rate limit information.
 	It shows the current hourly limit, how many API calls you have
-	remaining, and when your quota will be reset. It is useful if you
-	think you've been temporarily locked out of Twitter for hitting the
+	remaining, and when your quota will be reset. You can use it to check
+	if you have been temporarily locked out of Twitter for hitting the
 	rate limit. This command does not work on identi.ca.
 
 
@@ -744,6 +745,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	user. It displays the information in a user profile buffer.
 
 	See also |TwitVim-Leader-p|.
+
+
+	:LocationTwitter {location}			*:LocationTwitter*
+
+	This command calls the Twitter API to set the location field in your
+	profile. There is no mandatory format for the location. It could be a
+	zip code, a town, coordinates, or pretty much anything.
+
+	For example:
+	:LocationTwitter 10027
+	:LocationTwitter New York, NY, USA
+	:LocationTwitter 40.811583, -73.954486
 
 
 ==============================================================================
@@ -842,16 +855,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 7. TwitVim History					*TwitVim-history*
 
 	0.3.2 : 2008-09-30 * Added command to display rate limit info.
+			     |:RateLimitTwitter|
 			   * Improved error reporting for :UserTwitter.
 			   * Added command and mapping to display user
-			     profile information.
-	0.3.1 : 2008-09-18 * Added support for LongURL.
+			     profile information. |:ProfileTwitter|
+			     |TwitVim-Leader-p|
+			   * Added command for updating location.
+			     |:LocationTwitter|
+	0.3.1 : 2008-09-18 * Added support for LongURL. |TwitVim-LongURL|
 			   * Added support for posting multibyte/Unicode
 			     tweets in cURL mode.
 			   * Remove newlines from text before retweeting.
 	0.3.0 : 2008-09-12 * Added support for http networking through Vim's
 			     Perl, Python, Ruby, and Tcl interfaces, as
-			     alternatives to cURL.
+			     alternatives to cURL. |TwitVim-non-cURL|
 			   * Removed UrlTea support.
 	0.2.24 : 2008-08-28 * Added retweet feature. See |TwitVim-retweet|
 	0.2.23 : 2008-08-25 * Support in_reply_to_status_id parameter.
@@ -870,14 +887,17 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			    * Added Python code to convert Twitter timestamps
 			      to local time and simplify them.
 	0.2.20 : 2008-07-24 * Switched from Summize to Twitter Search.
+			      |:SearchTwitter|
 	0.2.19 : 2008-07-23 * Added support for non-Twitter servers
 			      implementing the Twitter API. This is for
 			      identi.ca support. See |twitvim-identi.ca|.
-	0.2.18 : 2008-07-14 * Added support for urlBorg API.
+	0.2.18 : 2008-07-14 * Added support for urlBorg API. |:UrlBorg|
 	0.2.17 : 2008-07-11 * Added command to show DM Sent Timeline.
+	                      |:DMSentTwitter|
 			    * Added support for pagination in Friends, User,
 			      Replies, DM, and DM Sent timelines.
 			    * Added support for bit.ly API and is.gd API.
+			      |:BitLy| |:IsGd|
 	0.2.16 : 2008-05-16 * Removed quotes around browser launch URL.
 			    * Escape ! character in browser launch URL.
 	0.2.15 : 2008-05-13 * Extend :UserTwitter and :FriendsTwitter to show
@@ -891,6 +911,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			      timeline.
 	0.2.12 : 2008-05-05 * Allow user to specify Twitter login info and
 			      proxy login info preencoded in base64.
+			      |twitvim_login_b64| |twitvim_proxy_login_b64|
 	0.2.11 : 2008-05-02 * Scroll to top in timeline window after adding
 			      an update line.
 			    * Add <Leader>r and <Leader>d mappings as
@@ -898,6 +919,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			      latter are not valid key combos under Cygwin.
 	0.2.10 : 2008-04-25 * Shortened snipurl.com to snipr.com
 			    * Added support for proxy authentication.
+			      |twitvim_proxy_login|
 			    * Handle Perl module load failure. Not that I
 			      expect those modules to ever be missing.
 	0.2.9 : 2008-04-23 * Added some status messages.
@@ -907,13 +929,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Added support for UrlTea API.
 			   * Generalize URL encoding to all non-alpha chars.
 	0.2.8 : 2008-04-22 * Encode URLs sent to URL-shortening services.
-	0.2.7 : 2008-04-21 * Add support for TinyURL API.
+	0.2.7 : 2008-04-21 * Add support for TinyURL API. |:TinyURL|
 			   * Add quick direct message feature.
+			     |TwitVim-direct-message|
 	0.2.6 : 2008-04-15 * Delete Twitter buffer to the blackhole register
 			     to avoid stepping on registers unnecessarily.
 			   * Quote login and proxy arguments before sending to
 			     cURL.
 			   * Added support for SnipURL API and Metamark API.
+			     |:Snipurl| |:Metamark|
 	0.2.5 : 2008-04-14 * Escape the "+" character in sent tweets.
 			   * Added Perl code to convert Twitter timestamps to
 			     local time and simplify them.
@@ -926,7 +950,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     the |T| command.
 	0.2.3 : 2008-04-12 * Added more Tweetburner commands.
 	0.2.2 : 2008-04-11 * Added quick reply feature.
-			   * Added Tweetburner support.
+			   * Added Tweetburner support. |:Tweetburner|
 			   * Changed client ident to "from twitvim".
 	0.2.1 : 2008-04-10 * Bug fix for Chinese characters in timeline.
 			     Thanks to Leiyue.

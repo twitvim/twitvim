@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 29, 2008
+" Last updated: September 30, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -21,9 +21,6 @@ let loaded_twitvim = 1
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
 set cpo&vim
-
-let s:proxy = ""
-let s:login = ""
 
 " The extended character limit is 246. Twitter will display a tweet longer than
 " 140 characters in truncated form with a link to the full tweet. If that is
@@ -1326,6 +1323,39 @@ endfunction
 
 if !exists(":RateLimitTwitter")
     command RateLimitTwitter :call <SID>get_rate_limit()
+endif
+
+" Set location field on Twitter profile.
+function! s:set_location(loc)
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    redraw
+    echo "Setting location on Twitter profile..."
+
+    let url = s:get_api_root()."/account/update_location.xml"
+    let parms = { 'location' : a:loc }
+
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	call s:errormsg("Error setting location: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error setting location: ".error)
+	return
+    endif
+
+    redraw
+    echo "Location: ".s:xml_get_element(output, 'location')
+endfunction
+
+if !exists(":LocationTwitter")
+    command -nargs=+ LocationTwitter :call <SID>set_location(<q-args>)
 endif
 
 let s:user_winname = "TwitterUserInfo_".localtime()
