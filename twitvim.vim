@@ -594,12 +594,23 @@ if { [llength $keys] > 0 } {
 upvar #0 $res state
 
 if { $state(status) == "ok" } {
-    set output [string map {' ''} $state(body)]
-    ::vim::command "let output = '$output'"
+    if { [ ::http::ncode $res ] >= 400 } {
+	set error $state(http)
+	::vim::command "let error = '$error'"
+    } else {
+	set output [string map {' ''} $state(body)]
+	::vim::command "let output = '$output'"
+    }
 } else {
-    set error [string map {' ''} $state(error)]
+    if { [ info exists state(error) ] } {
+	set error [string map {' ''} $state(error)]
+    } else {
+	set error "$state(status) error"
+    }
     ::vim::command "let error = '$error'"
 }
+
+::http::cleanup $res
 EOF
 
     return [error, output]
