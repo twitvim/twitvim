@@ -562,6 +562,7 @@ set url [::vim::expr a:url]
 
 set headers [list]
 
+::http::config -proxyhost ""
 set proxy [::vim::expr a:proxy]
 if { $proxy != "" } {
     array set prox [uri::split "http://$proxy"]
