@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.3.2
+" Version: 0.3.3
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 30, 2008
+" Last updated: October 6, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1638,6 +1638,31 @@ function! s:call_trim(url)
     endif
 endfunction
 
+" Get Cligs API key if configured by the user.
+function! s:get_cligs_key()
+    return exists('g:twitvim_cligs_key') ? g:twitvim_cligs_key : ''
+endfunction
+
+" Call Cligs API to shorten a URL.
+function! s:call_cligs(url)
+    let url = 'http://cli.gs/api/v1/cligs/create?appid=twitvim&url='.s:url_encode(a:url)
+
+    let key = s:get_cligs_key()
+    if key != ''
+	let url .= '&key='.key
+    endif
+
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error calling Cligs API: ".error)
+	return ""
+    endif
+
+    redraw
+    echo "Received response from Cligs."
+    return output
+endfunction
+
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
@@ -1746,6 +1771,16 @@ if !exists(":ATrim")
 endif
 if !exists(":PTrim")
     command -nargs=? PTrim :call <SID>GetShortURL("cmdline", <q-args>, "call_trim")
+endif
+
+if !exists(":Cligs")
+    command -nargs=? Cligs :call <SID>GetShortURL("insert", <q-args>, "call_cligs")
+endif
+if !exists(":ACligs")
+    command -nargs=? ACligs :call <SID>GetShortURL("append", <q-args>, "call_cligs")
+endif
+if !exists(":PCligs")
+    command -nargs=? PCligs :call <SID>GetShortURL("cmdline", <q-args>, "call_cligs")
 endif
 
 " Parse and format search results from Twitter Search API.

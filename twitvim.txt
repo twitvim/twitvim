@@ -92,6 +92,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_trim_login...................: |twitvim_trim_login|
 	     :ATrim...............................: |:ATrim|
 	     :PTrim...............................: |:PTrim|
+	     :Cligs...............................: |:Cligs|
+	     twitvim_cligs_key....................: |twitvim_cligs_key|
+	     :ACligs..............................: |:ACligs|
+	     :PCligs..............................: |:PCligs|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
@@ -762,6 +766,38 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
+	:Cligs						*:Cligs*
+	:Cligs {url}
+
+	Cligs is a URL forwarding and shortening service. See http://cli.gs/
+
+	This command calls the Cligs API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	If you supply a Cligs API key, Cligs will keep track of URLs that you
+	have shortened. In order to do that, add the following to your vimrc:
+
+							*twitvim_cligs_key*
+		let twitvim_cligs_key = "hexstring"
+
+	where hexstring is the API key. You can get an API key by registering
+	for a user account at Cligs and then visiting http://cli.gs/user/api
+
+	:ACligs						*:ACligs*
+	:ACligs {url}
+
+	Same as :Cligs but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PCligs						*:PCligs*
+	:PCligs {url}
+	
+	Same as :Cligs but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
 	:SearchTwitter					*:SearchTwitter*
 	:SearchTwitter {query}
 	
@@ -898,6 +934,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.3.3 : 2008-10-06 * Added support for Cligs. |:Cligs|
+	                   * Fixed a problem with not being able to unset
+			     the proxy if using Tcl http.
 	0.3.2 : 2008-09-30 * Added command to display rate limit info.
 			     |:RateLimitTwitter|
 			   * Improved error reporting for :UserTwitter.
@@ -907,6 +946,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Added command for updating location.
 			     |:LocationTwitter|
 			   * Added support for tr.im. |:Trim|
+			   * Fixed error reporting in Tcl http code.
 	0.3.1 : 2008-09-18 * Added support for LongURL. |TwitVim-LongURL|
 			   * Added support for posting multibyte/Unicode
 			     tweets in cURL mode.
