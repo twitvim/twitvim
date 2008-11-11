@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.3.3
+" Version: 0.3.4
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 6, 2008
+" Last updated: November 11, 2008
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -74,6 +74,21 @@ function! s:get_proxy_login()
     else
 	return exists('g:twitvim_proxy_login') ? g:twitvim_proxy_login : ''
     endif
+endfunction
+
+" Get twitvim_count, if it exists. This will be the number of tweets returned
+" by :FriendsTwitter and :UserTwitter.
+function! s:get_count()
+    if exists('g:twitvim_count')
+	if g:twitvim_count < 1
+	    return 1
+	elseif g:twitvim_count > 200
+	    return 200
+	else
+	    return g:twitvim_count
+	endif
+    endif
+    return 0
 endfunction
 
 " Display an error message in the message area.
@@ -1154,6 +1169,8 @@ endif
 
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
+    let gotparam = 0
+
     if a:tline_name == "public"
 	" No authentication is needed for public timeline.
 	let login = ''
@@ -1173,6 +1190,16 @@ function! s:get_timeline(tline_name, username, page)
     " Support pagination.
     if a:page > 1
 	let url_fname .= '?page='.a:page
+	let gotparam = 1
+    endif
+
+    " Support count parameter in friends and user timelines.
+    if a:tline_name == 'friends' || a:tline_name == 'user'
+	let tcount = s:get_count()
+	if tcount > 0
+	    let url_fname .= (gotparam ? '&' : '?').'count='.tcount
+	    let gotparam = 1
+	endif
     endif
 
     redraw

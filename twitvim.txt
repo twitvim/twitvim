@@ -40,6 +40,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :BPosttoTwitter......................: |:BPosttoTwitter|
 	4.2. Timeline Commands....................: |TwitVim-timeline-commands|
 	     :UserTwitter.........................: |:UserTwitter|
+	     twitvim_count........................: |twitvim_count|
 	     :FriendsTwitter......................: |:FriendsTwitter|
 	     :RepliesTwitter......................: |:RepliesTwitter|
 	     :PublicTwitter.......................: |:PublicTwitter|
@@ -373,6 +374,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	example, :2UserTwitter displays the second page from your user
 	timeline.
 
+							*twitvim_count*
+	You can configure the number of tweets returned by :UserTwitter by
+	setting twitvim_count. For example,
+
+		let twitvim_count = 50
+
+	will make :UserTwitter return 50 tweets instead of the default of 20.
+	You can set twitvim_count to any integer from 1 to 200.
+
 
 	:[count]FriendsTwitter				*:FriendsTwitter*
 	:[count]FriendsTwitter {username}
@@ -386,6 +396,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	If you specify [count], that number is used as the page number. For
 	example, :2FriendsTwitter displays the second page from your friends
 	timeline.
+
+	You can configure the number of tweets returned by :FriendsTwitter by
+	setting |twitvim_count|.
 
 
 	:[count]RepliesTwitter				*:RepliesTwitter*
@@ -934,6 +947,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.3.4 : 2008-11-11 * Added |twitvim_count| option to allow user to
+			     configure the number of tweets returned by
+			     :FriendsTwitter and :UserTwitter.
 	0.3.3 : 2008-10-06 * Added support for Cligs. |:Cligs|
 	                   * Fixed a problem with not being able to unset
 			     the proxy if using Tcl http.
