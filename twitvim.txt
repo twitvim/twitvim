@@ -33,11 +33,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_enable_python................: |twitvim_enable_python|
 	     twitvim_enable_ruby..................: |twitvim_enable_ruby|
 	     twitvim_enable_tcl...................: |twitvim_enable_tcl|
+	3.3. Using Twitter SSL API................: |TwitVim-ssl|
+	     Twitter SSL via cURL.................: |TwitVim-ssl-curl|
+	     twitvim_cert_insecure................: |twitvim_cert_insecure|
+	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
+	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
+	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. Update Commands......................: |TwitVim-update-commands|
 	     :PosttoTwitter.......................: |:PosttoTwitter|
 	     :CPosttoTwitter......................: |:CPosttoTwitter|
 	     :BPosttoTwitter......................: |:BPosttoTwitter|
+	     :SendDMTwitter.......................: |:SendDMTwitter|
 	4.2. Timeline Commands....................: |TwitVim-timeline-commands|
 	     :UserTwitter.........................: |:UserTwitter|
 	     twitvim_count........................: |twitvim_count|
@@ -46,6 +53,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :PublicTwitter.......................: |:PublicTwitter|
 	     :DMTwitter...........................: |:DMTwitter|
 	     :DMSentTwitter.......................: |:DMSentTwitter|
+	     :BackTwitter.........................: |:BackTwitter|
+	     :ForwardTwitter......................: |:ForwardTwitter|
+	     :RefreshTwitter......................: |:RefreshTwitter|
+	     :NextTwitter.........................: |:NextTwitter|
+	     :PreviousTwitter.....................: |:PreviousTwitter|
 	4.3. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
@@ -66,6 +78,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     <Leader>e............................: |TwitVim-Leader-e|
 	     User Profiles........................: |TwitVim-profile|
 	     <Leader>p............................: |TwitVim-Leader-p|
+	     In-reply-to..........................: |TwitVim-inreplyto|
+	     <Leader>@............................: |TwitVim-Leader-@|
+	     Delete...............................: |TwitVim-delete|
+	     <Leader>X............................: |TwitVim-Leader-X|
+	     Ctrl-O...............................: |TwitVim-C-o|
+	     Ctrl-I...............................: |TwitVim-C-i|
+	     Refresh..............................: |TwitVim-refresh|
+	     <Leader><Leader>.....................: |TwitVim-Leader-Leader|
+	     Next page............................: |TwitVim-next|
+	     Ctrl-PageDown........................: |TwitVim-C-PageDown|
+	     Previous page........................: |TwitVim-previous|
+	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
 	4.4. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
@@ -331,6 +355,81 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		teacup install tcllib
 
 
+------------------------------------------------------------------------------
+3.3. Using Twitter SSL API				*TwitVim-ssl*
+
+	For added security, TwitVim can use the Twitter SSL API instead of the
+	regular Twitter API. You configure this by setting |twitvim_api_root|
+	to the https version of the URL:
+
+		let twitvim_api_root = "https://twitter.com"
+
+	For identi.ca:
+
+		let twitvim_api_root = "https://identi.ca/api"
+
+	There are certain pre-requisites, as explained below.
+
+
+	1. Twitter SSL via cURL				*TwitVim-ssl-curl*
+
+	To use SSL via cURL, you need to install the SSL libraries and an
+	SSL-enabled build of cURL.
+
+							*twitvim_cert_insecure*
+	Even after you've done that, cURL may complain about certificates that
+	failed verification. If you need to override certificate checking, set
+	twitvim_cert_insecure:
+
+		let twitvim_cert_insecure = 1
+
+
+	2. Twitter SSL via Perl interface		*TwitVim-ssl-perl*
+
+	To use SSL via the TwitVim Perl interface (See |twitvim_enable_perl|),
+	you need to install the SSL libraries and the Crypt::SSLeay Perl
+	module.
+
+	If you are using Twitter SSL over a proxy, do not set twitvim_proxy
+	and twitvim_proxy_login. Crypt::SSLeay gets proxy information from
+	the environment, so do this instead:
+
+		let $HTTPS_PROXY="http://proxyserver:proxyport"
+		let $HTTPS_PROXY_USERNAME="user"
+		let $HTTPS_PROXY_PASSWORD="password"
+
+	Alternatively, you can set those environment variables before starting
+	Vim.
+
+
+	3. Twitter SSL via Ruby interface		*TwitVim-ssl-ruby*
+
+	To use SSL via Ruby, you need to install the SSL libraries and an
+	SSL-enabled build of Ruby.
+
+	If Ruby produces the error "`write': Bad file descriptor" in http.rb,
+	then you need to check your certificates or override certificate
+	checking. See |twitvim_cert_insecure|.
+
+	Set twitvim_proxy and twitvim_proxy_login as usual if using Twitter
+	SSL over a proxy.
+
+
+	4. Twitter SSL via Python interface		*TwitVim-ssl-python*
+
+	To use SSL via Python, you need to install the SSL libraries and an
+	SSL-enabled build of Python.
+
+	The Python interface does not yet support Twitter SSL over a proxy.
+	This is due to a missing feature in urllib2.
+
+
+	5. Twitter SSL via TCL interface
+
+	I do not know how to make this work with Twitter SSL yet. If you
+	succeed, let me know what you did.
+
+
 ==============================================================================
 4. TwitVim Manual					*TwitVim-manual*
 
@@ -352,6 +451,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	:BPosttoTwitter					*:BPosttoTwitter*
 
 	This command posts the contents of the current buffer to Twitter.
+
+	:SendDMTwitter {username}			*:SendDMTwitter*
+
+	This command will prompt you for a direct message to send to user
+	{username}.
 
 ------------------------------------------------------------------------------
 4.2. Timeline Commands				*TwitVim-timeline-commands*
@@ -432,6 +536,38 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	If you specify [count], that number is used as the page number. For
 	example, :2DMSentTwitter displays the second page from your direct
 	messages sent timeline.
+
+
+	:BackTwitter					*:BackTwitter*
+
+	This command takes you back to the previous timeline in the timeline
+	stack. TwitVim saves a limited number of timelines. This command
+	will display a warning if you attempt to go beyond the oldest saved
+	timeline.
+
+
+	:ForwardTwitter					*:ForwardTwitter*
+
+	This command takes you to the next timeline in the timeline stack.
+	It will display a warning if you attempt to go past the newest saved
+	timeline so this command can only be used after :BackTwitter.
+
+
+	:RefreshTwitter					*:RefreshTwitter*
+
+	This command refreshes the timeline.
+
+
+	:NextTwitter					*:NextTwitter*
+
+	This command loads the next (older) page in the timeline.
+
+
+	:PreviousTwitter				*:PreviousTwitter*
+
+	This command loads the previous (newer) page in the timeline. If the
+	timeline is on the first page, it issues a warning and doesn't do
+	anything.
 
 
 ------------------------------------------------------------------------------
@@ -555,6 +691,63 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	selected text as is for the user name.
 
 	See also |:ProfileTwitter|.
+
+
+							*TwitVim-inreplyto*
+	<Leader>@					*TwitVim-Leader-@*
+
+	This mapping is local to the timeline buffer. If the current line is
+	an @-reply tweet, it calls the Twitter API to retrieve the tweet to
+	which this one is replying. Then it will display that predecessor
+	tweet below the current one.
+	
+	If there is no in-reply-to information, it will show a warning and do
+	nothing.
+
+	This mapping is useful in the replies timeline. See |:RepliesTwitter|.
+
+
+							*TwitVim-delete*
+	<Leader>X					*TwitVim-Leader-X*
+
+	This mapping is local to the timeline buffer. The 'X' in the mapping
+	is uppercase. It calls the Twitter API to delete the tweet or message
+	on the current line.
+
+	Note: You have to be the author of the tweet in order to delete it.
+	You can delete direct messages that you sent or received.
+
+
+	Ctrl-O						*TwitVim-C-o*
+
+	This mapping takes you to the previous timeline in the timeline stack.
+	See |:BackTwitter|.
+
+	Ctrl-I						*TwitVim-C-i*
+
+	This mapping takes you to the next timeline in the timeline stack.
+	See |:ForwardTwitter|.
+
+
+							*TwitVim-refresh*
+	<Leader><Leader> 				*TwitVim-Leader-Leader*
+
+	This mapping refreshes the timeline. See |:RefreshTwitter|.
+
+
+							*TwitVim-next*
+	Ctrl-PageDown					*TwitVim-C-PageDown*
+
+	This mapping loads the next (older) page in the timeline.
+	See |:NextTwitter|.
+
+	
+							*TwitVim-previous*
+	Ctrl-PageUp					*TwitVim-C-PageUp*
+
+	This command loads the previous (newer) page in the timeline. If the
+	timeline is on the first page, it issues a warning and doesn't do
+	anything. See |:PreviousTwitter|.
 
 
 ------------------------------------------------------------------------------
@@ -954,6 +1147,27 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.0 : 2009-03-09 * Added |:SendDMTwitter| to send direct messages
+			     through API without relying on the "d user ..."
+			     syntax.
+			   * Modified Alt-D mapping in timeline to use
+			     the :SendDMTwitter code.
+			   * Added |:BackTwitter| and |:ForwardTwitter|
+			     commands, Ctrl-O and Ctrl-I mappings to move back
+			     and forth in the timeline stack.
+			   * Improvements in window handling. TwitVim commands
+			     will restore the cursor to the original window
+			     when possible.
+			   * Wrote some notes on using TwitVim with Twitter
+			     SSL API.
+			   * Added mapping to show predecessor tweet for an
+			     @-reply. |TwitVim-inreplyto|
+			   * Added mapping to delete a tweet or message.
+			     |TwitVim-delete|
+			   * Added commands and mappings to refresh the
+			     timeline and load the next or previous page.
+			     |TwitVim-refresh|, |TwitVim-next|,
+			     |TwitVim-previous|.
 	0.3.5 : 2009-01-30 * Added support for pagination and page length to
 			     :SearchTwitter.
 			   * Shortened default retweet prefix to "RT".

@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.3.4
+" Version: 0.4.0
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 11, 2008
+" Last updated: March 9, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -122,6 +122,12 @@ function! s:get_twitvim_login()
 	call s:errormsg('Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"')
 	return ''
     endif
+endfunction
+
+" If set, twitvim_cert_insecure turns off certificate verification if using
+" https Twitter API over cURL or Ruby.
+function! s:get_twitvim_cert_insecure()
+    return exists('g:twitvim_cert_insecure') ? g:twitvim_cert_insecure : 0
 endfunction
 
 " === XML helper functions ===
@@ -286,6 +292,10 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let output = ""
 
     let curlcmd = "curl -s -f -S "
+
+    if s:get_twitvim_cert_insecure()
+	let curlcmd .= "-k "
+    endif
 
     if a:proxy != ""
 	let curlcmd .= '-x "'.a:proxy.'" '
@@ -464,6 +474,7 @@ function! s:check_ruby()
     ruby <<EOF
 begin
     require 'net/http'
+    require 'net/https'
     require 'uri'
     require 'Base64'
 rescue LoadError
@@ -480,6 +491,7 @@ function! s:ruby_curl(url, login, proxy, proxylogin, parms)
 
     ruby <<EOF
 require 'net/http'
+require 'net/https'
 require 'uri'
 require 'Base64'
 
@@ -487,12 +499,32 @@ def make_base64(s)
     s =~ /:/ ? Base64.encode64(s) : s
 end
 
+def parse_user_password(s)
+    (s =~ /:/ ? s : Base64.decode64(s)).split(':', 2)    
+end
+
+url = URI.parse(VIM.evaluate('a:url'))
+httpargs = [ url.host, url.port ]
+
 proxy = VIM.evaluate('a:proxy')
 if proxy != ''
     prox = URI.parse("http://#{proxy}")
-    net = Net::HTTP::Proxy(prox.host, prox.port)
-else
-    net = Net::HTTP
+    httpargs += [ prox.host, prox.port ]
+end
+
+proxylogin = VIM.evaluate('a:proxylogin')
+if proxylogin != ''
+    httpargs += parse_user_password(proxylogin)
+end
+
+net = Net::HTTP.new(*httpargs)
+
+net.use_ssl = (url.scheme == 'https')
+
+# Disable certificate verification if user sets this variable.
+cert_insecure = VIM.evaluate('s:get_twitvim_cert_insecure()')
+if cert_insecure != '0'
+    net.verify_mode = OpenSSL::SSL::VERIFY_NONE
 end
 
 parms = {}
@@ -501,8 +533,7 @@ keys.split(/\n/).each { |k|
     parms[k] = VIM.evaluate("a:parms['#{k}']")
 }
 
-url = URI.parse(VIM.evaluate('a:url'))
-res = net.start(url.host, url.port) { |http| 
+res = net.start { |http| 
     path = "#{url.path}?#{url.query}"
     if parms == {}
 	req = Net::HTTP::Get.new(path)
@@ -516,10 +547,10 @@ res = net.start(url.host, url.port) { |http|
 	req.add_field 'Authorization', "Basic #{make_base64(login)}"
     end
 
-    proxylogin = VIM.evaluate('a:proxylogin')
-    if proxylogin != ''
-	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
-    end
+    #    proxylogin = VIM.evaluate('a:proxylogin')
+    #    if proxylogin != ''
+    #	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
+    #    end
 
     http.request(req)
 }
@@ -685,30 +716,152 @@ endif
 
 " === End of networking code ===
 
+" === Buffer stack code ===
+
+" Each buffer record holds the following fields:
+"
+" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies
+" user: For user buffers if other than current user
+" page: Keep track of pagination
+" statuses: Tweet IDs. For use by in_reply_to_status_id
+" inreplyto: IDs of predecessor messages for @-replies.
+" dmids: Direct Message IDs.
+" buffer: The buffer text
+
+let s:curbuffer = {}
+
+let s:bufstack = []
+
+" Maximum items in the buffer stack. Adding a new item after this limit will
+" get rid of the first item.
+let s:bufstackmax = 10
+
+" Buffer stack pointer. -1 if no items yet. May not point to the end of the
+" list if user has gone back one or more buffers.
+let s:bufstackptr = -1
+
+" Add current buffer to the buffer stack at the next position after current.
+" Remove all buffers after that.
+function! s:add_buffer()
+    if s:bufstackptr >= s:bufstackmax
+	call remove(s:bufstack, 0)
+	let s:bufstackptr -= 1
+    endif
+
+    let s:bufstackptr += 1
+
+    " Suppress errors because there may not be anything to remove after current
+    " position.
+    silent! call remove(s:bufstack, s:bufstackptr, -1)
+
+    call add(s:bufstack, s:curbuffer)
+endfunction
+
+" If current buffer is same type as the buffer at the buffer stack pointer then
+" just copy it into the buffer stack. Otherwise, add it to buffer stack.
+function! s:save_buffer()
+    if s:curbuffer == {}
+	return
+    endif
+
+    " Save buffer contents and cursor position.
+    let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
+    if twit_bufnr > 0
+	let curwin = winnr()
+	execute twit_bufnr . "wincmd w"
+	let s:curbuffer.buffer = getline(1, '$')
+	let s:curbuffer.view = winsaveview()
+	execute curwin .  "wincmd w"
+    endif
+
+    if s:bufstackptr >= 0 && s:curbuffer.buftype == s:bufstack[s:bufstackptr].buftype && s:curbuffer.user == s:bufstack[s:bufstackptr].user && s:curbuffer.page == s:bufstack[s:bufstackptr].page
+
+	let s:bufstack[s:bufstackptr] = deepcopy(s:curbuffer)
+	return
+    endif
+
+    call s:add_buffer()
+endfunction
+
+" Go back one buffer in the buffer stack.
+function! s:back_buffer()
+    call s:save_buffer()
+
+    if s:bufstackptr < 1
+	call s:warnmsg("Already at oldest buffer. Can't go back further.")
+	return -1
+    endif
+
+    let s:bufstackptr -= 1
+    let s:curbuffer = deepcopy(s:bufstack[s:bufstackptr])
+
+    call s:twitter_wintext_view(s:curbuffer.buffer, "timeline", s:curbuffer.view)
+    return 0
+endfunction
+
+" Go forward one buffer in the buffer stack.
+function! s:fwd_buffer()
+    call s:save_buffer()
+
+    if s:bufstackptr + 1 >= len(s:bufstack)
+	call s:warnmsg("Already at newest buffer. Can't go forward.")
+	return -1
+    endif
+
+    let s:bufstackptr += 1
+    let s:curbuffer = deepcopy(s:bufstack[s:bufstackptr])
+
+    call s:twitter_wintext_view(s:curbuffer.buffer, "timeline", s:curbuffer.view)
+    return 0
+endfunction
+
+if !exists(":BackTwitter")
+    command BackTwitter :call <SID>back_buffer()
+endif
+if !exists(":ForwardTwitter")
+    command ForwardTwitter :call <SID>fwd_buffer()
+endif
+
+" For debugging. Show the buffer stack.
+function! s:show_bufstack()
+    for i in range(len(s:bufstack) - 1, 0, -1)
+	echo i.':' 'type='.s:bufstack[i].buftype 'user='.s:bufstack[i].user 'page='.s:bufstack[i].page
+    endfor
+endfunction
+
+if !exists(":TwitVimShowBufstack")
+    command TwitVimShowBufstack :call <SID>show_bufstack()
+endif
+
+" For debugging. Show curbuffer variable.
+if !exists(":TwitVimShowCurbuffer")
+    command TwitVimShowCurbuffer :echo s:curbuffer
+endif
+
+" === End of buffer stack code ===
+
 " Add update to Twitter buffer if public, friends, or user timeline.
 function! s:add_update(output)
-    if s:twit_buftype == "public" || s:twit_buftype == "friends" || s:twit_buftype == "user"
+    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies")
 
 	" Parse the output from the Twitter update call.
-	let date = s:time_filter(s:xml_get_element(a:output, 'created_at'))
-	let text = s:xml_get_element(a:output, 'text')
-	let name = s:xml_get_element(a:output, 'screen_name')
+	let line = s:format_status_xml(a:output)
 
 	" Add the status ID to the current buffer's statuses list.
-	call insert(s:statuses, s:xml_get_element(a:output, 'id'), 3)
+	call insert(s:curbuffer.statuses, s:xml_get_element(a:output, 'id'), 3)
 
-	if text == ""
-	    return
-	endif
+	" Add in-reply-to ID to current buffer's in-reply-to list.
+	call insert(s:curbuffer.inreplyto, s:xml_get_element(a:output, 'in_reply_to_status_id'), 3)
 
 	let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
 	if twit_bufnr > 0
+	    let curwin = winnr()
 	    execute twit_bufnr . "wincmd w"
 	    set modifiable
-	    call append(2, name.': '.s:convert_entity(text).' |'.date.'|')
-	    normal 1G
+	    call append(2, line)
+	    normal 3G
 	    set nomodifiable
-	    wincmd p
+	    execute curwin .  "wincmd w"
 	endif
     endif
 endfunction
@@ -789,7 +942,8 @@ endfunction
 
 " Extract the user name from a line in the timeline.
 function! s:get_user_name(line)
-    let matchres = matchlist(a:line, '^\(\w\+\):')
+    let line = substitute(a:line, '^+ ', '', '')
+    let matchres = matchlist(line, '^\(\w\+\):')
     return matchres != [] ? matchres[1] : ""
 endfunction
 
@@ -800,7 +954,7 @@ function! s:Quick_Reply()
     if username != ""
 	" If the status ID is not available, get() will return 0 and
 	" post_twitter() won't add in_reply_to_status_id to the update.
-	call s:CmdLine_Twitter('@'.username.' ', get(s:statuses, line('.')))
+	call s:CmdLine_Twitter('@'.username.' ', get(s:curbuffer.statuses, line('.')))
     endif
 endfunction
 
@@ -809,7 +963,8 @@ endfunction
 function! s:Quick_DM()
     let username = s:get_user_name(getline('.'))
     if username != ""
-	call s:CmdLine_Twitter('d '.username.' ', 0)
+	" call s:CmdLine_Twitter('d '.username.' ', 0)
+	call s:send_dm(username, '')
     endif
 endfunction
 
@@ -832,6 +987,136 @@ function! s:Retweet()
 	let retweet = substitute(s:get_retweet_fmt(), '%s', '@'.username, '')
 	let retweet = substitute(retweet, '%t', s:get_tweet(line), '')
 	call s:CmdLine_Twitter(retweet, 0)
+    endif
+endfunction
+
+" Show which tweet this one is replying to below the current line.
+function! s:show_inreplyto()
+    let lineno = line('.')
+
+    let inreplyto = get(s:curbuffer.inreplyto, lineno)
+    if inreplyto == 0
+	call s:warnmsg("No in-reply-to information for current line.")
+	return
+    endif
+
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    let url = s:get_api_root()."/statuses/show/".inreplyto.".xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error getting in-reply-to tweet: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error getting in-reply-to tweet: ".error)
+	return
+    endif
+
+    let line = s:format_status_xml(output)
+
+    " Add the status ID to the current buffer's statuses list.
+    call insert(s:curbuffer.statuses, s:xml_get_element(output, 'id'), lineno + 1)
+
+    " Add in-reply-to ID to current buffer's in-reply-to list.
+    call insert(s:curbuffer.inreplyto, s:xml_get_element(output, 'in_reply_to_status_id'), lineno + 1)
+
+    " Already in the correct buffer so no need to search or switch buffers.
+    set modifiable
+    call append(lineno, '+ '.line)
+    set nomodifiable
+
+    redraw
+    echo "In-reply-to tweet found."
+endfunction
+
+" Truncate a string. Add '...' to the end of string was longer than
+" the specified number of characters.
+function! s:strtrunc(s, len)
+    let slen = strlen(substitute(a:s, ".", "x", "g"))
+    let s = substitute(a:s, '^\(.\{,'.a:len.'}\).*$', '\1', '')
+    if slen > a:len
+	let s .= '...'
+    endif
+    return s
+endfunction
+
+" Delete tweet or DM on current line.
+function! s:do_delete_tweet()
+    let lineno = line('.')
+
+    let isdm = (s:curbuffer.buftype == "dmrecv" || s:curbuffer.buftype == "dmsent")
+    let obj = isdm ? "message" : "tweet"
+    let uobj = isdm ? "Message" : "Tweet"
+
+    let id = get(isdm ? s:curbuffer.dmids : s:curbuffer.statuses, lineno)
+
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    " The delete API call requires POST, not GET, so we supply a fake parameter
+    " to force run_curl() to use POST.
+    let parms = {}
+    let parms["id"] = id
+
+    let url = s:get_api_root().'/'.(isdm ? "direct_messages" : "statuses")."/destroy/".id.".xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	call s:errormsg("Error deleting ".obj.": ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error deleting ".obj.": ".error)
+	return
+    endif
+
+    if isdm
+	call remove(s:curbuffer.dmids, lineno)
+    else
+	call remove(s:curbuffer.statuses, lineno)
+	call remove(s:curbuffer.inreplyto, lineno)
+    endif
+
+    " Already in the correct buffer so no need to search or switch buffers.
+    set modifiable
+    normal dd
+    set nomodifiable
+
+    redraw
+    echo uobj "deleted."
+endfunction
+
+" Delete tweet or DM on current line.
+function! s:delete_tweet()
+    let lineno = line('.')
+
+    let isdm = (s:curbuffer.buftype == "dmrecv" || s:curbuffer.buftype == "dmsent")
+    let obj = isdm ? "message" : "tweet"
+    let uobj = isdm ? "Message" : "Tweet"
+
+    let id = get(isdm ? s:curbuffer.dmids : s:curbuffer.statuses, lineno)
+    if id == 0
+	call s:warnmsg("No erasable ".obj." on current line.")
+	return
+    endif
+
+    call inputsave()
+    let answer = input('Delete "'.s:strtrunc(getline('.'), 40).'"? (y/n) ')
+    call inputrestore()
+    if answer == 'y' || answer == 'Y'
+	call s:do_delete_tweet()
+    else
+	redraw
+	echo uobj "not deleted."
     endif
 endfunction
 
@@ -1009,7 +1294,6 @@ function! s:convert_entity(str)
 endfunction
 
 let s:twit_winname = "Twitter_".localtime()
-let s:twit_buftype = ""
 
 " Set syntax highlighting in timeline window.
 function! s:twitter_win_syntax(wintype)
@@ -1055,13 +1339,16 @@ endfunction
 
 " Switch to the Twitter window if there is already one or open a new window for
 " Twitter.
+" Returns 1 if new window created, 0 otherwise.
 function! s:twitter_win(wintype)
     let winname = a:wintype == "userinfo" ? s:user_winname : s:twit_winname
+    let newwin = 0
 
     let twit_bufnr = bufwinnr('^'.winname.'$')
     if twit_bufnr > 0
 	execute twit_bufnr . "wincmd w"
     else
+	let newwin = 1
 	execute "new " . winname
 	setlocal noswapfile
 	setlocal buftype=nofile
@@ -1097,15 +1384,37 @@ function! s:twitter_win(wintype)
 	    " Retweet feature for replicating another user's tweet.
 	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
 
+	    " Show in-reply-to for current tweet.
+	    nnoremap <buffer> <silent> <Leader>@ :call <SID>show_inreplyto()<cr>
+
+	    " Delete tweet or message on current line.
+	    nnoremap <buffer> <silent> <Leader>X :call <SID>delete_tweet()<cr>
+
+	    " Refresh timeline.
+	    nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshTimeline()<cr>
+
+	    " Next page in timeline.
+	    nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageTimeline()<cr>
+
+	    " Previous page in timeline.
+	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageTimeline()<cr>
+
 	endif
+
+	" Go back and forth through buffer stack.
+	nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer()<cr>
+	nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer()<cr>
     endif
 
     call s:twitter_win_syntax(a:wintype)
+    return newwin
 endfunction
 
-" Get a Twitter window and stuff text into it.
-function! s:twitter_wintext(text, wintype)
-    call s:twitter_win(a:wintype)
+" Get a Twitter window and stuff text into it. If view is not an empty
+" dictionary then restore the cursor position to the saved view.
+function! s:twitter_wintext_view(text, wintype, view)
+    let curwin = winnr()
+    let newwin = s:twitter_win(a:wintype)
 
     set modifiable
 
@@ -1118,19 +1427,54 @@ function! s:twitter_wintext(text, wintype)
 
     set nomodifiable
 
-    wincmd p
+    " Restore the saved view if provided.
+    if a:view != {}
+	call winrestview(a:view)
+    endif
+
+    " Go back to original window after updating buffer. If a new window is
+    " created then our saved curwin number is wrong so the best we can do is to
+    " take the user back to the last-accessed window using 'wincmd p'.
+    if newwin
+	wincmd p
+    else
+	execute curwin .  "wincmd w"
+    endif
 endfunction
 
-" Show a timeline.
-function! s:show_timeline(timeline, page)
+" Get a Twitter window and stuff text into it.
+function! s:twitter_wintext(text, wintype)
+    call s:twitter_wintext_view(a:text, a:wintype, {})
+endfunction
+
+" Format XML status as a display line.
+function! s:format_status_xml(item)
+    let item = a:item
+
+    let user = s:xml_get_element(item, 'screen_name')
+    let text = s:convert_entity(s:xml_get_element(item, 'text'))
+    let pubdate = s:time_filter(s:xml_get_element(item, 'created_at'))
+
+    return user.': '.text.' |'.pubdate.'|'
+endfunction
+
+" Show a timeline from XML stream data.
+function! s:show_timeline_xml(timeline, tline_name, username, page)
     let matchcount = 1
     let text = []
 
     " Index of first status will be 3 to match line numbers in timeline display.
-    let s:statuses = [0, 0, 0]
+    let s:curbuffer.statuses = [0, 0, 0]
+    let s:curbuffer.inreplyto = [0, 0, 0]
 
-    let channel = s:xml_remove_elements(a:timeline, 'item')
-    let title = s:xml_get_element(channel, 'title')
+    let s:curbuffer.dmids = []
+
+    " Construct page title.
+
+    let title = substitute(a:tline_name, '^.', '\u&', '')." timeline"
+    if a:username != ''
+	let title .= " for ".a:username
+    endif
 
     if a:page > 1
 	let title .= ' (page '.a:page.')'
@@ -1143,29 +1487,21 @@ function! s:show_timeline(timeline, page)
     call add(text, repeat('=', s:mbstrlen(title)).'*')
 
     while 1
-	let item = s:xml_get_nth(a:timeline, 'item', matchcount)
+	let item = s:xml_get_nth(a:timeline, 'status', matchcount)
 	if item == ""
 	    break
 	endif
 
-	let title = s:xml_get_element(item, 'title')
-	let pubdate = s:time_filter(s:xml_get_element(item, 'pubDate'))
+	call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
+	call add(s:curbuffer.inreplyto, s:xml_get_element(item, 'in_reply_to_status_id'))
 
-	" Parse and save the status ID.
-	let status = substitute(s:xml_get_element(item, 'guid'), '^.*/', '', '')
-	call add(s:statuses, status)
-
-	call add(text, s:convert_entity(title).' |'.pubdate.'|')
+	let line = s:format_status_xml(item)
+	call add(text, line)
 
 	let matchcount += 1
     endwhile
     call s:twitter_wintext(text, "timeline")
 endfunction
-
-" For debugging. Show list of status IDs.
-if !exists(":TwitVimShowStatuses")
-    command TwitVimShowStatuses :echo s:statuses
-endif
 
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
@@ -1185,7 +1521,7 @@ function! s:get_timeline(tline_name, username, page)
     " friends timeline to retrieve another user's timeline.
     let user = a:username == '' ? '' : '/'.a:username
 
-    let url_fname = a:tline_name == "replies" ? "replies.rss" : a:tline_name."_timeline".user.".rss"
+    let url_fname = a:tline_name == "replies" ? "replies.xml" : a:tline_name."_timeline".user.".xml"
 
     " Support pagination.
     if a:page > 1
@@ -1220,8 +1556,12 @@ function! s:get_timeline(tline_name, username, page)
 	return
     endif
 
-    call s:show_timeline(output, a:page)
-    let s:twit_buftype = a:tline_name
+    call s:save_buffer()
+    let s:curbuffer = {}
+    call s:show_timeline_xml(output, a:tline_name, a:username, a:page)
+    let s:curbuffer.buftype = a:tline_name
+    let s:curbuffer.user = a:username
+    let s:curbuffer.page = a:page
     redraw
 
     let foruser = a:username == '' ? '' : ' for user '.a:username
@@ -1237,7 +1577,11 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
     let text = []
 
     "No status IDs in direct messages.
-    let s:statuses = []
+    let s:curbuffer.statuses = []
+    let s:curbuffer.inreplyto = []
+
+    " Index of first dmid will be 3 to match line numbers in timeline display.
+    let s:curbuffer.dmids = [0, 0, 0]
 
     let title = 'Direct messages '.a:sent_or_recv
 
@@ -1257,6 +1601,8 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 	    break
 	endif
 
+	call add(s:curbuffer.dmids, s:xml_get_element(item, 'id'))
+
 	let user = s:xml_get_element(item, a:sent_or_recv == 'sent' ? 'recipient_screen_name' : 'sender_screen_name')
 	let mesg = s:xml_get_element(item, 'text')
 	let date = s:time_filter(s:xml_get_element(item, 'created_at'))
@@ -1268,8 +1614,11 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
     call s:twitter_wintext(text, "timeline")
 endfunction
 
-" Get direct messages sent to user.
-function! s:Direct_Messages(page)
+" Get direct messages sent to or received by user.
+function! s:Direct_Messages(mode, page)
+    let sent = (a:mode == "dmsent")
+    let s_or_r = (sent ? "sent" : "received")
+
     let login = s:get_twitvim_login()
     if login == ''
 	return -1
@@ -1282,52 +1631,68 @@ function! s:Direct_Messages(page)
     endif
 
     redraw
-    echo "Sending direct message timeline request to Twitter..."
+    echo "Sending direct messages ".s_or_r." timeline request to Twitter..."
 
-    let url = s:get_api_root()."/direct_messages.xml".pagearg
+    let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".xml".pagearg
 
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error getting Twitter direct messages: ".error)
+	call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".error)
 	return
     endif
 
-    call s:show_dm_xml('received', output, a:page)
-    let s:twit_buftype = "directmessages"
+    call s:save_buffer()
+    let s:curbuffer = {}
+    call s:show_dm_xml(s_or_r, output, a:page)
+    let s:curbuffer.buftype = a:mode
+    let s:curbuffer.user = ''
+    let s:curbuffer.page = a:page
     redraw
-    echo "Direct message timeline updated."
+    echo "Direct messages ".s_or_r." timeline updated."
 endfunction
 
-" Get direct messages sent by user.
-function! s:Direct_Messages_Sent(page)
-    let login = s:get_twitvim_login()
-    if login == ''
-	return -1
+" Function to load a timeline from the given parameters. For use by refresh and
+" next/prev pagination commands.
+function! s:load_timeline(buftype, user, page)
+    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies"
+	call s:get_timeline(a:buftype, a:user, a:page)
+    elseif a:buftype == "dmsent" || a:buftype == "dmrecv"
+	call s:Direct_Messages(a:buftype, a:page)
+    elseif a:buftype == "search"
+	call s:get_summize(a:user, a:page)
     endif
+endfunction
 
-    " Support pagination.
-    let pagearg = ''
-    if a:page > 1
-	let pagearg = '?page='.a:page
+" Refresh the timeline buffer.
+function! s:RefreshTimeline()
+    if s:curbuffer != {}
+	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page)
+    else
+	call s:warnmsg("No timeline buffer to refresh.")
     endif
+endfunction
 
-    redraw
-    echo "Sending direct messages sent timeline request to Twitter..."
-
-    let url = s:get_api_root()."/direct_messages/sent.xml".pagearg
-
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-	call s:errormsg("Error getting Twitter direct messages sent timeline: ".error)
-	return
+" Go to next page in timeline.
+function! s:NextPageTimeline()
+    if s:curbuffer != {}
+	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page + 1)
+    else
+	call s:warnmsg("No timeline buffer.")
     endif
+endfunction
 
-    call s:show_dm_xml('sent', output, a:page)
-    let s:twit_buftype = "directmessages"
-    redraw
-    echo "Direct messages sent timeline updated."
+" Go to previous page in timeline.
+function! s:PrevPageTimeline()
+    if s:curbuffer != {}
+	if s:curbuffer.page <= 1
+	    call s:warnmsg("Timeline is already on first page.")
+	else
+	    call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page - 1)
+	endif
+    else
+	call s:warnmsg("No timeline buffer.")
+    endif
 endfunction
 
 if !exists(":PublicTwitter")
@@ -1343,20 +1708,98 @@ if !exists(":RepliesTwitter")
     command -count=1 RepliesTwitter :call <SID>get_timeline("replies", '', <count>)
 endif
 if !exists(":DMTwitter")
-    command -count=1 DMTwitter :call <SID>Direct_Messages(<count>)
+    command -count=1 DMTwitter :call <SID>Direct_Messages("dmrecv", <count>)
 endif
 if !exists(":DMSentTwitter")
-    command -count=1 DMSentTwitter :call <SID>Direct_Messages_Sent(<count>)
+    command -count=1 DMSentTwitter :call <SID>Direct_Messages("dmsent", <count>)
 endif
 
 nnoremenu Plugin.TwitVim.-Sep1- :
 nnoremenu Plugin.TwitVim.&Friends\ Timeline :call <SID>get_timeline("friends", '', 1)<cr>
 nnoremenu Plugin.TwitVim.&User\ Timeline :call <SID>get_timeline("user", '', 1)<cr>
 nnoremenu Plugin.TwitVim.&Replies\ Timeline :call <SID>get_timeline("replies", '', 1)<cr>
-nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages(1)<cr>
-nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages_Sent(1)<cr>
+nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 1)<cr>
+nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1)<cr>
 nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1)<cr>
 
+if !exists(":RefreshTwitter")
+    command RefreshTwitter :call <SID>RefreshTimeline()
+endif
+if !exists(":NextTwitter")
+    command NextTwitter :call <SID>NextPageTimeline()
+endif
+if !exists(":PreviousTwitter")
+    command PreviousTwitter :call <SID>PrevPageTimeline()
+endif
+
+" Send a direct message.
+function! s:do_send_dm(user, mesg)
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    let mesg = a:mesg
+
+    " Remove trailing newline. You see that when you visual-select an entire
+    " line. Don't let it count towards the message length.
+    let mesg = substitute(mesg, '\n$', '', "")
+
+    " Convert internal newlines to spaces.
+    let mesg = substitute(mesg, '\n', ' ', "g")
+
+    let mesglen = s:mbstrlen(mesg)
+
+    " Check message length. Note that the message length should be checked
+    " before URL-encoding the special characters because URL-encoding increases
+    " the string length.
+    if mesglen > s:char_limit
+	call s:warnmsg("Your message has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
+    elseif mesglen < 1
+	call s:warnmsg("Your message was empty. It was not sent.")
+    else
+	redraw
+	echo "Sending update to Twitter..."
+
+	let url = s:get_api_root()."/direct_messages/new.xml?source=twitvim"
+	let parms = { "user" : a:user, "text" : mesg }
+
+	let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+
+	if error != ''
+	    call s:errormsg("Error sending your message: ".error)
+	else
+	    redraw
+	    echo "Your message was sent. You used ".mesglen." characters."
+	endif
+    endif
+endfunction
+
+" Send a direct message. Prompt user for message if not given.
+function! s:send_dm(user, mesg)
+    if a:user == ""
+	call s:warnmsg("No recipient specified for direct message.")
+	return
+    endif
+
+    let mesg = a:mesg
+    if mesg == ""
+	call inputsave()
+	let mesg = input("DM ".a:user.": ")
+	call inputrestore()
+    endif
+
+    if mesg == ""
+	call s:warnmsg("Your message was empty. It was not sent.")
+	return
+    endif
+
+    call s:do_send_dm(a:user, mesg)
+endfunction
+
+if !exists(":SendDMTwitter")
+    command -nargs=1 SendDMTwitter :call <SID>send_dm(<q-args>, '')
+endif
 
 " Call Twitter API to get rate limit information.
 function! s:get_rate_limit()
@@ -1816,7 +2259,10 @@ function! s:show_summize(searchres, page)
     let matchcount = 1
 
     " Index of first status will be 3 to match line numbers in timeline display.
-    let s:statuses = [0, 0, 0]
+    let s:curbuffer.statuses = [0, 0, 0]
+    let s:curbuffer.inreplyto = [0, 0, 0]
+
+    let s:curbuffer.dmids = []
 
     let channel = s:xml_remove_elements(a:searchres, 'entry')
     let title = s:xml_get_element(channel, 'title')
@@ -1843,7 +2289,7 @@ function! s:show_summize(searchres, page)
 
 	" Parse and save the status ID.
 	let status = substitute(s:xml_get_element(item, 'id'), '^.*:', '', '')
-	call add(s:statuses, status)
+	call add(s:curbuffer.statuses, status)
 
 	call add(text, sender.": ".s:convert_entity(title).' |'.pubdate.'|')
 
@@ -1878,8 +2324,15 @@ function! s:get_summize(query, page)
 	return
     endif
 
+    call s:save_buffer()
+    let s:curbuffer = {}
     call s:show_summize(output, a:page)
-    let s:twit_buftype = "summize"
+    let s:curbuffer.buftype = "search"
+
+    " Stick the query in here to differentiate between sets of search results.
+    let s:curbuffer.user = a:query
+
+    let s:curbuffer.page = a:page
     redraw
     echo "Received search results from Twitter Search."
 endfunction
