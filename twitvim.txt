@@ -1147,6 +1147,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.1 : 2009-03-30 * Fixed a problem with usernames and search terms
+			     that begin with digits.
 	0.4.0 : 2009-03-09 * Added |:SendDMTwitter| to send direct messages
 			     through API without relying on the "d user ..."
 			     syntax.
