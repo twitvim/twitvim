@@ -2,7 +2,7 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.4.1
+" Version: 0.4.2
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
@@ -1005,6 +1005,9 @@ function! s:show_inreplyto()
 	return -1
     endif
 
+    redraw
+    echo "Querying Twitter for in-reply-to tweet..."
+
     let url = s:get_api_root()."/statuses/show/".inreplyto.".xml"
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
@@ -1298,7 +1301,9 @@ let s:twit_winname = "Twitter_".localtime()
 " Set syntax highlighting in timeline window.
 function! s:twitter_win_syntax(wintype)
     " Beautify the Twitter window with syntax highlighting.
-    if has("syntax") && exists("g:syntax_on") && !has("syntax_items")
+    if has("syntax") && exists("g:syntax_on")
+	" Reset syntax items in case there are any predefined in the new buffer.
+	syntax clear
 
 	" Twitter user name: from start of line to first colon.
 	syntax match twitterUser /^.\{-1,}:/
