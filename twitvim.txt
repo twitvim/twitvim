@@ -64,6 +64,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Reply Feature........................: |TwitVim-reply|
 	     Alt-R................................: |TwitVim-A-r|
 	     <Leader>r............................: |TwitVim-Leader-r|
+	     Reply to all Feature.................: |TwitVim-reply-all|
+	     <Leader>Ctrl-R.......................: |TwitVim-Leader-C-r|
 	     Retweet Feature......................: |TwitVim-retweet|
 	     <Leader>R............................: |TwitVim-Leader-S-r|
 	     twitvim_retweet_format...............: |twitvim_retweet_format|
@@ -595,6 +597,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|mapleader| for information on customizing that.
 
 
+							*TwitVim-reply-all*
+	<Leader>Ctrl-R					*TwitVim-Leader-C-r*
+
+	This mapping is local to the timeline buffer. It starts composing a
+	reply to all, i.e. a reply to the tweet author and also to everyone
+	mentioned in @-replies on the current line.
+
+
 							*TwitVim-retweet*	
 	<Leader>R					*TwitVim-Leader-S-r*
 
@@ -606,7 +616,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 						    *twitvim_retweet_format*
 	By default, TwitVim retweets tweets in the following format:
 
-		Retweeting @user: text of the tweet
+		RT @user: text of the tweet
 
 	You can customize the retweet format by adding the following to your
 	vimrc, for example:
@@ -621,7 +631,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	twitvim_retweet_format with the user name of the original poster and
 	"%t" with the text of the tweet.
 
-	The default setting of twitvim_retweet_format is "Retweeting %s: %t"
+	The default setting of twitvim_retweet_format is "RT %s: %t"
 
 
 							*TwitVim-direct-message*
@@ -1150,6 +1160,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	0.4.2 : 2009-06-22 * Bugfix: Reset syntax items in Twitter window.
 			   * Bugfix: Show progress message before querying
 			     for in-reply-to tweet.
+			   * Added reply to all feature. |TwitVim-reply-all|
 	0.4.1 : 2009-03-30 * Fixed a problem with usernames and search terms
 			     that begin with digits.
 	0.4.0 : 2009-03-09 * Added |:SendDMTwitter| to send direct messages

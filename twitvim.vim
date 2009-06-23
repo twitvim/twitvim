@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: March 30, 2009
+" Last updated: June 23, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -958,6 +958,47 @@ function! s:Quick_Reply()
     endif
 endfunction
 
+" Extract all user names from a line in the timeline. Return the poster's name as well as names from all the @replies.
+function! s:get_all_names(line)
+    let names = []
+    let dictnames = {}
+
+    let username = s:get_user_name(getline('.'))
+    if username != ""
+	" Add this to the beginning of the list because we want the tweet
+	" author to be the main addressee in the reply to all.
+	let names = [ username ]
+	let dictnames[tolower(username)] = 1
+    endif
+
+    let matchcount = 1
+    while 1
+	let matchres = matchlist(a:line, '@\(\w\+\)', -1, matchcount)
+	if matchres == []
+	    break
+	endif
+	let name = matchres[1]
+	" Don't add duplicate names.
+	if !has_key(dictnames, tolower(name))
+	    call add(names, name)
+	    let dictnames[tolower(name)] = 1
+	endif
+	let matchcount += 1
+    endwhile
+
+    return names
+endfunction
+
+" Reply to everyone mentioned on a line in the timeline.
+function! s:Reply_All()
+    let names = s:get_all_names(getline('.'))
+    if names != []
+	" If the status ID is not available, get() will return 0 and
+	" post_twitter() won't add in_reply_to_status_id to the update.
+	call s:CmdLine_Twitter('@'.join(names, ' @').' ', get(s:curbuffer.statuses, line('.')))
+    endif
+endfunction
+
 " This is for a local mapping in the timeline. Start a direct message on the
 " command line to the author of the tweet on the current line.
 function! s:Quick_DM()
@@ -1388,6 +1429,9 @@ function! s:twitter_win(wintype)
 
 	    " Retweet feature for replicating another user's tweet.
 	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
+
+	    " Reply to all feature.
+	    nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
 
 	    " Show in-reply-to for current tweet.
 	    nnoremap <buffer> <silent> <Leader>@ :call <SID>show_inreplyto()<cr>
