@@ -124,6 +124,47 @@ function! s:get_twitvim_login()
     endif
 endfunction
 
+let s:cached_login = ''
+let s:cached_username = ''
+
+" Get Twitter user name by verifying login credentials
+function! s:get_twitvim_username()
+    let login = s:get_twitvim_login()
+    if login == ''
+	return ''
+    endif
+
+    " If we already got the info, no need to get it again.
+    if login == s:cached_login
+	return s:cached_username
+    endif
+
+    redraw
+    echo "Verifying login credentials with Twitter..."
+
+    let url = s:get_api_root()."/account/verify_credentials.xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error verifying login credentials: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error verifying login credentials: ".error)
+	return
+    endif
+
+    let username = s:xml_get_element(output, 'screen_name')
+
+    " Save it so we don't have to do it again unless the user switches to
+    " a different login.
+    let s:cached_login = login
+    let s:cached_username = username
+
+    return username
+endfunction
+
 " If set, twitvim_cert_insecure turns off certificate verification if using
 " https Twitter API over cURL or Ruby.
 function! s:get_twitvim_cert_insecure()
@@ -720,7 +761,7 @@ endif
 
 " Each buffer record holds the following fields:
 "
-" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies
+" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies, list
 " user: For user buffers if other than current user
 " page: Keep track of pagination
 " statuses: Tweet IDs. For use by in_reply_to_status_id
@@ -842,7 +883,7 @@ endif
 
 " Add update to Twitter buffer if public, friends, or user timeline.
 function! s:add_update(output)
-    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies")
+    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list")
 
 	" Parse the output from the Twitter update call.
 	let line = s:format_status_xml(a:output)
