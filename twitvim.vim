@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.4.2
+" Version: 0.4.3
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 23, 2009
+" Last updated: November 8, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1313,7 +1313,7 @@ function! s:call_longurl(url)
 
 	let longurl = s:xml_get_element(output, 'long_url')
 	if longurl != ""
-	    return longurl
+	    return substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
 	endif
 
 	let errormsg = s:xml_get_element(output, 'error')
