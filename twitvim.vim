@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 8, 2009
+" Last updated: November 10, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -30,7 +30,7 @@ let s:char_limit = 246
 " Allow the user to override the API root, e.g. for identi.ca, which offers a
 " Twitter-compatible API.
 function! s:get_api_root()
-    return exists('g:twitvim_api_root') ? g:twitvim_api_root : "http://twitter.com"
+    return exists('g:twitvim_api_root') ? g:twitvim_api_root : "http://api.twitter.com/1"
 endfunction
 
 " Allow user to set the format for retweets.
@@ -111,17 +111,31 @@ endfunction
 " Format is username:password
 " If twitvim_login_b64 exists, use that instead. This is the user:password
 " in base64 encoding.
-function! s:get_twitvim_login()
+" Use this function if the API call doesn't require authentication but
+" can use it if available.
+function! s:get_twitvim_login_noerror()
     if exists('g:twitvim_login_b64') && g:twitvim_login_b64 != ''
 	return g:twitvim_login_b64
     elseif exists('g:twitvim_login') && g:twitvim_login != ''
 	return g:twitvim_login
     else
+	return ''
+    endif
+endfunction
+
+" Get Twitter login info from twitvim_login in .vimrc or _vimrc.
+" Format is username:password
+" If twitvim_login_b64 exists, use that instead. This is the user:password
+" in base64 encoding.
+function! s:get_twitvim_login()
+    let login = s:get_twitvim_login_noerror()
+    if login == ''
 	" Beep and error-highlight 
 	execute "normal \<Esc>"
 	call s:errormsg('Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"')
 	return ''
     endif
+    return login
 endfunction
 
 let s:cached_login = ''
@@ -763,7 +777,8 @@ endif
 "
 " buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies, list
 " user: For user buffers if other than current user
-" page: Keep track of pagination
+" list: List slug if displaying a Twitter list.
+" page: Keep track of pagination.
 " statuses: Tweet IDs. For use by in_reply_to_status_id
 " inreplyto: IDs of predecessor messages for @-replies.
 " dmids: Direct Message IDs.
@@ -1660,6 +1675,70 @@ function! s:get_timeline(tline_name, username, page)
     echo substitute(a:tline_name, '^.', '\u&', '') "timeline updated".foruser."."
 endfunction
 
+" Retrieve a Twitter list timeline.
+function! s:get_list_timeline(username, listname, page)
+    let gotparam = 0
+
+    let login = s:get_twitvim_login_noerror()
+    " No login is no problem because the list statuses API is documented 
+    " to not require authentication. However, you won't see tweets from
+    " protected timelines.
+
+    let user = a:username
+    if user == ''
+	let user = s:get_twitvim_username()
+	if user == ''
+	    call s:errormsg('Twitter login not set. Please specify a username.')
+	    return -1
+	endif
+    endif
+
+    let url = "/".user."/lists/".a:listname."/statuses.xml"
+
+    " Support pagination.
+    if a:page > 1
+	let url .= '?page='.a:page
+	let gotparam = 1
+    endif
+
+    " Support count parameter.
+    let tcount = s:get_count()
+    if tcount > 0
+	let url .= (gotparam ? '&' : '?').'count='.tcount
+	let gotparam = 1
+    endif
+
+    redraw
+    echo "Sending list timeline request to Twitter..."
+
+    let url = s:get_api_root().url
+
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+
+    if error != ''
+	call s:errormsg("Error getting Twitter list timeline: ".error)
+	return
+    endif
+
+    let error = s:xml_get_element(output, 'error')
+    if error != ''
+	call s:errormsg("Error getting Twitter list timeline: ".error)
+	return
+    endif
+
+    call s:save_buffer()
+    let s:curbuffer = {}
+    call s:show_timeline_xml(output, "list", user."/".a:listname, a:page)
+    let s:curbuffer.buftype = "list"
+    let s:curbuffer.user = user
+    let s:curbuffer.list = a:listname
+    let s:curbuffer.page = a:page
+    redraw
+
+    " Uppercase the first letter in the timeline name.
+    echo "List timeline updated for ".user."/".a:listname
+endfunction
+
 " Show direct message sent or received by user. First argument should be 'sent'
 " or 'received' depending on which timeline we are displaying.
 function! s:show_dm_xml(sent_or_recv, timeline, page)
@@ -1744,9 +1823,11 @@ endfunction
 
 " Function to load a timeline from the given parameters. For use by refresh and
 " next/prev pagination commands.
-function! s:load_timeline(buftype, user, page)
+function! s:load_timeline(buftype, user, list, page)
     if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies"
 	call s:get_timeline(a:buftype, a:user, a:page)
+    elseif a:buftype == "list"
+	call s:get_list_timeline(a:user, a:list, a:page)
     elseif a:buftype == "dmsent" || a:buftype == "dmrecv"
 	call s:Direct_Messages(a:buftype, a:page)
     elseif a:buftype == "search"
@@ -1757,7 +1838,7 @@ endfunction
 " Refresh the timeline buffer.
 function! s:RefreshTimeline()
     if s:curbuffer != {}
-	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page)
+	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page)
     else
 	call s:warnmsg("No timeline buffer to refresh.")
     endif
@@ -1766,7 +1847,7 @@ endfunction
 " Go to next page in timeline.
 function! s:NextPageTimeline()
     if s:curbuffer != {}
-	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page + 1)
+	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page + 1)
     else
 	call s:warnmsg("No timeline buffer.")
     endif
@@ -1778,11 +1859,23 @@ function! s:PrevPageTimeline()
 	if s:curbuffer.page <= 1
 	    call s:warnmsg("Timeline is already on first page.")
 	else
-	    call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.page - 1)
+	    call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page - 1)
 	endif
     else
 	call s:warnmsg("No timeline buffer.")
     endif
+endfunction
+
+" Get a Twitter list. Need to do a little fiddling because the 
+" username argument is optional.
+function! s:DoList(page, arg1, ...)
+    let user = ''
+    let list = a:arg1
+    if a:0 > 0
+	let user = a:arg1
+	let list = a:1
+    endif
+    call s:get_list_timeline(user, list, a:page)
 endfunction
 
 if !exists(":PublicTwitter")
@@ -1802,6 +1895,9 @@ if !exists(":DMTwitter")
 endif
 if !exists(":DMSentTwitter")
     command -count=1 DMSentTwitter :call <SID>Direct_Messages("dmsent", <count>)
+endif
+if !exists(":ListTwitter")
+    command -range=1 -nargs=+ ListTwitter :call <SID>DoList(<count>, <f-args>)
 endif
 
 nnoremenu Plugin.TwitVim.-Sep1- :

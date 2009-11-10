@@ -1157,7 +1157,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.4.3 : 2009-11-08 * Fixed some minor breakage in LongURL support.
+	0.4.3 : 2009-11-10 * Fixed some minor breakage in LongURL support.
+			   * Added :ListTwitter
 	0.4.2 : 2009-06-22 * Bugfix: Reset syntax items in Twitter window.
 			   * Bugfix: Show progress message before querying
 			     for in-reply-to tweet.
