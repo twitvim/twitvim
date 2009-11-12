@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 10, 2009
+" Last updated: November 12, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -168,6 +168,9 @@ function! s:get_twitvim_username()
 	call s:errormsg("Error verifying login credentials: ".error)
 	return
     endif
+
+    redraw
+    echo "Twitter login credentials verified."
 
     let username = s:xml_get_element(output, 'screen_name')
 
@@ -991,6 +994,7 @@ function! s:CmdLine_Twitter(initstr, inreplyto)
     endif
 
     call inputsave()
+    redraw
     let mesg = input("Your Twitter: ", a:initstr)
     call inputrestore()
     call s:post_twitter(mesg, a:inreplyto)
@@ -1048,10 +1052,23 @@ endfunction
 " Reply to everyone mentioned on a line in the timeline.
 function! s:Reply_All()
     let names = s:get_all_names(getline('.'))
+
+    " Remove the author from the reply list so that he doesn't end up replying
+    " to himself.
+    let user = s:get_twitvim_username()
+    let names2 = []
+    for name in names
+	if name != user
+	    call add(names2, name)
+	endif
+    endfor
+
+    let replystr = '@'.join(names2, ' @').' '
+
     if names != []
 	" If the status ID is not available, get() will return 0 and
 	" post_twitter() won't add in_reply_to_status_id to the update.
-	call s:CmdLine_Twitter('@'.join(names, ' @').' ', get(s:curbuffer.statuses, line('.')))
+	call s:CmdLine_Twitter(replystr, get(s:curbuffer.statuses, line('.')))
     endif
 endfunction
 
