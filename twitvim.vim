@@ -1683,6 +1683,7 @@ function! s:get_timeline(tline_name, username, page)
     call s:show_timeline_xml(output, a:tline_name, a:username, a:page)
     let s:curbuffer.buftype = a:tline_name
     let s:curbuffer.user = a:username
+    let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
 
@@ -1833,6 +1834,7 @@ function! s:Direct_Messages(mode, page)
     call s:show_dm_xml(s_or_r, output, a:page)
     let s:curbuffer.buftype = a:mode
     let s:curbuffer.user = ''
+    let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
     echo "Direct messages ".s_or_r." timeline updated."
@@ -2535,6 +2537,7 @@ function! s:get_summize(query, page)
     " Stick the query in here to differentiate between sets of search results.
     let s:curbuffer.user = a:query
 
+    let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
     echo "Received search results from Twitter Search."
