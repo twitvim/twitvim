@@ -53,6 +53,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :PublicTwitter.......................: |:PublicTwitter|
 	     :DMTwitter...........................: |:DMTwitter|
 	     :DMSentTwitter.......................: |:DMSentTwitter|
+	     :ListTwitter.........................: |:ListTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -540,12 +541,24 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	messages sent timeline.
 
 
+	:[count]ListTwitter {list}			*:ListTwitter*
+	:[count]ListTwitter {user} {list}
+
+	This command displays a Twitter list timeline.
+
+	In the first form, {user} is assumed to be you so the command will
+	display a list of yours named {list}.
+
+	In the second form, the command displays list {list} from user
+	{user}.
+
+
 	:BackTwitter					*:BackTwitter*
 
 	This command takes you back to the previous timeline in the timeline
 	stack. TwitVim saves a limited number of timelines. This command
 	will display a warning if you attempt to go beyond the oldest saved
-	timeline.
+	timeline. See |TwitVim-C-o|.
 
 
 	:ForwardTwitter					*:ForwardTwitter*
@@ -553,23 +566,25 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command takes you to the next timeline in the timeline stack.
 	It will display a warning if you attempt to go past the newest saved
 	timeline so this command can only be used after :BackTwitter.
+	See |TwitVim-C-i|.
 
 
 	:RefreshTwitter					*:RefreshTwitter*
 
-	This command refreshes the timeline.
+	This command refreshes the timeline. See |TwitVim-Leader-Leader|.
 
 
 	:NextTwitter					*:NextTwitter*
 
 	This command loads the next (older) page in the timeline.
+	See |TwitVim-C-PageDown|.
 
 
 	:PreviousTwitter				*:PreviousTwitter*
 
 	This command loads the previous (newer) page in the timeline. If the
 	timeline is on the first page, it issues a warning and doesn't do
-	anything.
+	anything. See |TwitVim-C-PageUp|.
 
 
 ------------------------------------------------------------------------------
@@ -1158,7 +1173,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 7. TwitVim History					*TwitVim-history*
 
 	0.4.3 : 2009-11-12 * Fixed some minor breakage in LongURL support.
-			   * Added :ListTwitter
+			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
 			     reply to all. |TwitVim-reply-all|
 	0.4.2 : 2009-06-22 * Bugfix: Reset syntax items in Twitter window.
