@@ -1172,7 +1172,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.4.3 : 2009-11-12 * Fixed some minor breakage in LongURL support.
+	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
 			     reply to all. |TwitVim-reply-all|

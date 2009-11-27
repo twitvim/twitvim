@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 12, 2009
+" Last updated: November 27, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
