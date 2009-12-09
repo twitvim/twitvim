@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.4.3
+" Version: 0.4.4
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 27, 2009
+" Last updated: December 9, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2211,22 +2211,52 @@ function! s:call_tinyurl(url)
     endif
 endfunction
 
+" Get bit.ly username and api key if configured by the user. Otherwise, use a
+" default username and api key.
+function! s:get_bitly_key()
+    if exists('g:twitvim_bitly_user') && exists('g:twitvim_bitly_key')
+	return [ g:twitvim_bitly_user, g:twitvim_bitly_key ]
+    endif
+    return [ 'twitvim', 'R_a53414d2f36a90c3e189299c967e6efc' ]
+endfunction
+
 " Call bit.ly API to shorten a URL.
 function! s:call_bitly(url)
+    let [ user, key ] = s:get_bitly_key()
+
     redraw
     echo "Sending request to bit.ly..."
 
-    let url = 'http://bit.ly/api?url='.s:url_encode(a:url)
+    let url = 'http://api.bit.ly/shorten?version=2.0.1'
+    let url .= '&longUrl='.s:url_encode(a:url)
+    let url .= '&login='.user
+    let url .= '&apiKey='.key.'&format=xml&history=1'
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
 	call s:errormsg("Error calling bit.ly API: ".error)
 	return ""
-    else
-	redraw
-	echo "Received response from bit.ly."
-	return output
     endif
+
+    let status = s:xml_get_element(output, 'statusCode')
+    if status != 'OK'
+	let errorcode = s:xml_get_element(output, 'errorCode')
+	let errormsg = s:xml_get_element(output, 'errorMessage')
+	if errorcode == 0
+	    " For reasons unknown, bit.ly sometimes return two error codes and
+	    " the first one is 0.
+	    let errorcode = s:xml_get_nth(output, 'errorCode', 2)
+	    let errormsg = s:xml_get_nth(output, 'errorMessage', 2)
+	endif
+	redraw
+	echo "Error from bit.ly: ".errorcode." ".errormsg
+	return ""
+    endif
+
+    let shorturl = s:xml_get_element(output, 'shortUrl')
+    redraw
+    echo "Received response from bit.ly."
+    return shorturl
 endfunction
 
 " Call is.gd API to shorten a URL.

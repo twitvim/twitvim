@@ -107,6 +107,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :ATinyURL............................: |:ATinyURL|
 	     :PTinyURL............................: |:PTinyURL|
 	     :BitLy...............................: |:BitLy|
+	     twitvim_bitly_user...................: |twitvim_bitly_user|
+	     twitvim_bitly_key....................: |twitvim_bitly_key|
 	     :ABitLy..............................: |:ABitLy|
 	     :PBitLy..............................: |:PBitLy|
 	     :IsGd................................: |:IsGd|
@@ -878,12 +880,27 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	:BitLy {url}
 
 	bit.ly is a URL forwarding and shortening service. See
-	http://bit.ly/go
+	http://bit.ly/
 
 	This command calls the bit.ly API to get a short URL in place of
 	<url>. If {url} is not provided on the command line, the command will
 	prompt you to enter a URL. The short URL is then inserted into the
 	current buffer at the current position.
+
+	The bit.ly API requires a bit.ly login and a bit.ly API key. A default
+	login and key pair is provided with TwitVim and no configuration is
+	needed. However, if you wish to supply your own login and key to track
+	your bit.ly history and stats, visit
+	http://bit.ly/account/your_api_key to retrieve your API info and add
+	the following to your vimrc:
+
+							*twitvim_bitly_user*
+							*twitvim_bitly_key*
+		let twitvim_bitly_user = "username"
+		let twitvim_bitly_key = "R_123456789"
+
+	Replace username with your bit.ly login and R_123456789 with your
+	bit.ly API key.
 
 	:ABitLy						*:ABitLy*
 	:ABitLy {url}
@@ -934,7 +951,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	current buffer at the current position.
 
 	The urlBorg API requires an API key. A default API key is provided
-	with TwitVim and no configuration is required. However, if you wish to
+	with TwitVim and no configuration is needed. However, if you wish to
 	supply your own key in order to track your urlBorg history and stats,
 	visit http://urlborg.com/a/account/ to retrieve your API key and then
 	add the following to your vimrc:
@@ -1172,6 +1189,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.4 : 2009-12-09 * Upgraded bit.ly API support to version 2.0.1
+			     with configurable user login and key.
 	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
