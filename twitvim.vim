@@ -2248,8 +2248,7 @@ function! s:call_bitly(url)
 	    let errorcode = s:xml_get_nth(output, 'errorCode', 2)
 	    let errormsg = s:xml_get_nth(output, 'errorMessage', 2)
 	endif
-	redraw
-	echo "Error from bit.ly: ".errorcode." ".errormsg
+	call s:errormsg("Error from bit.ly: ".errorcode." ".errormsg)
 	return ""
     endif
 
@@ -2319,6 +2318,9 @@ endfunction
 function! s:call_trim(url)
     let login = s:get_trim_login()
 
+    redraw
+    echo "Sending request to tr.im..."
+
     let url = 'http://tr.im/api/trim_url.xml?url='.s:url_encode(a:url)
 
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
@@ -2357,6 +2359,9 @@ function! s:call_cligs(url)
 	let url .= '&key='.key
     endif
 
+    redraw
+    echo "Sending request to Cligs..."
+
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error calling Cligs API: ".error)
@@ -2365,6 +2370,30 @@ function! s:call_cligs(url)
 
     redraw
     echo "Received response from Cligs."
+    return output
+endfunction
+
+" Call Zi.ma API to shorten a URL.
+function! s:call_zima(url)
+    let url = "http://zi.ma/?module=ShortURL&file=Add&mode=API&url=".s:url_encode(a:url)
+
+    redraw
+    echo "Sending request to Zi.ma..."
+
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error calling Zi.ma API: ".error)
+	return ""
+    endif
+
+    let error = s:xml_get_element(output, 'h3')
+    if error != ''
+	call s:errormsg("Error from Zi.ma: ".error)
+	return ""
+    endif
+
+    redraw
+    echo "Received response from Zi.ma."
     return output
 endfunction
 
@@ -2486,6 +2515,16 @@ if !exists(":ACligs")
 endif
 if !exists(":PCligs")
     command -nargs=? PCligs :call <SID>GetShortURL("cmdline", <q-args>, "call_cligs")
+endif
+
+if !exists(":Zima")
+    command -nargs=? Zima :call <SID>GetShortURL("insert", <q-args>, "call_zima")
+endif
+if !exists(":AZima")
+    command -nargs=? AZima :call <SID>GetShortURL("append", <q-args>, "call_zima")
+endif
+if !exists(":PZima")
+    command -nargs=? PZima :call <SID>GetShortURL("cmdline", <q-args>, "call_zima")
 endif
 
 " Parse and format search results from Twitter Search API.

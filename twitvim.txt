@@ -126,6 +126,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_cligs_key....................: |twitvim_cligs_key|
 	     :ACligs..............................: |:ACligs|
 	     :PCligs..............................: |:PCligs|
+	     :Zima................................: |:Zima|
+	     :AZima...............................: |:AZima|
+	     :PZima...............................: |:PZima|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
@@ -1046,6 +1049,29 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
+	:Zima						*:Zima*
+	:Zima {url}
+
+	Zima is a URL forwarding and shortening service. See http://zi.ma/
+
+	This command calls the Zi.ma API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	:AZima						*:AZima*
+	:AZima {url}
+
+	Same as :Zima but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PZima						*:PZima*
+	:PZima {url}
+	
+	Same as :Zima but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
 	:[count]SearchTwitter					*:SearchTwitter*
 	:[count]SearchTwitter {query}
 	
@@ -1191,6 +1217,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	0.4.4 : 2009-12-09 * Upgraded bit.ly API support to version 2.0.1
 			     with configurable user login and key.
+			   * Added support for Zima. |:Zima|
 	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
