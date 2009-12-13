@@ -69,7 +69,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     <Leader>Ctrl-R.......................: |TwitVim-Leader-C-r|
 	     Retweet Feature......................: |TwitVim-retweet|
 	     <Leader>R............................: |TwitVim-Leader-S-r|
-	     twitvim_retweet_format...............: |twitvim_retweet_format|
 	     Direct Message Feature...............: |TwitVim-direct-message|
 	     Alt-D................................: |TwitVim-A-d|
 	     <Leader>d............................: |TwitVim-Leader-d|
@@ -626,28 +625,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This mapping (Note: uppercase 'R' instead of 'r'.) is local to the
 	timeline buffer. It is similar to the retweet feature in popular
-	Twitter clients. In the timeline buffer, it sends the current line to
-	the command line so that you can repost this line as a new tweet.
-
-						    *twitvim_retweet_format*
-	By default, TwitVim retweets tweets in the following format:
-
-		RT @user: text of the tweet
-
-	You can customize the retweet format by adding the following to your
-	vimrc, for example:
-
-		let twitvim_retweet_format = 'Retweet from %s: %t'
-
-	or:
-
-		let twitvim_retweet_format = '%t (retweeted from %s)'
-
-	When you retweet a tweet, TwitVim will replace "%s" in
-	twitvim_retweet_format with the user name of the original poster and
-	"%t" with the text of the tweet.
-
-	The default setting of twitvim_retweet_format is "RT %s: %t"
+	Twitter clients. In the timeline buffer, it retweets the current line.
 
 
 							*TwitVim-direct-message*
@@ -1216,6 +1194,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Added support for Zima. |:Zima|
 			   * Fixed :BackTwitter behavior when browsing
 			     multiple lists.
+			   * Added support for displaying retweets in
+			     friends timeline.
+			   * Use Twitter Retweet API to retweet.
 	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a

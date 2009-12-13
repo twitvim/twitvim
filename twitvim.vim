@@ -1110,6 +1110,41 @@ function! s:Retweet()
     endif
 endfunction
 
+" Use new-style retweet API to retweet a tweet from another user.
+function! s:Retweet_2()
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
+    endif
+
+    let status = get(s:curbuffer.statuses, line('.'))
+    if status == 0
+	" Fall back to old-style retweeting if we can't get this tweet's status
+	" ID.
+	call s:Retweet()
+	return
+    endif
+
+    let parms = {}
+
+    " Force POST instead of GET.
+    let parms["dummy"] = "dummy1"
+
+    let url = s:get_api_root()."/statuses/retweet/".status.".xml"
+
+    redraw
+    echo "Retweeting..."
+
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	call s:errormsg("Error retweeting: ".error)
+    else
+	call s:add_update(output)
+	redraw
+	echo "Retweeted."
+    endif
+endfunction
+
 " Show which tweet this one is replying to below the current line.
 function! s:show_inreplyto()
     let lineno = line('.')
@@ -1507,7 +1542,7 @@ function! s:twitter_win(wintype)
 	    nnoremap <buffer> <silent> <Leader>d :call <SID>Quick_DM()<cr>
 
 	    " Retweet feature for replicating another user's tweet.
-	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet()<cr>
+	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet_2()<cr>
 
 	    " Reply to all feature.
 	    nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
