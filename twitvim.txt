@@ -1215,9 +1215,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.4.4 : 2009-12-09 * Upgraded bit.ly API support to version 2.0.1
+	0.4.4 : 2009-12-13 * Upgraded bit.ly API support to version 2.0.1
 			     with configurable user login and key.
 			   * Added support for Zima. |:Zima|
+			   * Fixed :BackTwitter behavior when browsing
+			     multiple lists.
 	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
