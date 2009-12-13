@@ -497,13 +497,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 	:[count]FriendsTwitter				*:FriendsTwitter*
-	:[count]FriendsTwitter {username}
 
 	This command displays your Twitter timeline with updates from friends
 	merged in.
-
-	If you specify a {username}, this command displays the friends
-	timeline for that user. Note: Twitter has disabled this API feature.
 
 	If you specify [count], that number is used as the page number. For
 	example, :2FriendsTwitter displays the second page from your friends

@@ -802,6 +802,9 @@ let s:bufstackptr = -1
 " Add current buffer to the buffer stack at the next position after current.
 " Remove all buffers after that.
 function! s:add_buffer()
+
+    " If stack is already full, remove the buffer at the bottom of the stack to
+    " make room.
     if s:bufstackptr >= s:bufstackmax
 	call remove(s:bufstack, 0)
 	let s:bufstackptr -= 1
@@ -833,12 +836,15 @@ function! s:save_buffer()
 	execute curwin .  "wincmd w"
     endif
 
+    " If current buffer is the same type as buffer at the top of the stack,
+    " then just copy it.
     if s:bufstackptr >= 0 && s:curbuffer.buftype == s:bufstack[s:bufstackptr].buftype && s:curbuffer.list == s:bufstack[s:bufstackptr].list && s:curbuffer.user == s:bufstack[s:bufstackptr].user && s:curbuffer.page == s:bufstack[s:bufstackptr].page
 
 	let s:bufstack[s:bufstackptr] = deepcopy(s:curbuffer)
 	return
     endif
 
+    " Otherwise, push the current buffer onto the stack.
     call s:add_buffer()
 endfunction
 
@@ -1573,6 +1579,10 @@ endfunction
 function! s:format_status_xml(item)
     let item = a:item
 
+    " Quick hack. Even though we're getting new-style retweets in the timeline
+    " XML, we'll still use the old-style retweet text from it.
+    let item = s:xml_remove_elements(item, 'retweeted_status')
+
     let user = s:xml_get_element(item, 'screen_name')
     let text = s:convert_entity(s:xml_get_element(item, 'text'))
     let pubdate = s:time_filter(s:xml_get_element(item, 'created_at'))
@@ -1639,11 +1649,11 @@ function! s:get_timeline(tline_name, username, page)
 	endif
     endif
 
-    " Twitter API allows you to specify a username for user timeline and
-    " friends timeline to retrieve another user's timeline.
+    " Twitter API allows you to specify a username for user_timeline to
+    " retrieve another user's timeline.
     let user = a:username == '' ? '' : '/'.a:username
 
-    let url_fname = a:tline_name == "replies" ? "replies.xml" : a:tline_name."_timeline".user.".xml"
+    let url_fname = a:tline_name == "replies" ? "replies.xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name."_timeline".user.".xml"
 
     " Support pagination.
     if a:page > 1
@@ -1901,7 +1911,7 @@ if !exists(":PublicTwitter")
     command PublicTwitter :call <SID>get_timeline("public", '', 1)
 endif
 if !exists(":FriendsTwitter")
-    command -range=1 -nargs=? FriendsTwitter :call <SID>get_timeline("friends", <q-args>, <count>)
+    command -count=1 FriendsTwitter :call <SID>get_timeline("friends", '', <count>)
 endif
 if !exists(":UserTwitter")
     command -range=1 -nargs=? UserTwitter :call <SID>get_timeline("user", <q-args>, <count>)
