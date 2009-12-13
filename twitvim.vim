@@ -907,7 +907,7 @@ endif
 
 " Add update to Twitter buffer if public, friends, or user timeline.
 function! s:add_update(output)
-    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list")
+    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list" || s:curbuffer.buftype = "retweeted_by_me" || s:curbuffer.buftype == "retweeted_to_me")
 
 	" Parse the output from the Twitter update call.
 	let line = s:format_status_xml(a:output)
@@ -1643,6 +1643,13 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	let title .= " for ".a:username
     endif
 
+    " Special case titles for Retweets.
+    if a:tline_name == "retweeted_to_me"
+	let title = "Retweets by others"
+    elseif a:tline_name == "retweeted_by_me"
+	let title = "Retweets by you"
+    endif
+
     if a:page > 1
 	let title .= ' (page '.a:page.')'
     endif
@@ -1688,7 +1695,7 @@ function! s:get_timeline(tline_name, username, page)
     " retrieve another user's timeline.
     let user = a:username == '' ? '' : '/'.a:username
 
-    let url_fname = a:tline_name == "replies" ? "replies.xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name."_timeline".user.".xml"
+    let url_fname = (a:tline_name == "replies" || a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name."_timeline".user.".xml"
 
     " Support pagination.
     if a:page > 1
@@ -1696,8 +1703,8 @@ function! s:get_timeline(tline_name, username, page)
 	let gotparam = 1
     endif
 
-    " Support count parameter in friends and user timelines.
-    if a:tline_name == 'friends' || a:tline_name == 'user'
+    " Support count parameter in friends, user, and retweet timelines.
+    if a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
 	let tcount = s:get_count()
 	if tcount > 0
 	    let url_fname .= (gotparam ? '&' : '?').'count='.tcount
@@ -1888,7 +1895,7 @@ endfunction
 " Function to load a timeline from the given parameters. For use by refresh and
 " next/prev pagination commands.
 function! s:load_timeline(buftype, user, list, page)
-    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies"
+    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me"
 	call s:get_timeline(a:buftype, a:user, a:page)
     elseif a:buftype == "list"
 	call s:get_list_timeline(a:user, a:list, a:page)
@@ -1962,6 +1969,12 @@ if !exists(":DMSentTwitter")
 endif
 if !exists(":ListTwitter")
     command -range=1 -nargs=+ ListTwitter :call <SID>DoList(<count>, <f-args>)
+endif
+if !exists(":RetweetedByMeTwitter")
+    command -count=1 RetweetedByMeTwitter :call <SID>get_timeline("retweeted_by_me", '', <count>)
+endif
+if !exists(":RetweetedToMeTwitter")
+    command -count=1 RetweetedToMeTwitter :call <SID>get_timeline("retweeted_to_me", '', <count>)
 endif
 
 nnoremenu Plugin.TwitVim.-Sep1- :

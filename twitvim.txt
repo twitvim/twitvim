@@ -54,6 +54,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :DMTwitter...........................: |:DMTwitter|
 	     :DMSentTwitter.......................: |:DMSentTwitter|
 	     :ListTwitter.........................: |:ListTwitter|
+	     :RetweetedToMeTwitter................: |:RetweetedToMeTwitter|
+	     :RetweetedByMeTwitter................: |:RetweetedByMeTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -551,6 +553,28 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	In the second form, the command displays list {list} from user
 	{user}.
+
+	If you specify [count], that number is used as the page number. For
+	example, :2ListTwitter list1 displays the second page from the list1
+	list timeline.
+
+
+	:[count]RetweetedToMeTwitter			*:RetweetedToMeTwitter*
+
+	This command displays a timeline of retweets by others to you.
+
+	If you specify [count], that number is used as the page number. For
+	example, :2RetweetedToMeTwitter displays the second page from the
+	retweets timeline.
+
+
+	:[count]RetweetedByMeTwitter			*:RetweetedByMeTwitter*
+
+	This command displays a timeline of retweets by you.
+
+	If you specify [count], that number is used as the page number. For
+	example, :2RetweetedByMeTwitter displays the second page from the
+	retweets timeline.
 
 
 	:BackTwitter					*:BackTwitter*
@@ -1197,6 +1221,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Added support for displaying retweets in
 			     friends timeline.
 			   * Use Twitter Retweet API to retweet.
+			   * Added commands to display retweets to you or
+			     by you. |:RetweetedToMeTwitter|
+			     |:RetweetedByMeTwitter|
 	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
 			   * Added |:ListTwitter|
 			   * Omit author's name from the list when doing a
