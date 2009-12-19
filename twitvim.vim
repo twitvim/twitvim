@@ -2021,6 +2021,9 @@ nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 
 nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1)<cr>
 nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1)<cr>
 
+nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1)<cr>
+nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call <SID>get_timeline("retweeted_to_me", '', 1)<cr>
+
 if !exists(":RefreshTwitter")
     command RefreshTwitter :call <SID>RefreshTimeline()
 endif
@@ -2037,6 +2040,11 @@ endif
 if !exists(":ResetLoginTwitter")
     command ResetLoginTwitter :call <SID>reset_twitvim_login()
 endif
+
+nnoremenu Plugin.TwitVim.-Sep2- :
+nnoremenu Plugin.TwitVim.Set\ Twitter\ Login :call <SID>prompt_twitvim_login()<cr>
+nnoremenu Plugin.TwitVim.Reset\ Twitter\ Login :call <SID>reset_twitvim_login()<cr>
+
 
 " Send a direct message.
 function! s:do_send_dm(user, mesg)
