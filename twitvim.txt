@@ -61,6 +61,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :RefreshTwitter......................: |:RefreshTwitter|
 	     :NextTwitter.........................: |:NextTwitter|
 	     :PreviousTwitter.....................: |:PreviousTwitter|
+	     :SetLoginTwitter.....................: |:SetLoginTwitter|
+	     :ResetLoginTwitter...................: |:ResetLoginTwitter|
 	4.3. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
@@ -195,6 +197,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	It is possible to avoid having your Twitter password in plaintext in
 	your vimrc. See |TwitVim-login-base64| for details.
+
+
+	If you haven't configured twitvim_login, the first TwitVim command
+	that needs Twitter authentication will prompt you for Twitter login
+	information. This alternative is provided to allow TwitVim use on a
+	public, shared, or non-secure system where storing passwords in the
+	vimrc is not advisable.
+
+	If you make a mistake when entering your Twitter login information,
+	subsequent TwitVim commands using the Twitter API will return a "401
+	Unauthorized" error. If that happens, simply run |:SetLoginTwitter| to
+	reenter your Twitter login information or use |:ResetLoginTwitter| so
+	that the next TwitVim command will prompt you again for login
+	information.
 
 
 	4. twitvim_proxy				*twitvim_proxy*
@@ -609,6 +625,26 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command loads the previous (newer) page in the timeline. If the
 	timeline is on the first page, it issues a warning and doesn't do
 	anything. See |TwitVim-C-PageUp|.
+
+
+	:SetLoginTwitter				*:SetLoginTwitter*
+
+	This command prompts you for a Twitter username and password, which
+	will then be used for subsequent TwitVim commands. This is an
+	alternative to configuring |twitvim_login| in your vimrc.
+
+	If you make a mistake when entering your Twitter login information,
+	subsequent TwitVim commands using the Twitter API will return a "401
+	Unauthorized" error. If that happens, simply rerun |:SetLoginTwitter|
+	or use |:ResetLoginTwitter| so that the next TwitVim command will
+	prompt you for login information.
+
+
+	:ResetLoginTwitter				*:ResetLoginTwitter*
+
+	This command resets the stored Twitter login information. The next
+	TwitVim command that requires Twitter authentication will then prompt
+	you for Twitter login information.
 
 
 ------------------------------------------------------------------------------
@@ -1213,6 +1249,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.5 : 2009-12-19 * Prompt for login info if not configured.
+			     |:SetLoginTwitter| |:ResetLoginTwitter|
 	0.4.4 : 2009-12-13 * Upgraded bit.ly API support to version 2.0.1
 			     with configurable user login and key.
 			   * Added support for Zima. |:Zima|

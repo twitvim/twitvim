@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.4.4
+" Version: 0.4.5
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: December 13, 2009
+" Last updated: December 19, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -123,6 +123,35 @@ function! s:get_twitvim_login_noerror()
     endif
 endfunction
 
+" Reset login info.
+function! s:reset_twitvim_login()
+    unlet! g:twitvim_login
+    unlet! g:twitvim_login_b64
+endfunction
+
+" Ask user for Twitter login info.
+" Returns user:password. Also saves it in g:twitvim_login for future use.
+function! s:prompt_twitvim_login()
+    call inputsave()
+    redraw
+    let user = input("Twitter username: ")
+    call inputrestore()
+
+    if user == ''
+	call s:warnmsg("Twitter login not set.")
+	return ''
+    endif
+
+    call inputsave()
+    redraw
+    let pass = inputsecret("Twitter password: ")
+    call inputrestore()
+
+    call s:reset_twitvim_login()
+    let g:twitvim_login = user.':'.pass
+    return g:twitvim_login
+endfunction
+
 " Get Twitter login info from twitvim_login in .vimrc or _vimrc.
 " Format is username:password
 " If twitvim_login_b64 exists, use that instead. This is the user:password
@@ -130,10 +159,17 @@ endfunction
 function! s:get_twitvim_login()
     let login = s:get_twitvim_login_noerror()
     if login == ''
+
+	let login = s:prompt_twitvim_login()
+	if login == ''
+	    call s:errormsg('Twitter login info not provided.')
+	    return ''
+	endif
+
 	" Beep and error-highlight 
-	execute "normal \<Esc>"
-	call s:errormsg('Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"')
-	return ''
+	" execute "normal \<Esc>"
+	" call s:errormsg('Twitter login not set. Please add to .vimrc: let twitvim_login="USER:PASS"')
+	" return ''
     endif
     return login
 endfunction
@@ -1993,6 +2029,13 @@ if !exists(":NextTwitter")
 endif
 if !exists(":PreviousTwitter")
     command PreviousTwitter :call <SID>PrevPageTimeline()
+endif
+
+if !exists(":SetLoginTwitter")
+    command SetLoginTwitter :call <SID>prompt_twitvim_login()
+endif
+if !exists(":ResetLoginTwitter")
+    command ResetLoginTwitter :call <SID>reset_twitvim_login()
 endif
 
 " Send a direct message.
