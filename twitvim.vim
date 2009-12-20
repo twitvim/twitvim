@@ -2073,7 +2073,7 @@ function! s:do_send_dm(user, mesg)
 	call s:warnmsg("Your message was empty. It was not sent.")
     else
 	redraw
-	echo "Sending update to Twitter..."
+	echo "Sending message to ".a:user."..."
 
 	let url = s:get_api_root()."/direct_messages/new.xml?source=twitvim"
 	let parms = { "user" : a:user, "text" : mesg }
@@ -2084,7 +2084,7 @@ function! s:do_send_dm(user, mesg)
 	    call s:errormsg("Error sending your message: ".error)
 	else
 	    redraw
-	    echo "Your message was sent. You used ".mesglen." characters."
+	    echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
 	endif
     endif
 endfunction
