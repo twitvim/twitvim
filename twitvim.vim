@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: December 19, 2009
+" Last updated: December 20, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -129,23 +129,86 @@ function! s:reset_twitvim_login()
     unlet! g:twitvim_login_b64
 endfunction
 
-" Ask user for Twitter login info.
-" Returns user:password. Also saves it in g:twitvim_login for future use.
-function! s:prompt_twitvim_login()
-    call inputsave()
-    redraw
-    let user = input("Twitter username: ")
-    call inputrestore()
+" Verify login info. This will be used to check whether a username and password
+" pair entered by the user is a valid login.
+"
+" Returns 1 if login succeeded, 0 if login failed, <0 for other errors.
+function! s:check_twitvim_login(user, password)
+    let login = a:user.':'.a:password
 
-    if user == ''
-	call s:warnmsg("Twitter login not set.")
-	return ''
+    redraw
+    echo "Logging into Twitter..."
+
+    let url = s:get_api_root()."/account/verify_credentials.xml"
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    if error =~ '401'
+	return 0
     endif
 
-    call inputsave()
+    if error != ''
+	call s:errormsg("Error logging into Twitter: ".error)
+	return -1
+    endif
+
+    " The following check should not be required because Twitter is supposed to
+    " return a 401 HTTP status on login failure, but you never know with
+    " Twitter.
+    let error = s:xml_get_element(output, 'error')
+    if error =~ '\ccould not authenticate'
+	return 0
+    endif
+
+    if error != ''
+	call s:errormsg("Error logging into Twitter: ".error)
+	return -1
+    endif
+
     redraw
-    let pass = inputsecret("Twitter password: ")
-    call inputrestore()
+    echo "Twitter login succeeded."
+
+    return 1
+endfunction
+
+" Ask user for Twitter login info.
+" Returns user:password. Also saves it in g:twitvim_login for future use.
+" Returns empty string if login canceled or failed.
+function! s:prompt_twitvim_login()
+    let failed = 0
+
+    while 1
+	call inputsave()
+	redraw
+	let user = input((failed ? 'Login failed. Try again. ' : 'Please log in. ')."Twitter username (Esc=exit): ")
+	call inputrestore()
+
+	if user == ''
+	    call s:warnmsg("Twitter login not set.")
+	    return ''
+	endif
+
+	call inputsave()
+	redraw
+	let pass = inputsecret("Twitter password (Esc=exit): ")
+	call inputrestore()
+
+	if pass == ''
+	    call s:warnmsg("Twitter login not set.")
+	    return ''
+	endif
+
+	let result = s:check_twitvim_login(user, pass)
+	if result < 0
+	    " Login didn't succeed or fail but there was some kind of error.
+	    return ''
+	endif
+
+	if result > 0
+	    " Login succeeded.
+	    break
+	endif
+
+	let failed = 1
+    endwhile
 
     call s:reset_twitvim_login()
     let g:twitvim_login = user.':'.pass
@@ -160,9 +223,9 @@ function! s:get_twitvim_login()
     let login = s:get_twitvim_login_noerror()
     if login == ''
 
+	" Prompt user to enter login info if not already configured.
 	let login = s:prompt_twitvim_login()
 	if login == ''
-	    call s:errormsg('Twitter login info not provided.')
 	    return ''
 	endif
 
