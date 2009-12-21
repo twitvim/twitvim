@@ -2468,15 +2468,14 @@ function! s:call_urlborg(url)
 	call s:errormsg("Error calling urlBorg API: ".error)
 	return ""
     else
-	let matchres = matchlist(output, '^http')
-	if matchres == []
+	if output !~ '\c^http'
 	    call s:errormsg("urlBorg error: ".output)
 	    return ""
-	else
-	    redraw
-	    echo "Received response from urlBorg."
-	    return output
 	endif
+
+	redraw
+	echo "Received response from urlBorg."
+	return output
     endif
 endfunction
 
