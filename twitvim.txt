@@ -73,6 +73,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     <Leader>Ctrl-R.......................: |TwitVim-Leader-C-r|
 	     Retweet Feature......................: |TwitVim-retweet|
 	     <Leader>R............................: |TwitVim-Leader-S-r|
+	     Old-style retweets...................: |twitvim_old_retweet|
+	     twitvim_retweet_format...............: |twitvim_retweet_format|
 	     Direct Message Feature...............: |TwitVim-direct-message|
 	     Alt-D................................: |TwitVim-A-d|
 	     <Leader>d............................: |TwitVim-Leader-d|
@@ -687,6 +689,36 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Twitter clients. In the timeline buffer, it retweets the current line.
 
 
+							*twitvim_old_retweet*
+	If you prefer old-style retweets, add this to your vimrc:
+
+		let twitvim_old_retweet = 1
+	
+	The difference is an old-style retweet does not use the retweet API.
+	Instead, it sends the current line to the command line so that you can
+	repost it as a new tweet and optionally edit it or add your own
+	comments.
+
+						    *twitvim_retweet_format*
+	If you use old-style retweets, you can configure the retweet format.
+	By default, TwitVim retweets tweets in the following format:
+
+		RT @user: text of the tweet
+
+	You can customize the retweet format by adding the following to your
+	vimrc, for example:
+
+		let twitvim_retweet_format = 'Retweet from %s: %t'
+
+		let twitvim_retweet_format = '%t (retweeted from %s)'
+
+	When you retweet a tweet, TwitVim will replace "%s" in
+	twitvim_retweet_format with the user name of the original poster and
+	"%t" with the text of the tweet.
+
+	The default setting of twitvim_retweet_format is "RT %s: %t"
+
+
 							*TwitVim-direct-message*
 	Alt-D						*TwitVim-A-d*
 	<Leader>d					*TwitVim-Leader-d*
@@ -1250,6 +1282,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	0.4.5 : 2009-12-20 * Prompt for login info if not configured.
 			     |:SetLoginTwitter| |:ResetLoginTwitter|
+			   * Reintroduced old-style retweet via
+			     |twitvim_old_retweet|.
 	0.4.4 : 2009-12-13 * Upgraded bit.ly API support to version 2.0.1
 			     with configurable user login and key.
 			   * Added support for Zima. |:Zima|

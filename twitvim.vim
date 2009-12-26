@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: December 20, 2009
+" Last updated: December 26, 2009
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1187,6 +1187,11 @@ function! s:Quick_DM()
     endif
 endfunction
 
+" Allow user to switch to old-style retweets by setting twitvim_old_retweet.
+function! s:get_old_retweet()
+    return exists('g:twitvim_old_retweet') ? g:twitvim_old_retweet : 0
+endfunction
+
 " Extract the tweet text from a timeline buffer line.
 function! s:get_tweet(line)
     let line = substitute(a:line, '^\w\+:\s\+', '', '')
@@ -1211,9 +1216,11 @@ endfunction
 
 " Use new-style retweet API to retweet a tweet from another user.
 function! s:Retweet_2()
-    let login = s:get_twitvim_login()
-    if login == ''
-	return -1
+
+    " Do an old-style retweet if user has set twitvim_old_retweet.
+    if s:get_old_retweet()
+	call s:Retweet()
+	return
     endif
 
     let status = get(s:curbuffer.statuses, line('.'))
@@ -1222,6 +1229,11 @@ function! s:Retweet_2()
 	" ID.
 	call s:Retweet()
 	return
+    endif
+
+    let login = s:get_twitvim_login()
+    if login == ''
+	return -1
     endif
 
     let parms = {}
