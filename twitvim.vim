@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.4.5
+" Version: 0.4.6
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: December 26, 2009
+" Last updated: January 27, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1023,7 +1023,7 @@ function! s:add_update(output)
 	    execute twit_bufnr . "wincmd w"
 	    set modifiable
 	    call append(2, line)
-	    normal 3G
+	    normal! 3G
 	    set nomodifiable
 	    execute curwin .  "wincmd w"
 	endif
@@ -1357,7 +1357,7 @@ function! s:do_delete_tweet()
 
     " Already in the correct buffer so no need to search or switch buffers.
     set modifiable
-    normal dd
+    normal! dd
     set nomodifiable
 
     redraw
@@ -1425,7 +1425,7 @@ vmenu Plugin.TwitVim.Post\ selection <Plug>TwitvimVisual
 function! s:launch_browser(url)
     if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
 	" Beep and error-highlight 
-	execute "normal \<Esc>"
+	execute "normal! \<Esc>"
 	call s:errormsg('Browser cmd not set. Please add to .vimrc: let twitvim_browser_cmd="browsercmd"')
 	return -1
     endif
@@ -1697,7 +1697,7 @@ function! s:twitter_wintext_view(text, wintype, view)
     " Delete to the blackhole register "_ so that we don't affect registers.
     silent %delete _
     call setline('.', a:text)
-    normal 1G
+    normal! 1G
 
     set nomodifiable
 
@@ -2603,9 +2603,9 @@ function! s:GetShortURL(tweetmode, url, shortfn)
 	if a:tweetmode == "cmdline"
 	    call s:CmdLine_Twitter(shorturl." ", 0)
 	elseif a:tweetmode == "append"
-	    execute "normal a".shorturl."\<esc>"
+	    execute "normal! a".shorturl."\<esc>"
 	else
-	    execute "normal i".shorturl." \<esc>"
+	    execute "normal! i".shorturl." \<esc>"
 	endif
     endif
 endfunction
