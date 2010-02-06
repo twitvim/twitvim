@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 27, 2010
+" Last updated: February 5, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -89,6 +89,11 @@ function! s:get_count()
 	endif
     endif
     return 0
+endfunction
+
+" User setting to show/hide header in the buffer. Default: show header.
+function! s:get_show_header()
+    return exists('g:twitvim_show_header') ? g:twitvim_show_header : 1
 endfunction
 
 " Display an error message in the message area.
@@ -884,7 +889,8 @@ endif
 " statuses: Tweet IDs. For use by in_reply_to_status_id
 " inreplyto: IDs of predecessor messages for @-replies.
 " dmids: Direct Message IDs.
-" buffer: The buffer text
+" buffer: The buffer text.
+" showheader: 1 if header is shown in this buffer, 0 if header is hidden.
 
 let s:curbuffer = {}
 
@@ -1011,19 +1017,26 @@ function! s:add_update(output)
 	" Parse the output from the Twitter update call.
 	let line = s:format_status_xml(a:output)
 
+	" Line number where new tweet will be inserted. It should be 3 if
+	" header is shown and 1 if header is hidden.
+	let insline = 1
+	if s:curbuffer.showheader
+	    let insline = 3
+	endif
+
 	" Add the status ID to the current buffer's statuses list.
-	call insert(s:curbuffer.statuses, s:xml_get_element(a:output, 'id'), 3)
+	call insert(s:curbuffer.statuses, s:xml_get_element(a:output, 'id'), insline)
 
 	" Add in-reply-to ID to current buffer's in-reply-to list.
-	call insert(s:curbuffer.inreplyto, s:xml_get_element(a:output, 'in_reply_to_status_id'), 3)
+	call insert(s:curbuffer.inreplyto, s:xml_get_element(a:output, 'in_reply_to_status_id'), insline)
 
 	let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
 	if twit_bufnr > 0
 	    let curwin = winnr()
 	    execute twit_bufnr . "wincmd w"
 	    set modifiable
-	    call append(2, line)
-	    normal! 3G
+	    call append(insline - 1, line)
+	    execute "normal! ".insline."G"
 	    set nomodifiable
 	    execute curwin .  "wincmd w"
 	endif
@@ -1741,10 +1754,6 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
     let matchcount = 1
     let text = []
 
-    " Index of first status will be 3 to match line numbers in timeline display.
-    let s:curbuffer.statuses = [0, 0, 0]
-    let s:curbuffer.inreplyto = [0, 0, 0]
-
     let s:curbuffer.dmids = []
 
     " Construct page title.
@@ -1765,11 +1774,24 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	let title .= ' (page '.a:page.')'
     endif
 
-    " The extra stars at the end are for the syntax highlighter to recognize
-    " the title. Then the syntax highlighter hides the stars by coloring them
-    " the same as the background. It is a bad hack.
-    call add(text, title.'*')
-    call add(text, repeat('=', s:mbstrlen(title)).'*')
+    let s:curbuffer.showheader = s:get_show_header()
+    if s:curbuffer.showheader
+	" Index of first status will be 3 to match line numbers in timeline
+	" display.
+	let s:curbuffer.statuses = [0, 0, 0]
+	let s:curbuffer.inreplyto = [0, 0, 0]
+
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, title.'*')
+	call add(text, repeat('=', s:mbstrlen(title)).'*')
+    else
+	" Index of first status will be 1 to match line numbers in timeline
+	" display.
+	let s:curbuffer.statuses = [0]
+	let s:curbuffer.inreplyto = [0]
+    endif
 
     while 1
 	let item = s:xml_get_nth(a:timeline, 'status', matchcount)
@@ -1930,20 +1952,28 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
     let s:curbuffer.statuses = []
     let s:curbuffer.inreplyto = []
 
-    " Index of first dmid will be 3 to match line numbers in timeline display.
-    let s:curbuffer.dmids = [0, 0, 0]
-
     let title = 'Direct messages '.a:sent_or_recv
 
     if a:page > 1
 	let title .= ' (page '.a:page.')'
     endif
 
-    " The extra stars at the end are for the syntax highlighter to recognize
-    " the title. Then the syntax highlighter hides the stars by coloring them
-    " the same as the background. It is a bad hack.
-    call add(text, title.'*')
-    call add(text, repeat('=', s:mbstrlen(title)).'*')
+    let s:curbuffer.showheader = s:get_show_header()
+    if s:curbuffer.showheader
+	" Index of first dmid will be 3 to match line numbers in timeline
+	" display.
+	let s:curbuffer.dmids = [0, 0, 0]
+
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, title.'*')
+	call add(text, repeat('=', s:mbstrlen(title)).'*')
+    else
+	" Index of first dmid will be 1 to match line numbers in timeline
+	" display.
+	let s:curbuffer.dmids = [0]
+    endif
 
     while 1
 	let item = s:xml_get_nth(a:timeline, 'direct_message', matchcount)
@@ -2715,10 +2745,6 @@ function! s:show_summize(searchres, page)
     let text = []
     let matchcount = 1
 
-    " Index of first status will be 3 to match line numbers in timeline display.
-    let s:curbuffer.statuses = [0, 0, 0]
-    let s:curbuffer.inreplyto = [0, 0, 0]
-
     let s:curbuffer.dmids = []
 
     let channel = s:xml_remove_elements(a:searchres, 'entry')
@@ -2728,11 +2754,24 @@ function! s:show_summize(searchres, page)
 	let title .= ' (page '.a:page.')'
     endif
 
-    " The extra stars at the end are for the syntax highlighter to recognize
-    " the title. Then the syntax highlighter hides the stars by coloring them
-    " the same as the background. It is a bad hack.
-    call add(text, title.'*')
-    call add(text, repeat('=', strlen(title)).'*')
+    let s:curbuffer.showheader = s:get_show_header()
+    if s:curbuffer.showheader
+	" Index of first status will be 3 to match line numbers in timeline
+	" display.
+	let s:curbuffer.statuses = [0, 0, 0]
+	let s:curbuffer.inreplyto = [0, 0, 0]
+
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, title.'*')
+	call add(text, repeat('=', strlen(title)).'*')
+    else
+	" Index of first status will be 1 to match line numbers in timeline
+	" display.
+	let s:curbuffer.statuses = [0]
+	let s:curbuffer.inreplyto = [0]
+    endif
 
     while 1
 	let item = s:xml_get_nth(a:searchres, 'entry', matchcount)

@@ -39,6 +39,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
 	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
 	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
+	3.4. Hide the header in timeline buffer...: |TwitVim-hide-header|
+	     twitvim_show_header..................: |twitvim_show_header|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. Update Commands......................: |TwitVim-update-commands|
 	     :PosttoTwitter.......................: |:PosttoTwitter|
@@ -454,6 +456,30 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	I do not know how to make this work with Twitter SSL yet. If you
 	succeed, let me know what you did.
+
+
+------------------------------------------------------------------------------
+3.4. Hide the header in timeline buffer			*TwitVim-hide-header*
+
+	In a timeline buffer, the first two lines are header lines. The first
+	line tells you the type of buffer it is (e.g. friends, user, replies,
+	direct messages, search) and other relevant buffer information. (e.g.
+	user name, search terms, page number) The second line is a separator
+	line.
+
+	If you wish to suppress the header display, set twitvim_show_header
+	to 0:
+
+							*twitvim_show_header*
+		let twitvim_show_header = 0
+
+	If twitvim_show_header is unset, it defaults to 1, i.e. show the
+	header.
+
+	Note: Setting twitvim_show_header does not change the timeline buffer
+	immediately. Use |:RefreshTwitter| to refresh the timeline to see the
+	effect. Also, twitvim_show_header does not retroactively alter
+	previous timelines in the timeline stack.
 
 
 ==============================================================================
@@ -1280,6 +1306,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.6 : 2010-02-05 * Added option to hide header in timeline buffer.
+			     |TwitVim-hide-header|
 	0.4.5 : 2009-12-20 * Prompt for login info if not configured.
 			     |:SetLoginTwitter| |:ResetLoginTwitter|
 			   * Reintroduced old-style retweet via
