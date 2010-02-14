@@ -51,6 +51,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :UserTwitter.........................: |:UserTwitter|
 	     twitvim_count........................: |twitvim_count|
 	     :FriendsTwitter......................: |:FriendsTwitter|
+	     :MentionsTwitter.....................: |:MentionsTwitter|
 	     :RepliesTwitter......................: |:RepliesTwitter|
 	     :PublicTwitter.......................: |:PublicTwitter|
 	     :DMTwitter...........................: |:DMTwitter|
@@ -553,14 +554,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	setting |twitvim_count|.
 
 
+	:[count]MentionsTwitter				*:MentionsTwitter*
 	:[count]RepliesTwitter				*:RepliesTwitter*
 
-	This command displays a timeline of @-replies that you've received
-	from other Twitter users.
+	This command displays a timeline of mentions (updates containing
+	@username) that you've received from other Twitter users.
 
 	If you specify [count], that number is used as the page number. For
-	example, :2RepliesTwitter displays the second page from your replies
+	example, :2MentionsTwitter displays the second page from your mentions
 	timeline.
+
+	:RepliesTwitter is the old name for :MentionsTwitter.
+
+	You can configure the number of tweets returned by :MentionsTwitter by
+	setting |twitvim_count|.
 
 
 	:PublicTwitter					*:PublicTwitter*
@@ -1306,6 +1313,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.4.7 : 2010-02-13 * Added |:MentionsTwitter|, the new name for
+			     |:RepliesTwitter|.
+			   * Added support for |twitvim_count| in
+			     :MentionsTwitter.
 	0.4.6 : 2010-02-05 * Added option to hide header in timeline buffer.
 			     |TwitVim-hide-header|
 	0.4.5 : 2009-12-20 * Prompt for login info if not configured.
