@@ -1908,7 +1908,7 @@ function! s:get_list_timeline(username, listname, page)
     " Support count parameter.
     let tcount = s:get_count()
     if tcount > 0
-	let url .= (gotparam ? '&' : '?').'count='.tcount
+	let url .= (gotparam ? '&' : '?').'per_page='.tcount
 	let gotparam = 1
     endif
 
