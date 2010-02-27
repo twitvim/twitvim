@@ -947,6 +947,8 @@ function! s:save_buffer()
 	let s:curbuffer.buffer = getline(1, '$')
 	let s:curbuffer.view = winsaveview()
 	execute curwin .  "wincmd w"
+    else
+	let s:curbuffer.view = {}
     endif
 
     " If current buffer is the same type as buffer at the top of the stack,
@@ -1043,6 +1045,7 @@ function! s:add_update(output)
 	    call append(insline - 1, line)
 	    execute "normal! ".insline."G"
 	    set nomodifiable
+	    let s:curbuffer.buffer = getline(1, '$')
 	    execute curwin .  "wincmd w"
 	endif
     endif
@@ -1317,6 +1320,7 @@ function! s:show_inreplyto()
     set modifiable
     call append(lineno, '+ '.line)
     set nomodifiable
+    let s:curbuffer.buffer = getline(1, '$')
 
     redraw
     echo "In-reply-to tweet found."
@@ -1377,6 +1381,7 @@ function! s:do_delete_tweet()
     set modifiable
     normal! dd
     set nomodifiable
+    let s:curbuffer.buffer = getline(1, '$')
 
     redraw
     echo uobj "deleted."
@@ -1815,6 +1820,7 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	let matchcount += 1
     endwhile
     call s:twitter_wintext(text, "timeline")
+    let s:curbuffer.buffer = text
 endfunction
 
 " Generic timeline retrieval function.
@@ -2001,6 +2007,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 	let matchcount += 1
     endwhile
     call s:twitter_wintext(text, "timeline")
+    let s:curbuffer.buffer = text
 endfunction
 
 " Get direct messages sent to or received by user.
@@ -2804,6 +2811,7 @@ function! s:show_summize(searchres, page)
 	let matchcount += 1
     endwhile
     call s:twitter_wintext(text, "timeline")
+    let s:curbuffer.buffer = text
 endfunction
 
 " Query Twitter Search API and retrieve results
