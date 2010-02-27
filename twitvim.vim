@@ -691,7 +691,15 @@ end
 
 parms = {}
 keys = VIM.evaluate('keys(a:parms)')
-keys.split(/\n/).each { |k|
+
+# Vim patch 7.2.374 adds support to if_ruby for Vim types. So keys() will
+# actually return a Ruby array instead of a newline-delimited string.
+# So we only need to split the string if VIM.evaluate returns a string.
+# If it's already an array, leave it alone.
+
+keys = keys.split(/\n/) if keys.is_a? String
+
+keys.each { |k|
     parms[k] = VIM.evaluate("a:parms['#{k}']")
 }
 

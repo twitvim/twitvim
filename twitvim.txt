@@ -357,12 +357,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	TwitVim requires the net/http, uri, and Base64 modules. These modules
 	are in the Ruby standard library.
 
-	In addition, TwitVim requires a Vim patch to fix an if_ruby networking
-	problem. See the following message:
+	In addition, if using the Ruby interface, TwitVim requires Vim
+	7.2.360 or later to fix an if_ruby problem with Windows sockets.
+
+	Alternatively, you can add the following patch to the Vim sources:
 
 	http://www.mail-archive.com/vim_dev@googlegroups.com/msg03693.html
 
-	and also Bram's correction to the patch:
+	See also Bram's correction to the patch:
 
 	http://www.mail-archive.com/vim_dev@googlegroups.com/msg03713.html
 
