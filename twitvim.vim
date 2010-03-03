@@ -703,34 +703,38 @@ keys.each { |k|
     parms[k] = VIM.evaluate("a:parms['#{k}']")
 }
 
-res = net.start { |http| 
-    path = "#{url.path}?#{url.query}"
-    if parms == {}
-	req = Net::HTTP::Get.new(path)
+begin
+    res = net.start { |http| 
+	path = "#{url.path}?#{url.query}"
+	if parms == {}
+	    req = Net::HTTP::Get.new(path)
+	else
+	    req = Net::HTTP::Post.new(path)
+	    req.set_form_data(parms)
+	end
+
+	login = VIM.evaluate('a:login')
+	if login != ''
+	    req.add_field 'Authorization', "Basic #{make_base64(login)}"
+	end
+
+	#    proxylogin = VIM.evaluate('a:proxylogin')
+	#    if proxylogin != ''
+	#	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
+	#    end
+
+	http.request(req)
+    }
+    case res
+    when Net::HTTPSuccess
+	output = res.body.gsub("'", "''")
+	VIM.command("let output='#{output}'")
     else
-	req = Net::HTTP::Post.new(path)
-	req.set_form_data(parms)
+	error = "#{res.code} #{res.message}".gsub("'", "''")
+	VIM.command("let error='#{error}'")
     end
-
-    login = VIM.evaluate('a:login')
-    if login != ''
-	req.add_field 'Authorization', "Basic #{make_base64(login)}"
-    end
-
-    #    proxylogin = VIM.evaluate('a:proxylogin')
-    #    if proxylogin != ''
-    #	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
-    #    end
-
-    http.request(req)
-}
-case res
-when Net::HTTPSuccess
-    output = res.body.gsub("'", "''")
-    VIM.command("let output='#{output}'")
-else
-    error = "#{res.code} #{res.message}".gsub("'", "''")
-    VIM.command("let error='#{error}'")
+rescue SocketError
+    VIM.command("let error='#{ERROR_INFO}'")
 end
 EOF
 
