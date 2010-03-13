@@ -1315,10 +1315,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.4.7 : 2010-02-13 * Added |:MentionsTwitter|, the new name for
+	0.4.7 : 2010-03-13 * Added |:MentionsTwitter| as an alias for
 			     |:RepliesTwitter|.
-			   * Added support for |twitvim_count| in
-			     :MentionsTwitter.
+			   * Support |twitvim_count| in |:MentionsTwitter|.
+			   * Fixed |twitvim_count| bug in |:ListTwitter|.
+			   * Fixed Ruby interface problem with
+			     Vim patch 7.2.374.
+			   * Fixed |:BackTwitter| behavior when timeline
+			     window is hidden by user.
+			   * Handle SocketError exception in Ruby code.
 	0.4.6 : 2010-02-05 * Added option to hide header in timeline buffer.
 			     |TwitVim-hide-header|
 	0.4.5 : 2009-12-20 * Prompt for login info if not configured.
