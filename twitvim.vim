@@ -733,8 +733,8 @@ begin
 	error = "#{res.code} #{res.message}".gsub("'", "''")
 	VIM.command("let error='#{error}'")
     end
-rescue SocketError
-    VIM.command("let error='#{ERROR_INFO}'")
+rescue => exc
+    VIM.command("let error='#{exc.message}'")
 end
 EOF
 
