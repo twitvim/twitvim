@@ -660,6 +660,8 @@ sub getOauthResponse {
     # [METHOD_UPPER_CASE]&[content]&content
     my $signature_base_str = "${method}&" . uri_escape_RFC3986($url) . "&" . uri_escape_RFC3986($content);
 
+    # VIM::Msg("Signature base = $signature_base_str");
+
     # Create our HMAC_SHA1 key which is the doubly encoded
     # consumer secret concatenated with the doubly encoded
     # token secret (which is expected to be the empty string
@@ -816,11 +818,17 @@ if ($login ne '') {
 	    }
 	}
 
+	# VIM::Msg("Access Token = $access_token");
+	# VIM::Msg("Access Token Secret = $access_token_secret");
+
 	if ($error eq '') {
 	    my %oauthParms = %parms;
 	    $oauthParms{oauth_token} = $access_token;
 
 	    my $oauthHdr = getOauthResponse($url, %parms ? 'POST' : 'GET', \%oauthParms, $access_token_secret);
+
+	    # VIM::Msg("Oauth Hdr = $oauthHdr");
+
 	    $ua->default_header('Authorization' => $oauthHdr);
 	}
     }
@@ -1322,8 +1330,9 @@ function! s:post_twitter(mesg, inreplyto)
 	redraw
 	echo "Sending update to Twitter..."
 
-	let url = s:get_api_root()."/statuses/update.xml?source=twitvim"
+	let url = s:get_api_root()."/statuses/update.xml"
 	let parms["status"] = mesg
+	let parms["source"] = "twitvim"
 
 	let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
@@ -2075,18 +2084,36 @@ function! s:get_timeline(tline_name, username, page)
 
     let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline".user.".xml"
 
+    " user_timeline requires GET request method even if there are count and
+    " page parameters. All other timeline calls seem to require POST method if
+    " there are parameters.
+    let force_get = 0
+    if a:tline_name == "user"
+	let force_get = 1
+    endif
+
+    let parms = {}
+
     " Support pagination.
     if a:page > 1
-	let url_fname .= '?page='.a:page
-	let gotparam = 1
+	if force_get
+	    let url_fname .= '?page='.a:page
+	    let gotparam = 1
+	else
+	    let parms["page"] = a:page
+	endif
     endif
 
     " Support count parameter in friends, user, mentions, and retweet timelines.
     if a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'replies' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
 	let tcount = s:get_count()
 	if tcount > 0
-	    let url_fname .= (gotparam ? '&' : '?').'count='.tcount
-	    let gotparam = 1
+	    if force_get
+		let url_fname .= (gotparam ? '&' : '?').'count='.tcount
+		let gotparam = 1
+	    else
+		let parms["count"] = tcount
+	    endif
 	endif
     endif
 
@@ -2097,7 +2124,7 @@ function! s:get_timeline(tline_name, username, page)
 
     let url = s:get_api_root()."/statuses/".url_fname
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
     if error != ''
 	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".error)
