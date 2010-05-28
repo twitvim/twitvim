@@ -561,15 +561,6 @@ eval {
 
     require LWP::UserAgent;
     LWP::UserAgent->import;
-
-    require Encode;
-    Encode->import;
-
-    require URI::Escape;
-    URI::Escape->import;
-
-    require Digest::HMAC_SHA1;
-    Digest::HMAC_SHA1->import;
 };
 
 if ($@) {
@@ -651,20 +642,12 @@ function s:getOauthResponse(url, method, parms, token_secret)
     " pieces, with each piece URL encoded.
     " [METHOD_UPPER_CASE]&[url]&content
     let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
-
-    " echom signature_base_str
-
     let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
-    " echom hmac_sha1_key
-
     let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
 
     " Add padding character to make a multiple of 4 per the
     " requirement of OAuth.
     let signature .= "="
-
-    " echom signature
-
 
     let content = "OAuth "
 
@@ -685,9 +668,6 @@ function! s:do_oauth()
 
     let parms = { "oauth_callback": "oob", "dummy" : "1" }
     let oauth_hdr = s:getOauthResponse(s:gc_req_url, "POST", parms, "")
-
-    " echom s:gc_req_url
-    " echom oauth_hdr
 
     let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
 
@@ -759,195 +739,6 @@ MIME::Base64->import;
 require LWP::UserAgent;
 LWP::UserAgent->import;
 
-require Encode;
-Encode->import;
-
-require URI::Escape;
-URI::Escape->import;
-
-require Digest::HMAC_SHA1;
-Digest::HMAC_SHA1->import;
-
-
-my $gc_consumer_key = "HyshEU8SbcsklPQ6ouF0g";
-my $gc_consumer_secret = "U1uvxLjZxlQAasy9Kr5L2YAFnsvYTOqx1bk7uJuezQ";
-
-my $gc_req_url = "http://api.twitter.com/oauth/request_token";
-my $gc_access_url = "http://api.twitter.com/oauth/access_token";
-my $gc_authorize_url = "http://api.twitter.com/oauth/authorize";
-
-
-sub uri_escape_RFC3986 {
-    my $str = shift;
-    return uri_escape($str,"^A-Za-z0-9\-_.~");
-}
-
-# Adapted from http://www.social.com/main/twitter-oauth-using-perl/
-#
-# Produce signed content using the parameters provided via %$paramHashRef using
-# the chosen method, url and provided token secret.  Note that in the case of
-# getting a new Request token, the secret will be ""
-sub getOauthResponse {
-    my($url,$method,$paramHashRef,$token_secret) = @_;
-
-    # Add some constants to hash
-    $paramHashRef->{oauth_consumer_key} = $gc_consumer_key;
-    $paramHashRef->{oauth_signature_method} = "HMAC-SHA1";
-    $paramHashRef->{oauth_version} = "1.0";
-
-    # Get the timestamp and add to hash
-    $paramHashRef->{oauth_timestamp} = time;
-
-    # Get our nonce - a randomly generated, unique string.
-    #
-    # Lowest nonce to be generated
-    my $lower = 999999;
-
-    # Highest nonce to be generated
-    my $upper = 2**31;
-
-    # Get a random nonce from  $lower to $upper inclusive.
-    my $nonce = int(rand($upper - $lower + 1)) + $lower;
-
-    # Add nonce to param hash
-    $paramHashRef->{oauth_nonce} = $nonce;
-
-    # Alphabetically sort by key and form a string that has
-    # the format key1=value1&key2=value2&...
-    # Must UTF8 encode and then URL encode the values.
-    my $content = "";
-    foreach my $key (sort keys %$paramHashRef){
-        my $value = uri_escape_RFC3986(Encode::encode("UTF-8",$$paramHashRef{$key}));
-
-        $content .= "${key}=${value}&";
-    }
-    chop $content; # Get rid of trailing &
-
-    # Form the signature base string which is comprised of 3
-    # pieces, with each piece URL encoded.
-    # [METHOD_UPPER_CASE]&[content]&content
-    my $signature_base_str = "${method}&" . uri_escape_RFC3986($url) . "&" . uri_escape_RFC3986($content);
-
-    # VIM::Msg("Signature base = $signature_base_str");
-
-    # Create our HMAC_SHA1 key which is the doubly encoded
-    # consumer secret concatenated with the doubly encoded
-    # token secret (which is expected to be the empty string
-    # if this is a Request Token fetch).
-    my $HMAC_SHA1_key = uri_escape_RFC3986(Encode::encode("UTF-8",$gc_consumer_secret));
-    $HMAC_SHA1_key .= "&";
-    $HMAC_SHA1_key .= uri_escape_RFC3986(Encode::encode("UTF-8",$token_secret));
-
-    #
-    # Create the base64 encoded digest using the signature
-    # base string and the HMAC_SHA1 key.  The result is
-    # always of length 27.
-    my $hmac = Digest::HMAC_SHA1->new($HMAC_SHA1_key);
-
-    $hmac->add($signature_base_str);
-    my $signature = $hmac->b64digest; # Length of 27
-
-    # Add padding character to make a multiple of 4 per the
-    # requirement of OAuth.
-    $signature .= "="; 
-
-    # Update the content with the URL encoded signature
-    $content .= "&oauth_signature=" . uri_escape_RFC3986($signature);
-
-    $content = "OAuth ";
-
-    # Generate Authorization header containing relevant OAuth parameters.
-    foreach my $key (keys %$paramHashRef) {
-	$key =~ /oauth/ or next;
-        my $value = uri_escape_RFC3986(Encode::encode("UTF-8",$$paramHashRef{$key}));
-
-        $content .= "$key=\"$value\", ";
-    }
-    $content .= ' oauth_signature="'.uri_escape_RFC3986($signature).'"';
-    $content;
-}
-
-sub do_oauth {
-    my %requestTokenParam = (
-	oauth_callback => "oob"
-    );
-
-    my $content = getOauthResponse($gc_req_url, "POST", \%requestTokenParam, "");
-
-    my $ua = LWP::UserAgent->new;
-    $ua->default_header('Authorization' => $content);
-
-    my $response = $ua->post($gc_req_url);
-    unless ($response->is_success) {
-	my $err = $response->status_line;
-	die "Error from oauth/request_token: $err";
-    }
-
-
-    my $requestToken;
-    my $token_secret;
-
-    my $resp = $response->content;
-    if ($resp =~ /oauth_token=([^&]*)&/) {
-	$requestToken = $1;
-    }
-    if ($resp =~ /oauth_token_secret=([^&]*)&/) {
-	$token_secret = $1;
-    }
-
-    my $auth_url = "$gc_authorize_url?oauth_token=$requestToken";
-
-    if (VIM::Eval("s:launch_browser('$auth_url')") < 0) {
-	die "Error launching browser\n";
-    }
-
-    VIM::DoCommand("call inputsave()");
-    my $pin = VIM::Eval("input('Enter Twitter OAuth PIN: ')");
-    VIM::DoCommand("call inputrestore()");
-
-    if ($pin eq '') {
-	die "No OAuth PIN entered";
-    }
-
-    my %accessTokenParam = (
-	oauth_token => $requestToken,
-	oauth_verifier => $pin
-    );
-
-    $content = getOauthResponse($gc_access_url, "POST", \%accessTokenParam, $token_secret);
-
-    $ua = LWP::UserAgent->new;
-    $ua->default_header('Authorization' => $content);
-
-    $response = $ua->post($gc_access_url);
-    unless ($response->is_success) {
-	my $err = $response->status_line;
-	die "Error from oauth/access_token: $err";
-    }
-
-    $resp = $response->content;
-
-    my $access_token;
-    my $access_token_secret;
-    my $userid;
-    my $screen_name;
-
-    if ($resp =~ /oauth_token=([^&]*)/) {
-	$access_token = $1;
-    }
-    if ($resp =~ /oauth_token_secret=([^&]*)/) {
-	$access_token_secret = $1;
-    }
-    if ($resp =~ /user_id=([^&]*)/) {
-	$userid = $1;
-    }
-    if ($resp =~ /screen_name=([^&]*)/) {
-	$screen_name = $1;
-    }
-
-    ($access_token, $access_token_secret);
-}
-
 sub make_base64 {
     my $s = shift;
     $s =~ /:/ ? encode_base64($s) : $s;
@@ -969,8 +760,6 @@ for $k (split(/\n/, $keys)) {
     $parms{$k} = VIM::Eval("a:parms['$k']");
 }
 
-my $error = '';
-
 my $login = VIM::Eval('a:login');
 if ($login ne '') {
     if ($login =~ /^OAuth /) {
@@ -980,37 +769,6 @@ if ($login ne '') {
     else {
 	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
     }
-
-#    if ($url =~ /twitter\.com/i) {
-#
-#	if (!defined($access_token) or $access_token eq '') {
-#	    eval {
-#		($access_token, $access_token_secret) = do_oauth();
-#	    };
-#	    if ($@) {
-#		$error = $@;
-#		$error =~ s/'/''/g;
-#		VIM::DoCommand("let error ='$error'");
-#	    }
-#	}
-#
-#	# VIM::Msg("Access Token = $access_token");
-#	# VIM::Msg("Access Token Secret = $access_token_secret");
-#
-#	if ($error eq '') {
-#	    my %oauthParms = %parms;
-#	    $oauthParms{oauth_token} = $access_token;
-#
-#	    my $oauthHdr = getOauthResponse($url, %parms ? 'POST' : 'GET', \%oauthParms, $access_token_secret);
-#
-#	    # VIM::Msg("Oauth Hdr = $oauthHdr");
-#
-#	    $ua->default_header('Authorization' => $oauthHdr);
-#	}
-#    }
-#    else {
-#	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
-#    }
 }
 
 # VIM::Msg($url, "ErrorMsg");
@@ -1022,7 +780,7 @@ if ($response->is_success) {
     VIM::DoCommand("let output ='$output'");
 }
 else {
-    $error = $response->status_line;
+    my $error = $response->status_line;
     $error =~ s/'/''/g;
     VIM::DoCommand("let error ='$error'");
 }
@@ -1282,9 +1040,6 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 		return [ "Error from do_oauth(): ".retval, '' ]
 	    endif
 	endif
-
-	" echom s:access_token
-	" echom s:access_token_secret
 
 	let parms = copy(a:parms)
 	let parms["oauth_token"] = s:access_token
