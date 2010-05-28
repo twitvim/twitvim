@@ -145,7 +145,7 @@ function! s:check_twitvim_login(user, password)
     echo "Logging into Twitter..."
 
     let url = s:get_api_root()."/account/verify_credentials.xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error =~ '401'
 	return 0
     endif
@@ -261,7 +261,7 @@ function! s:get_twitvim_username()
     echo "Verifying login credentials with Twitter..."
 
     let url = s:get_api_root()."/account/verify_credentials.xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error verifying login credentials: ".error)
 	return
@@ -445,7 +445,7 @@ endfunction
 
 " URL-encode a string.
 function! s:url_encode(str)
-    return substitute(a:str, '[^a-zA-Z0-9_-]', '\=s:url_encode_char(submatch(0))', 'g')
+    return substitute(a:str, '[^a-zA-Z0-9_.~-]', '\=s:url_encode_char(submatch(0))', 'g')
 endfunction
 
 " Use curl to fetch a web page.
@@ -593,10 +593,6 @@ my $hmac = Digest::HMAC_SHA1->new($key);
 $hmac->add($str);
 my $signature = $hmac->b64digest; # Length of 27
 
-# Add padding character to make a multiple of 4 per the
-# requirement of OAuth.
-$signature .= "=";
-
 VIM::DoCommand("let signature = '$signature'");
 EOF
 
@@ -611,6 +607,19 @@ let s:gc_access_url = "http://api.twitter.com/oauth/access_token"
 let s:gc_authorize_url = "http://api.twitter.com/oauth/authorize"
 
 
+" Simple nonce value generator. This needs to be randomized better.
+function s:nonce()
+    if !exists("s:nonce_val") || s:nonce_val < 1
+	let s:nonce_val = localtime() + 109
+    endif
+
+    let retval = s:nonce_val
+    let s:nonce_val += 109
+
+    return retval
+endfunction
+
+
 " Produce signed content using the parameters provided via parms using the
 " chosen method, url and provided token secret. Note that in the case of
 " getting a new Request token, the secret will be ""
@@ -618,13 +627,14 @@ function s:getOauthResponse(url, method, parms, token_secret)
     let parms = copy(a:parms)
 
     " Add some constants to hash
-    parms["oauth_consumer_key"] = s:gc_consumer_key
-    parms["oauth_signature_method"] = "HMAC_SHA1"
-    parms["oauth_version"] = "1.0"
+    let parms["oauth_consumer_key"] = s:gc_consumer_key
+    let parms["oauth_signature_method"] = "HMAC-SHA1"
+    let parms["oauth_version"] = "1.0"
 
     " Get the timestamp and add to hash
-    parms["oauth_timestamp"] = localtime()
-    parms["oauth_nonce"] = localtime()
+    let parms["oauth_timestamp"] = localtime()
+
+    let parms["oauth_nonce"] = s:nonce()
 
     " Alphabetically sort by key and form a string that has
     " the format key1=value1&key2=value2&...
@@ -642,19 +652,29 @@ function s:getOauthResponse(url, method, parms, token_secret)
     " [METHOD_UPPER_CASE]&[url]&content
     let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
 
+    " echom signature_base_str
+
     let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
+    " echom hmac_sha1_key
 
     let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
 
+    " Add padding character to make a multiple of 4 per the
+    " requirement of OAuth.
+    let signature .= "="
+
+    " echom signature
+
+
     let content = "OAuth "
 
-    for key in keys(parms) {
+    for key in keys(parms)
 	if key =~ "oauth"
 	    let value = s:url_encode(parms[key])
 	    let content .= key . '="' . value . '", '
 	endif
     endfor
-    let content .= ' oauth_signature="' . s:url_encode(signature) . '"'
+    let content .= 'oauth_signature="' . s:url_encode(signature) . '"'
     return content
 endfunction
 
@@ -663,14 +683,17 @@ endfunction
 function! s:do_oauth()
     " Get request token from Twitter.
 
-    let parms = { "oauth_callback": "oob" }
+    let parms = { "oauth_callback": "oob", "dummy" : "1" }
     let oauth_hdr = s:getOauthResponse(s:gc_req_url, "POST", parms, "")
 
-    let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), parms)
+    " echom s:gc_req_url
+    " echom oauth_hdr
+
+    let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
 
     if error != ''
 	call s:errormsg("Error from oauth/request_token: ".error)
-	return -1
+	return [-1, '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
@@ -686,7 +709,7 @@ function! s:do_oauth()
     let auth_url = s:gc_authorize_url . "?oauth_token=" . request_token
 
     if s:launch_browser(auth_url) < 0
-	return -2
+	return [-2, '', '']
     endif
 
     call inputsave()
@@ -695,19 +718,19 @@ function! s:do_oauth()
 
     if pin == ""
 	call s:warnmsg("No OAuth PIN entered")
-	return -3
+	return [-3, '', '']
     endif
 
     " Swap request token for access token.
     
-    let parms = { "oauth_token" : request_token, "oauth_verifier" : pin }
+    let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
     let oauth_hdr = s:getOauthResponse(s:gc_access_url, "POST", parms, token_secret)
 
-    let [error, output] = s:run_curl(s:gc_access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl(s:gc_access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
 
     if error != ''
 	call s:errormsg("Error from oauth/access_token: ".error)
-	return -4
+	return [-4, '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
@@ -720,7 +743,7 @@ function! s:do_oauth()
 	let token_secret = matchres[1]
     endif
 
-    return [ request_token, token_secret ]
+    return [ 0, request_token, token_secret ]
 
 endfunction
 
@@ -950,50 +973,58 @@ my $error = '';
 
 my $login = VIM::Eval('a:login');
 if ($login ne '') {
-    if ($url =~ /twitter\.com/i) {
-
-	if (!defined($access_token) or $access_token eq '') {
-	    eval {
-		($access_token, $access_token_secret) = do_oauth();
-	    };
-	    if ($@) {
-		$error = $@;
-		$error =~ s/'/''/g;
-		VIM::DoCommand("let error ='$error'");
-	    }
-	}
-
-	# VIM::Msg("Access Token = $access_token");
-	# VIM::Msg("Access Token Secret = $access_token_secret");
-
-	if ($error eq '') {
-	    my %oauthParms = %parms;
-	    $oauthParms{oauth_token} = $access_token;
-
-	    my $oauthHdr = getOauthResponse($url, %parms ? 'POST' : 'GET', \%oauthParms, $access_token_secret);
-
-	    # VIM::Msg("Oauth Hdr = $oauthHdr");
-
-	    $ua->default_header('Authorization' => $oauthHdr);
-	}
+    if ($login =~ /^OAuth /) {
+	$ua->default_header('Authorization' => $login);
+	# VIM::Msg($login, "ErrorMsg");
     }
     else {
 	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
     }
+
+#    if ($url =~ /twitter\.com/i) {
+#
+#	if (!defined($access_token) or $access_token eq '') {
+#	    eval {
+#		($access_token, $access_token_secret) = do_oauth();
+#	    };
+#	    if ($@) {
+#		$error = $@;
+#		$error =~ s/'/''/g;
+#		VIM::DoCommand("let error ='$error'");
+#	    }
+#	}
+#
+#	# VIM::Msg("Access Token = $access_token");
+#	# VIM::Msg("Access Token Secret = $access_token_secret");
+#
+#	if ($error eq '') {
+#	    my %oauthParms = %parms;
+#	    $oauthParms{oauth_token} = $access_token;
+#
+#	    my $oauthHdr = getOauthResponse($url, %parms ? 'POST' : 'GET', \%oauthParms, $access_token_secret);
+#
+#	    # VIM::Msg("Oauth Hdr = $oauthHdr");
+#
+#	    $ua->default_header('Authorization' => $oauthHdr);
+#	}
+#    }
+#    else {
+#	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
+#    }
 }
 
-if ($error eq '') {
-    my $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
-    if ($response->is_success) {
-	my $output = $response->content;
-	$output =~ s/'/''/g;
-	VIM::DoCommand("let output ='$output'");
-    }
-    else {
-	$error = $response->status_line;
-	$error =~ s/'/''/g;
-	VIM::DoCommand("let error ='$error'");
-    }
+# VIM::Msg($url, "ErrorMsg");
+# VIM::Msg(join(' ', keys(%parms)), "ErrorMsg");
+my $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
+if ($response->is_success) {
+    my $output = $response->content;
+    $output =~ s/'/''/g;
+    VIM::DoCommand("let output ='$output'");
+}
+else {
+    $error = $response->status_line;
+    $error =~ s/'/''/g;
+    VIM::DoCommand("let error ='$error'");
 }
 EOF
 
@@ -1242,6 +1273,29 @@ function! s:get_curl_method()
     return s:curl_method
 endfunction
 
+" Sign a request with OAuth and send it.
+function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
+    if a:login != '' && a:url =~ 'twitter\.com'
+	if !exists('s:access_token') || s:access_token == ''
+	    let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
+	    if retval < 0
+		return [ "Error from do_oauth(): ".retval, '' ]
+	    endif
+	endif
+
+	" echom s:access_token
+	" echom s:access_token_secret
+
+	let parms = copy(a:parms)
+	let parms["oauth_token"] = s:access_token
+	let oauth_hdr = s:getOauthResponse(a:url, a:parms == {} ? 'GET' : 'POST', parms, s:access_token_secret)
+
+	return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
+    else
+	return s:run_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
+    endif
+endfunction
+
 function! s:run_curl(url, login, proxy, proxylogin, parms)
     return s:{s:get_curl_method()}_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
 endfunction
@@ -1479,7 +1533,7 @@ function! s:post_twitter(mesg, inreplyto)
 	let parms["status"] = mesg
 	let parms["source"] = "twitvim"
 
-	let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+	let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
 	if error != ''
 	    call s:errormsg("Error posting your tweet: ".error)
@@ -1650,7 +1704,7 @@ function! s:Retweet_2()
     redraw
     echo "Retweeting..."
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
 	call s:errormsg("Error retweeting: ".error)
     else
@@ -1679,7 +1733,7 @@ function! s:show_inreplyto()
     echo "Querying Twitter for in-reply-to tweet..."
 
     let url = s:get_api_root()."/statuses/show/".inreplyto.".xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error getting in-reply-to tweet: ".error)
 	return
@@ -1741,7 +1795,7 @@ function! s:do_delete_tweet()
     let parms["id"] = id
 
     let url = s:get_api_root().'/'.(isdm ? "direct_messages" : "statuses")."/destroy/".id.".xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
 	call s:errormsg("Error deleting ".obj.": ".error)
 	return
@@ -2269,7 +2323,7 @@ function! s:get_timeline(tline_name, username, page)
 
     let url = s:get_api_root()."/statuses/".url_fname
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
     if error != ''
 	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".error)
@@ -2335,7 +2389,7 @@ function! s:get_list_timeline(username, listname, page)
 
     let url = s:get_api_root().url
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
 	call s:errormsg("Error getting Twitter list timeline: ".error)
@@ -2435,7 +2489,7 @@ function! s:Direct_Messages(mode, page)
 
     let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".xml".pagearg
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
 	call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".error)
@@ -2603,10 +2657,10 @@ function! s:do_send_dm(user, mesg)
 	redraw
 	echo "Sending message to ".a:user."..."
 
-	let url = s:get_api_root()."/direct_messages/new.xml?source=twitvim"
-	let parms = { "user" : a:user, "text" : mesg }
+	let url = s:get_api_root()."/direct_messages/new.xml"
+	let parms = { "source" : "twitvim", "user" : a:user, "text" : mesg }
 
-	let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+	let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
 
 	if error != ''
 	    call s:errormsg("Error sending your message: ".error)
@@ -2654,7 +2708,7 @@ function! s:get_rate_limit()
     echo "Querying Twitter for rate limit information..."
 
     let url = s:get_api_root()."/account/rate_limit_status.xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error getting rate limit info: ".error)
 	return
@@ -2691,7 +2745,7 @@ function! s:set_location(loc)
     let url = s:get_api_root()."/account/update_location.xml"
     let parms = { 'location' : a:loc }
 
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
 	call s:errormsg("Error setting location: ".error)
 	return
@@ -2753,7 +2807,7 @@ function! s:get_user_info(username)
     echo "Querying Twitter for user information..."
 
     let url = s:get_api_root()."/users/show/".a:username.".xml"
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error getting user info: ".error)
 	return
