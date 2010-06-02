@@ -353,6 +353,163 @@ endfunction
 
 " === End of time parser ===
 
+" === OAuth code ===
+
+" Compute HMAC_SHA1 digest.
+function! s:hmac_sha1_digest(key, str)
+    perl <<EOF
+require Digest::HMAC_SHA1;
+Digest::HMAC_SHA1->import;
+
+my $key = VIM::Eval('a:key');
+my $str = VIM::Eval('a:str');
+
+my $hmac = Digest::HMAC_SHA1->new($key);
+
+$hmac->add($str);
+my $signature = $hmac->b64digest; # Length of 27
+
+VIM::DoCommand("let signature = '$signature'");
+EOF
+
+    return signature
+endfunction
+
+let s:gc_consumer_key = "HyshEU8SbcsklPQ6ouF0g"
+let s:gc_consumer_secret = "U1uvxLjZxlQAasy9Kr5L2YAFnsvYTOqx1bk7uJuezQ"
+
+let s:gc_req_url = "http://api.twitter.com/oauth/request_token"
+let s:gc_access_url = "http://api.twitter.com/oauth/access_token"
+let s:gc_authorize_url = "http://api.twitter.com/oauth/authorize"
+
+" Simple nonce value generator. This needs to be randomized better.
+function s:nonce()
+    if !exists("s:nonce_val") || s:nonce_val < 1
+	let s:nonce_val = localtime() + 109
+    endif
+
+    let retval = s:nonce_val
+    let s:nonce_val += 109
+
+    return retval
+endfunction
+
+" Produce signed content using the parameters provided via parms using the
+" chosen method, url and provided token secret. Note that in the case of
+" getting a new Request token, the secret will be ""
+function s:getOauthResponse(url, method, parms, token_secret)
+    let parms = copy(a:parms)
+
+    " Add some constants to hash
+    let parms["oauth_consumer_key"] = s:gc_consumer_key
+    let parms["oauth_signature_method"] = "HMAC-SHA1"
+    let parms["oauth_version"] = "1.0"
+
+    " Get the timestamp and add to hash
+    let parms["oauth_timestamp"] = localtime()
+
+    let parms["oauth_nonce"] = s:nonce()
+
+    " Alphabetically sort by key and form a string that has
+    " the format key1=value1&key2=value2&...
+    " Must UTF8 encode and then URL encode the values.
+    let content = ""
+
+    for key in sort(keys(parms))
+	let value = s:url_encode(parms[key])
+	let content .= key . "=" . value . "&"
+    endfor
+    let content = content[0:-2]
+
+    " Form the signature base string which is comprised of 3
+    " pieces, with each piece URL encoded.
+    " [METHOD_UPPER_CASE]&[url]&content
+    let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
+    let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
+    let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
+
+    " Add padding character to make a multiple of 4 per the
+    " requirement of OAuth.
+    let signature .= "="
+
+    let content = "OAuth "
+
+    for key in keys(parms)
+	if key =~ "oauth"
+	    let value = s:url_encode(parms[key])
+	    let content .= key . '="' . value . '", '
+	endif
+    endfor
+    let content .= 'oauth_signature="' . s:url_encode(signature) . '"'
+    return content
+endfunction
+
+" Perform the OAuth dance to authorize this client with Twitter.
+function! s:do_oauth()
+    " Call oauth/request_token to get request token from Twitter.
+
+    let parms = { "oauth_callback": "oob", "dummy" : "1" }
+    let oauth_hdr = s:getOauthResponse(s:gc_req_url, "POST", parms, "")
+
+    let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
+
+    if error != ''
+	call s:errormsg("Error from oauth/request_token: ".error)
+	return [-1, '', '']
+    endif
+
+    let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
+    if matchres != []
+	let request_token = matchres[1]
+    endif
+
+    let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
+    if matchres != []
+	let token_secret = matchres[1]
+    endif
+
+    " Launch web browser to let user allow or deny the authentication request.
+    let auth_url = s:gc_authorize_url . "?oauth_token=" . request_token
+    if s:launch_browser(auth_url) < 0
+	return [-2, '', '']
+    endif
+
+    call inputsave()
+    let pin = input("Enter Twitter OAuth PIN: ")
+    call inputrestore()
+
+    if pin == ""
+	call s:warnmsg("No OAuth PIN entered")
+	return [-3, '', '']
+    endif
+
+    " Call oauth/access_token to swap request token for access token.
+    
+    let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
+    let oauth_hdr = s:getOauthResponse(s:gc_access_url, "POST", parms, token_secret)
+
+    let [error, output] = s:run_curl(s:gc_access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
+
+    if error != ''
+	call s:errormsg("Error from oauth/access_token: ".error)
+	return [-4, '', '']
+    endif
+
+    let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
+    if matchres != []
+	let request_token = matchres[1]
+    endif
+
+    let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
+    if matchres != []
+	let token_secret = matchres[1]
+    endif
+
+    return [ 0, request_token, token_secret ]
+endfunction
+
+" === End of OAuth code ===
+
 " === Networking code ===
 
 function! s:url_encode_char(c)
@@ -498,163 +655,6 @@ if ($@) {
 }
 EOF
     return can_perl
-endfunction
-
-" Compute HMAC_SHA1 digest.
-function! s:hmac_sha1_digest(key, str)
-    perl <<EOF
-require Digest::HMAC_SHA1;
-Digest::HMAC_SHA1->import;
-
-my $key = VIM::Eval('a:key');
-my $str = VIM::Eval('a:str');
-
-my $hmac = Digest::HMAC_SHA1->new($key);
-
-$hmac->add($str);
-my $signature = $hmac->b64digest; # Length of 27
-
-VIM::DoCommand("let signature = '$signature'");
-EOF
-
-    return signature
-endfunction
-
-let s:gc_consumer_key = "HyshEU8SbcsklPQ6ouF0g"
-let s:gc_consumer_secret = "U1uvxLjZxlQAasy9Kr5L2YAFnsvYTOqx1bk7uJuezQ"
-
-let s:gc_req_url = "http://api.twitter.com/oauth/request_token"
-let s:gc_access_url = "http://api.twitter.com/oauth/access_token"
-let s:gc_authorize_url = "http://api.twitter.com/oauth/authorize"
-
-
-" Simple nonce value generator. This needs to be randomized better.
-function s:nonce()
-    if !exists("s:nonce_val") || s:nonce_val < 1
-	let s:nonce_val = localtime() + 109
-    endif
-
-    let retval = s:nonce_val
-    let s:nonce_val += 109
-
-    return retval
-endfunction
-
-
-" Produce signed content using the parameters provided via parms using the
-" chosen method, url and provided token secret. Note that in the case of
-" getting a new Request token, the secret will be ""
-function s:getOauthResponse(url, method, parms, token_secret)
-    let parms = copy(a:parms)
-
-    " Add some constants to hash
-    let parms["oauth_consumer_key"] = s:gc_consumer_key
-    let parms["oauth_signature_method"] = "HMAC-SHA1"
-    let parms["oauth_version"] = "1.0"
-
-    " Get the timestamp and add to hash
-    let parms["oauth_timestamp"] = localtime()
-
-    let parms["oauth_nonce"] = s:nonce()
-
-    " Alphabetically sort by key and form a string that has
-    " the format key1=value1&key2=value2&...
-    " Must UTF8 encode and then URL encode the values.
-    let content = ""
-
-    for key in sort(keys(parms))
-	let value = s:url_encode(parms[key])
-	let content .= key . "=" . value . "&"
-    endfor
-    let content = content[0:-2]
-
-    " Form the signature base string which is comprised of 3
-    " pieces, with each piece URL encoded.
-    " [METHOD_UPPER_CASE]&[url]&content
-    let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
-    let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
-    let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
-
-    " Add padding character to make a multiple of 4 per the
-    " requirement of OAuth.
-    let signature .= "="
-
-    let content = "OAuth "
-
-    for key in keys(parms)
-	if key =~ "oauth"
-	    let value = s:url_encode(parms[key])
-	    let content .= key . '="' . value . '", '
-	endif
-    endfor
-    let content .= 'oauth_signature="' . s:url_encode(signature) . '"'
-    return content
-endfunction
-
-
-" Perform the OAuth dance to authorize this client with Twitter.
-function! s:do_oauth()
-    " Get request token from Twitter.
-
-    let parms = { "oauth_callback": "oob", "dummy" : "1" }
-    let oauth_hdr = s:getOauthResponse(s:gc_req_url, "POST", parms, "")
-
-    let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
-
-    if error != ''
-	call s:errormsg("Error from oauth/request_token: ".error)
-	return [-1, '', '']
-    endif
-
-    let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
-    if matchres != []
-	let request_token = matchres[1]
-    endif
-
-    let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
-    if matchres != []
-	let token_secret = matchres[1]
-    endif
-
-    let auth_url = s:gc_authorize_url . "?oauth_token=" . request_token
-
-    if s:launch_browser(auth_url) < 0
-	return [-2, '', '']
-    endif
-
-    call inputsave()
-    let pin = input("Enter Twitter OAuth PIN: ")
-    call inputrestore()
-
-    if pin == ""
-	call s:warnmsg("No OAuth PIN entered")
-	return [-3, '', '']
-    endif
-
-    " Swap request token for access token.
-    
-    let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
-    let oauth_hdr = s:getOauthResponse(s:gc_access_url, "POST", parms, token_secret)
-
-    let [error, output] = s:run_curl(s:gc_access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
-
-    if error != ''
-	call s:errormsg("Error from oauth/access_token: ".error)
-	return [-4, '', '']
-    endif
-
-    let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
-    if matchres != []
-	let request_token = matchres[1]
-    endif
-
-    let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
-    if matchres != []
-	let token_secret = matchres[1]
-    endif
-
-    return [ 0, request_token, token_secret ]
-
 endfunction
 
 " Use Perl to fetch a web page.
