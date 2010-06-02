@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: May 27, 2010
+" Last updated: June 2, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -96,6 +96,11 @@ function! s:get_show_header()
     return exists('g:twitvim_show_header') ? g:twitvim_show_header : 1
 endfunction
 
+" User config for name of OAuth access token file.
+function! s:get_token_file()
+    return exists('g:twitvim_token_file') ? g:twitvim_token_file : $HOME . "/.twitvim.token"
+endfunction
+
 " Display an error message in the message area.
 function! s:errormsg(msg)
     redraw
@@ -174,50 +179,17 @@ function! s:check_twitvim_login(user, password)
     return 1
 endfunction
 
-" Ask user for Twitter login info.
-" Returns user:password. Also saves it in g:twitvim_login for future use.
-" Returns empty string if login canceled or failed.
+" Throw away OAuth access tokens and log in again. This is meant to allow the
+" user to switch to a different Twitter account.
 function! s:prompt_twitvim_login()
-    let failed = 0
 
-    while 1
-	call inputsave()
-	redraw
-	let user = input((failed ? 'Login failed. Try again. ' : 'Please log in. ')."Twitter username (Esc=exit): ")
-	call inputrestore()
+    let s:access_token = ""
+    let s:access_token_secret = ""
+    call delete(s:get_token_file())
 
-	if user == ''
-	    call s:warnmsg("Twitter login not set.")
-	    return ''
-	endif
+    let s:cached_username = ""
 
-	call inputsave()
-	redraw
-	let pass = inputsecret("Twitter password (Esc=exit): ")
-	call inputrestore()
-
-	if pass == ''
-	    call s:warnmsg("Twitter login not set.")
-	    return ''
-	endif
-
-	let result = s:check_twitvim_login(user, pass)
-	if result < 0
-	    " Login didn't succeed or fail but there was some kind of error.
-	    return ''
-	endif
-
-	if result > 0
-	    " Login succeeded.
-	    break
-	endif
-
-	let failed = 1
-    endwhile
-
-    call s:reset_twitvim_login()
-    let g:twitvim_login = user.':'.pass
-    return g:twitvim_login
+    call s:check_twitvim_login("oauth", "oauth")
 endfunction
 
 " Get Twitter login info from twitvim_login in .vimrc or _vimrc.
@@ -242,7 +214,6 @@ function! s:get_twitvim_login()
     return login
 endfunction
 
-let s:cached_login = ''
 let s:cached_username = ''
 
 " Get Twitter user name by verifying login credentials
@@ -253,7 +224,7 @@ function! s:get_twitvim_username()
     endif
 
     " If we already got the info, no need to get it again.
-    if login == s:cached_login
+    if s:cached_username != ""
 	return s:cached_username
     endif
 
@@ -280,7 +251,6 @@ function! s:get_twitvim_username()
 
     " Save it so we don't have to do it again unless the user switches to
     " a different login.
-    let s:cached_login = login
     let s:cached_username = username
 
     return username
@@ -1035,9 +1005,29 @@ endfunction
 function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
     if a:login != '' && a:url =~ 'twitter\.com'
 	if !exists('s:access_token') || s:access_token == ''
-	    let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
-	    if retval < 0
-		return [ "Error from do_oauth(): ".retval, '' ]
+
+	    let tokens = []
+
+	    if filereadable(s:get_token_file())
+		" Try to read access tokens from token file.
+		let tokens = readfile(s:get_token_file(), "t", 3)
+	    endif
+
+	    if tokens == []
+
+		" If unsuccessful, do the OAuth handshake.
+		let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
+		if retval < 0
+		    return [ "Error from do_oauth(): ".retval, '' ]
+		endif
+
+		" Save access tokens to the token file.
+		let v:errmsg = ""
+		if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
+		    call s:errormsg('Error writing token file: '.v:errmsg)
+		endif
+	    else
+		let [s:access_token, s:access_token_secret] = tokens
 	    endif
 	endif
 
