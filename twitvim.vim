@@ -397,7 +397,9 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     endif
 
     if a:login != ""
-	if stridx(a:login, ':') != -1
+	if a:login =~ "^OAuth "
+	    let curlcmd .= '-H "Authorization: '.a:login.'" '
+	elseif stridx(a:login, ':') != -1
 	    let curlcmd .= '-u "'.a:login.'" '
 	else
 	    let curlcmd .= '-H "Authorization: Basic '.a:login.'" '
@@ -455,7 +457,10 @@ try:
 
     login = vim.eval("a:login")
     if login != "":
-	req.add_header('Authorization', 'Basic %s' % make_base64(login))
+	if login[0:6] == "OAuth ":
+	    req.add_header('Authorization', login)
+	else:
+	    req.add_header('Authorization', 'Basic %s' % make_base64(login))
 
     proxy = vim.eval("a:proxy")
     if proxy != "":
@@ -807,7 +812,11 @@ begin
 
 	login = VIM.evaluate('a:login')
 	if login != ''
-	    req.add_field 'Authorization', "Basic #{make_base64(login)}"
+	    if login =~ /^OAuth /
+		req.add_field 'Authorization', login
+	    else
+		req.add_field 'Authorization', "Basic #{make_base64(login)}"
+	    end
 	end
 
 	#    proxylogin = VIM.evaluate('a:proxylogin')
@@ -889,7 +898,11 @@ if { $proxylogin != "" } {
 
 set login [::vim::expr a:login]
 if { $login != "" } {
-    lappend headers "Authorization" "Basic [make_base64 $login]"
+    if {[string range $login 0 5] == "OAuth "} {
+	lappend headers "Authorization" $login
+    } else {
+	lappend headers "Authorization" "Basic [make_base64 $login]"
+    }
 }
 
 set parms [list]
@@ -970,7 +983,7 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 
 	    if tokens == []
 
-		" If unsuccessful, do the OAuth handshake.
+		" If unsuccessful at reading token file, do the OAuth handshake.
 		let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
 		if retval < 0
 		    return [ "Error from do_oauth(): ".retval, '' ]
