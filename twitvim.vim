@@ -45,7 +45,7 @@ endfunction
 
 " Allow user to enable Perl networking code by setting twitvim_enable_perl.
 function! s:get_enable_perl()
-    return exists('g:twitvim_enable_perl') ? g:twitvim_enable_perl : 1
+    return exists('g:twitvim_enable_perl') ? g:twitvim_enable_perl : 0
 endfunction
 
 " Allow user to enable Ruby code by setting twitvim_enable_ruby.
@@ -355,8 +355,23 @@ endfunction
 
 " === OAuth code ===
 
-" Compute HMAC_SHA1 digest.
-function! s:hmac_sha1_digest(key, str)
+" Check if we can use Perl for HMAC-SHA1 digests.
+function! s:check_perl_hmac()
+    let can_perl = 1
+    perl <<EOF
+eval {
+    require Digest::HMAC_SHA1;
+    Digest::HMAC_SHA1->import;
+};
+if ($@) {
+    VIM::DoCommand('let can_perl = 0');
+}
+EOF
+    return can_perl
+endfunction
+
+" Compute HMAC-SHA1 digest. (Perl version)
+function! s:perl_hmac_sha1_digest(key, str)
     perl <<EOF
 require Digest::HMAC_SHA1;
 Digest::HMAC_SHA1->import;
@@ -373,6 +388,57 @@ VIM::DoCommand("let signature = '$signature'");
 EOF
 
     return signature
+endfunction
+
+" Check if we can use Python for HMAC-SHA1 digests.
+function! s:check_python_hmac()
+    let can_python = 1
+    python <<EOF
+import vim
+try:
+    import base64
+    import hashlib
+    import hmac
+except:
+    vim.command('let can_python = 0')
+EOF
+    return can_python
+endfunction
+
+" Compute HMAC-SHA1 digest. (Python version)
+function! s:python_hmac_sha1_digest(key, str)
+    python <<EOF
+import base64
+import hashlib
+import hmac
+import vim
+
+key = vim.eval("a:key")
+str = vim.eval("a:str")
+
+digest = hmac.new(key, str, hashlib.sha1).digest()
+signature = base64.encodestring(digest)[0:-1]
+
+vim.command("let signature='%s'" % signature)
+EOF
+    return signature
+endfunction
+
+" Find out which method we can use to compute a HMAC-SHA1 digest.
+function! s:get_hmac_method()
+    if !exists('s:hmac_method')
+	let s:hmac_method = 'perl'
+	if s:get_enable_perl() && has('perl') && s:check_perl_hmac()
+	    let s:hmac_method = 'perl'
+	elseif s:get_enable_python() && has('python') && s:check_python_hmac()
+	    let s:hmac_method = 'python'
+	endif
+    endif
+    return s:hmac_method
+endfunction
+
+function! s:hmac_sha1_digest(key, str)
+    return s:{s:get_hmac_method()}_hmac_sha1_digest(a:key, a:str)
 endfunction
 
 let s:gc_consumer_key = "HyshEU8SbcsklPQ6ouF0g"
@@ -506,6 +572,46 @@ function! s:do_oauth()
     endif
 
     return [ 0, request_token, token_secret ]
+endfunction
+
+" Sign a request with OAuth and send it.
+function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
+    if a:login != '' && a:url =~ 'twitter\.com'
+	if !exists('s:access_token') || s:access_token == ''
+
+	    let tokens = []
+
+	    if filereadable(s:get_token_file())
+		" Try to read access tokens from token file.
+		let tokens = readfile(s:get_token_file(), "t", 3)
+	    endif
+
+	    if tokens == []
+
+		" If unsuccessful at reading token file, do the OAuth handshake.
+		let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
+		if retval < 0
+		    return [ "Error from do_oauth(): ".retval, '' ]
+		endif
+
+		" Save access tokens to the token file.
+		let v:errmsg = ""
+		if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
+		    call s:errormsg('Error writing token file: '.v:errmsg)
+		endif
+	    else
+		let [s:access_token, s:access_token_secret] = tokens
+	    endif
+	endif
+
+	let parms = copy(a:parms)
+	let parms["oauth_token"] = s:access_token
+	let oauth_hdr = s:getOauthResponse(a:url, a:parms == {} ? 'GET' : 'POST', parms, s:access_token_secret)
+
+	return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
+    else
+	return s:run_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
+    endif
 endfunction
 
 " === End of OAuth code ===
@@ -946,67 +1052,17 @@ endfunction
 function! s:get_curl_method()
     if !exists('s:curl_method')
 	let s:curl_method = 'curl'
-
-	if s:get_enable_perl() && has('perl')
-	    if s:check_perl()
-		let s:curl_method = 'perl'
-	    endif
-	elseif s:get_enable_python() && has('python')
-	    if s:check_python()
-		let s:curl_method = 'python'
-	    endif
-	elseif s:get_enable_ruby() && has('ruby')
-	    if s:check_ruby()
-		let s:curl_method = 'ruby'
-	    endif
-	elseif s:get_enable_tcl() && has('tcl')
-	    if s:check_tcl()
-		let s:curl_method = 'tcl'
-	    endif
+	if s:get_enable_perl() && has('perl') && s:check_perl()
+	    let s:curl_method = 'perl'
+	elseif s:get_enable_python() && has('python') && s:check_python()
+	    let s:curl_method = 'python'
+	elseif s:get_enable_ruby() && has('ruby') && s:check_ruby()
+	    let s:curl_method = 'ruby'
+	elseif s:get_enable_tcl() && has('tcl') && s:check_tcl()
+	    let s:curl_method = 'tcl'
 	endif
     endif
-
     return s:curl_method
-endfunction
-
-" Sign a request with OAuth and send it.
-function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
-    if a:login != '' && a:url =~ 'twitter\.com'
-	if !exists('s:access_token') || s:access_token == ''
-
-	    let tokens = []
-
-	    if filereadable(s:get_token_file())
-		" Try to read access tokens from token file.
-		let tokens = readfile(s:get_token_file(), "t", 3)
-	    endif
-
-	    if tokens == []
-
-		" If unsuccessful at reading token file, do the OAuth handshake.
-		let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
-		if retval < 0
-		    return [ "Error from do_oauth(): ".retval, '' ]
-		endif
-
-		" Save access tokens to the token file.
-		let v:errmsg = ""
-		if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
-		    call s:errormsg('Error writing token file: '.v:errmsg)
-		endif
-	    else
-		let [s:access_token, s:access_token_secret] = tokens
-	    endif
-	endif
-
-	let parms = copy(a:parms)
-	let parms["oauth_token"] = s:access_token
-	let oauth_hdr = s:getOauthResponse(a:url, a:parms == {} ? 'GET' : 'POST', parms, s:access_token_secret)
-
-	return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
-    else
-	return s:run_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
-    endif
 endfunction
 
 function! s:run_curl(url, login, proxy, proxylogin, parms)
