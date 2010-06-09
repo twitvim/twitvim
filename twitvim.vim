@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 2, 2010
+" Last updated: June 9, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -22,10 +22,10 @@ let loaded_twitvim = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
-" The extended character limit is 246. Twitter will display a tweet longer than
-" 140 characters in truncated form with a link to the full tweet. If that is
-" undesirable, set s:char_limit to 140.
-let s:char_limit = 246
+" Twitter character limit. Twitter used to accept tweets up to 246 characters
+" in length and display those in truncated form, but that is no longer the
+" case. So 140 is now the hard limit.
+let s:char_limit = 140
 
 " Allow the user to override the API root, e.g. for identi.ca, which offers a
 " Twitter-compatible API.
