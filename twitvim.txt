@@ -28,21 +28,21 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3.2. identi.ca............................: |TwitVim-identica|
 	     twitvim_login........................: |twitvim_login|
 	     twitvim_api_root.....................: |twitvim_api_root|
-	3.1. Base64-Encoded Login.................: |TwitVim-login-base64|
+	3.3. Base64-Encoded Login.................: |TwitVim-login-base64|
 	     twitvim_login_b64....................: |twitvim_login_b64|
 	     twitvim_proxy_login_b64..............: |twitvim_proxy_login_b64|
-	3.2. Alternatives to cURL.................: |TwitVim-non-cURL|
+	3.4. Alternatives to cURL.................: |TwitVim-non-cURL|
 	     twitvim_enable_perl..................: |twitvim_enable_perl|
 	     twitvim_enable_python................: |twitvim_enable_python|
 	     twitvim_enable_ruby..................: |twitvim_enable_ruby|
 	     twitvim_enable_tcl...................: |twitvim_enable_tcl|
-	3.3. Using Twitter SSL API................: |TwitVim-ssl|
+	3.5. Using Twitter SSL API................: |TwitVim-ssl|
 	     Twitter SSL via cURL.................: |TwitVim-ssl-curl|
 	     twitvim_cert_insecure................: |twitvim_cert_insecure|
 	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
 	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
 	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
-	3.4. Hide the header in timeline buffer...: |TwitVim-hide-header|
+	3.6. Hide the header in timeline buffer...: |TwitVim-hide-header|
 	     twitvim_show_header..................: |twitvim_show_header|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. Update Commands......................: |TwitVim-update-commands|
@@ -152,7 +152,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	   twitterReply...........................: |hl-twitterReply|
 	6. Tips and Tricks........................: |TwitVim-tips|
 	6.1. Timeline Hotkeys.....................: |TwitVim-hotkeys|
-	6.2. Switching between services...........: |TwitVim-switch|
+	6.2. Switching between identi.ca users....: |TwitVim-switch|
 	6.3. Line length in status line...........: |TwitVim-line-length|
 	7. History................................: |TwitVim-history|
 	8. Credits................................: |TwitVim-credits|
@@ -356,23 +356,27 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.1. Base64-Encoded Login				*TwitVim-login-base64*
+3.3. Base64-Encoded Login				*TwitVim-login-base64*
 
-	For safety purposes, TwitVim allows you to specify your Twitter login
-	and proxy login information preencoded in base64. This is not truly
-	secure as it is not encryption but it can stop casual onlookers
-	from reading off your password when you edit your vimrc.
+	For safety purposes, TwitVim allows you to configure your login and
+	proxy login information preencoded in base64. This is not truly secure
+	as it is not encryption but it can stop casual onlookers from reading
+	off your password when you edit your vimrc.
 
 						*twitvim_login_b64*
 	To do that, set the following in your vimrc:
 
 		let twitvim_login_b64 = "base64string"
+
+	Note: This is only for identi.ca and other services that use Basic
+	authentication. Twitter uses OAuth, so you do not need to add Twitter
+	login info to your vimrc.
+
 	
 						*twitvim_proxy_login_b64*
 	If your HTTP proxy needs authentication, set the following:
 
 		let twitvim_proxy_login_b64 = "base64string"
-
 
 	Where base64string is your username:password encoded in base64.
 
@@ -396,7 +400,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.2. Alternatives to cURL				*TwitVim-non-cURL*
+3.4. Alternatives to cURL				*TwitVim-non-cURL*
 
 	TwitVim supports http networking through Vim's |Perl|, |Python|,
 	|Ruby|, and |Tcl| interfaces, so if you have any of those interfaces
@@ -484,7 +488,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.3. Using Twitter SSL API				*TwitVim-ssl*
+3.5. Using Twitter SSL API				*TwitVim-ssl*
 
 	For added security, TwitVim can use the Twitter SSL API instead of the
 	regular Twitter API. You configure this by setting |twitvim_api_root|
@@ -559,7 +563,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.4. Hide the header in timeline buffer			*TwitVim-hide-header*
+3.6. Hide the header in timeline buffer			*TwitVim-hide-header*
 
 	In a timeline buffer, the first two lines are header lines. The first
 	line tells you the type of buffer it is (e.g. friends, user, replies,
@@ -764,7 +768,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command discards the OAuth access token and initiates an OAuth
 	handshake. Use this command if you need to log out and log in as
-	another Twitter user.
+	another Twitter user. When the Twitter authentication web page comes
+	up, use the "Sign Out" link to log in as a different Twitter user and
+	grant TwitVim access to that user.
 
 	This command has no effect in identi.ca and other Twitter-compatible
 	services that use Basic authentication.
@@ -812,7 +818,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	mentioned in @-replies on the current line.
 
 
-							*TwitVim-retweet*	
+							*TwitVim-retweet*
 	<Leader>R					*TwitVim-Leader-S-r*
 
 	This mapping (Note: uppercase 'R' instead of 'r'.) is local to the
@@ -1364,36 +1370,38 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-6.2. Switching between services				*TwitVim-switch*
+6.2. Switching between identi.ca users			*TwitVim-switch*
 
-	I have user accounts on both Twitter and identi.ca. Here is what I
-	added to my vimrc to make it easy to switch between the two services
-	within the same TwitVim session:
+	If you have multiple user accounts on identi.ca, you can add something
+	like to following to your vimrc to make it easy to switch between
+	those accounts:
 
-		function! Switch_to_twitter()
-		    let g:twitvim_api_root = "http://twitter.com"
-
-		    let g:twitvim_login_b64 = "Twitter Base64 login"
-
-		    FriendsTwitter
-		endfunction
-
-		function! Switch_to_identica()
+		function! Switch_to_identica_user1()
 		    let g:twitvim_api_root = "http://identi.ca/api"
 
-		    let g:twitvim_login_b64 = "identi.ca Base64 login"
+		    let g:twitvim_login = "logininfo1"
 
 		    FriendsTwitter
 		endfunction
 
-		command! ToTwitter :call Switch_to_twitter()
-		command! ToIdentica :call Switch_to_identica()
+		function! Switch_to_identica_user2()
+		    let g:twitvim_api_root = "http://identi.ca/api"
+
+		    let g:twitvim_login = "logininfo2"
+
+		    FriendsTwitter
+		endfunction
+
+		command! ToIdentica1 :call Switch_to_identica_user1()
+		command! ToIdentica2 :call Switch_to_identica_user2()
 	
-	With that in place, I can use :ToTwitter and :ToIdentica to switch
-	between services. I added a call to FriendsTwitter at the end of each
-	function so that I'll have a fresh timeline view after switching. You
-	may also use this technique to switch between different user accounts
-	on the same service.
+	With that in place, you can use :ToIdentica1 and :ToIdentica2 to
+	switch between user accounts. There is a call to |:FriendsTwitter| at
+	the end of each function to refresh the timeline view after switching.
+
+	Note: This won't work on Twitter because logging in is handled via
+	OAuth. Use |:SetLoginTwitter| or |:ResetLoginTwitter| instead to
+	switch to a different Twitter user account.
 
 
 ------------------------------------------------------------------------------
@@ -1408,10 +1416,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	them with |:CPosttoTwitter|. With the line length in your status line,
 	you will know when you've reached the 140-character boundary.
 
+
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.0 : 2010-06-09 * Switched to OAuth for user logins.
+	0.5.0 : 2010-06-09 * Switched to OAuth for user authentication on 
+			     Twitter. |TwitVim-OAuth|
 	0.4.7 : 2010-03-13 * Added |:MentionsTwitter| as an alias for
 			     |:RepliesTwitter|.
 			   * Support |twitvim_count| in |:MentionsTwitter|.
