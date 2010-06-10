@@ -2058,10 +2058,13 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
     let s:curbuffer.buffer = text
 endfunction
 
+" Add a parameter to a URL.
+function! s:add_to_url(url, parm)
+    return a:url . (a:url =~ '?' ? '&' : '?') . a:parm
+endfunction
+
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
-    let gotparam = 0
-
     if a:tline_name == "public"
 	" No authentication is needed for public timeline.
 	let login = ''
@@ -2069,29 +2072,31 @@ function! s:get_timeline(tline_name, username, page)
 	let login = s:ologin
     endif
 
-    " Twitter API allows you to specify a username for user_timeline to
-    " retrieve another user's timeline.
-    let user = a:username == '' ? '' : '/'.a:username
-
-    let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline".user.".xml"
-
     " user_timeline requires GET request method even if there are count and
     " page parameters. All other timeline calls seem to require POST method if
     " there are parameters.
-    let force_get = 0
-    if a:tline_name == "user"
-	let force_get = 1
-    endif
+    let force_get = a:tline_name == "user"
+
+    let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
 
     let parms = {}
 
     " Support pagination.
     if a:page > 1
 	if force_get
-	    let url_fname .= '?page='.a:page
-	    let gotparam = 1
+	    let url_fname = s:add_to_url(url_fname, 'page='.a:page)
 	else
 	    let parms["page"] = a:page
+	endif
+    endif
+
+    " Twitter API allows you to specify a username for user_timeline to
+    " retrieve another user's timeline.
+    if a:username != ''
+	if force_get
+	    let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
+	else
+	    let parms["screen_name"] = a:username
 	endif
     endif
 
@@ -2100,8 +2105,7 @@ function! s:get_timeline(tline_name, username, page)
 	let tcount = s:get_count()
 	if tcount > 0
 	    if force_get
-		let url_fname .= (gotparam ? '&' : '?').'count='.tcount
-		let gotparam = 1
+		let url_fname = s:add_to_url(url_fname, 'count='.tcount)
 	    else
 		let parms["count"] = tcount
 	    endif
@@ -2145,7 +2149,6 @@ endfunction
 
 " Retrieve a Twitter list timeline.
 function! s:get_list_timeline(username, listname, page)
-    let gotparam = 0
 
     let user = a:username
     if user == ''
@@ -2160,15 +2163,13 @@ function! s:get_list_timeline(username, listname, page)
 
     " Support pagination.
     if a:page > 1
-	let url .= '?page='.a:page
-	let gotparam = 1
+	let url = s:add_to_url(url, 'page='.a:page)
     endif
 
     " Support count parameter.
     let tcount = s:get_count()
     if tcount > 0
-	let url .= (gotparam ? '&' : '?').'per_page='.tcount
-	let gotparam = 1
+	let url = s:add_to_url(url, 'per_page='.tcount)
     endif
 
     redraw
