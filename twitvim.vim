@@ -458,9 +458,9 @@ import hmac
 import vim
 
 key = vim.eval("a:key")
-str = vim.eval("a:str")
+mstr = vim.eval("a:str")
 
-digest = hmac.new(key, str, hashlib.sha1).digest()
+digest = hmac.new(key, mstr, hashlib.sha1).digest()
 signature = base64.encodestring(digest)[0:-1]
 
 vim.command("let signature='%s'" % signature)
