@@ -540,7 +540,9 @@ function s:getOauthResponse(url, method, parms, token_secret)
 
     " Add padding character to make a multiple of 4 per the
     " requirement of OAuth.
-    let signature .= "="
+    if strlen(signature) % 4
+	let signature .= "="
+    endif
 
     let content = "OAuth "
 
@@ -580,8 +582,16 @@ function! s:do_oauth()
 
     " Launch web browser to let user allow or deny the authentication request.
     let auth_url = s:gc_authorize_url . "?oauth_token=" . request_token
-    if s:launch_browser(auth_url) < 0
-	return [-2, '', '']
+
+    " If user has not set up twitvim_browser_cmd, just display the
+    " authentication URL and ask the user to visit that URL.
+    if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
+	echo "Visit the following URL in your browser to authenticate TwitVim:"
+	echo auth_url
+    else
+	if s:launch_browser(auth_url) < 0
+	    return [-2, '', '']
+	endif
     endif
 
     call inputsave()
@@ -675,14 +685,13 @@ endfunction
 function! s:url_encode_char(c)
     let utf = iconv(a:c, &encoding, "utf-8")
     if utf == ""
-	return a:c
-    else
-	let s = ""
-	for i in range(strlen(utf))
-	    let s .= printf("%%%02X", char2nr(utf[i]))
-	endfor
-	return s
+	let utf = a:c
     endif
+    let s = ""
+    for i in range(strlen(utf))
+	let s .= printf("%%%02X", char2nr(utf[i]))
+    endfor
+    return s
 endfunction
 
 " URL-encode a string.
