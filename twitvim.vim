@@ -191,13 +191,33 @@ function! s:prompt_twitvim_login()
     call s:check_twitvim_login()
 endfunction
 
+let s:cached_login = ''
 let s:cached_username = ''
+
+" See if we can save time by using the cached username.
+function! s:get_twitvim_cached_username()
+    if s:get_api_root() =~ 'twitter\.com'
+	if s:cached_username == ''
+	    return ''
+	endif
+    else
+	" In Twitter-compatible services that use Basic authentication, the
+	" user may have changed the login info on the fly. So we have to watch
+	" out for that.
+	let login = s:get_twitvim_login_noerror()
+	if login == '' || login != s:cached_login
+	    return ''
+	endif
+    endif
+    return s:cached_username
+endfunction
 
 " Get Twitter user name by verifying login credentials
 function! s:get_twitvim_username()
-    " If we already got the info, no need to get it again.
-    if s:cached_username != ""
-	return s:cached_username
+    " If we already have the info, no need to get it again.
+    let username = s:get_twitvim_cached_username()
+    if username != ''
+	return username
     endif
 
     redraw
@@ -224,6 +244,7 @@ function! s:get_twitvim_username()
     " Save it so we don't have to do it again unless the user switches to
     " a different login.
     let s:cached_username = username
+    let s:cached_login = s:get_twitvim_login_noerror()
 
     return username
 endfunction
