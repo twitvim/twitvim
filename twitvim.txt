@@ -20,11 +20,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3. Installation...........................: |TwitVim-install|
 	   cURL...................................: |TwitVim-cURL|
 	   twitvim.vim............................: |TwitVim-add|
-	   twitvim_login..........................: |twitvim_login|
 	   twitvim_proxy..........................: |twitvim_proxy|
 	   twitvim_proxy_login....................: |twitvim_proxy_login|
-	   twitvim_api_root.......................: |twitvim_api_root|
-	   twitvim-identi.ca......................: |twitvim-identi.ca|
 	3.1. Base64-Encoded Login.................: |TwitVim-login-base64|
 	     twitvim_login_b64....................: |twitvim_login_b64|
 	     twitvim_proxy_login_b64..............: |twitvim_proxy_login_b64|
@@ -170,51 +167,50 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 3. Installation						*TwitVim-install*
 
-	1. Install cURL.				*TwitVim-cURL*
+	1. Compile Vim with either |Python| or |Perl|.
+
+	TwitVim requires one of these scripting interfaces in order to compute
+	HMAC-SHA1 digests for Twitter OAuth request signing.
+
+
+	If you compiled Vim with Perl, add the following to your vimrc:
+
+		let twitvim_enable_perl = 1
+
+	Also, verify that your Perl installation has the Digest::HMAC_SHA1
+	module. This module comes standard with some Perl packages, e.g.
+	ActivePerl.
+
+
+	If you compiled Vim with Python, add the following to your vimrc:
+
+		let twitvim_enable_python = 1
+
+	Also, verify that your Python installation has the base64, hashlib,
+	and hmac modules. All of these are in the Python standard library as
+	of Python 2.5.
+
+
+	2. Install cURL.				*TwitVim-cURL*
 
 	If you don't already have cURL on your system, download it from
 	http://curl.haxx.se/. Make sure that the curl executable is in a
 	directory listed in your PATH environment variable, or the equivalent
 	for your system.
 
-	If you have the Perl, Python, Ruby, or Tcl interfaces, you may use one
-	of those instead of installing cURL. See |TwitVim-non-cURL| for
-	setup details.
+	Since you already have Vim compiled with Perl or Python for Step 1, it
+	is recommended that you use it instead of installing cURL. See
+	|TwitVim-non-cURL| for setup details. TwitVim also supports Ruby and
+	Tcl, if your Vim installation has those scripting interfaces compiled.
 
 
-	2. twitvim.vim					*TwitVim-add*
+	3. twitvim.vim					*TwitVim-add*
 
 	Add twitvim.vim to your plugins directory. The location depends on
 	your operating system. See |add-global-plugin| for details.
 
 	If you installed from the Vimball (.vba) file, twitvim.vim should
 	already be in its correct place.
-
-
-	3. twitvim_login				*twitvim_login*
-
-	Add the following to your vimrc:
-
-		let twitvim_login = "USER:PASS"
-
-	Replace USER with your Twitter user name and PASS with your Twitter
-	password.
-
-	It is possible to avoid having your Twitter password in plaintext in
-	your vimrc. See |TwitVim-login-base64| for details.
-
-
-	If you haven't configured twitvim_login, the first TwitVim command
-	that needs Twitter authentication will prompt you to log into Twitter.
-	This alternative is provided to allow TwitVim use on a public, shared,
-	or non-secure system where storing passwords in the vimrc is not
-	advisable.
-
-	If you make a mistake when entering your Twitter login information,
-	simply run |:SetLoginTwitter| to reenter your Twitter login
-	information or use |:ResetLoginTwitter| to remove the login
-	information so that the next TwitVim command will prompt you to log in
-	again.
 
 
 	4. twitvim_proxy				*twitvim_proxy*
@@ -242,20 +238,34 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	your vimrc. See |TwitVim-login-base64| for details.
 
 
-	6. twitvim_api_root				*twitvim_api_root*
+	6. Set twitvim_browser_cmd.
 
-	This setting allows you to configure TwitVim to communicate with
-	servers other than twitter.com that implement a Twitter-compatible
-	API.
+	In order to log in with Twitter OAuth, TwitVim needs to launch your
+	web browser and bring up the Twitter authentication web page.
 
-							*twitvim-identi.ca*
-	For instance, to use identi.ca instead of Twitter, add this to your
-	vimrc:
+	See |twitvim_browser_cmd| for details. For example, if you use Firefox
+	under Windows, add the following to your vimrc:
 
-		let twitvim_api_root = "http://identi.ca/api"
+		let twitvim_browser_cmd = 'firefox.exe'
+
+
+	7. Sign into Twitter with OAuth.
+
+	Use any TwitVim command that requires authentication. For example,
+	run |:FriendsTwitter|.
+
+	Since TwitVim does not yet have an OAuth access token, it will
+	initiate the Twitter OAuth handshake. Then it'll launch your web
+	browser to a Twitter web page that says "An application would like to
+	connect to your account". On this page, sign in, if necessary, and
+	then click on "Allow" to allow TwitVim access to your Twitter account.
+
+	Twitter will then report that you have granted access to TwitVim and
+	display a 7-digit PIN. Copy the PIN and paste it to the TwitVim input
+	prompt "Enter Twitter OAuth PIN:".
+
 	
-	A server implementing a Twitter-compatible API may not support all of
-	Twitter's features, so some TwitVim commands may not work.
+	And now you are ready to use TwitVim.
 
 
 ------------------------------------------------------------------------------
@@ -301,9 +311,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ------------------------------------------------------------------------------
 3.2. Alternatives to cURL				*TwitVim-non-cURL*
 
-	TwitVim supports http networking through Vim's Perl, Python, Ruby, and
-	Tcl interfaces, so if you have any of those interfaces compiled into
-	your Vim program, you can use that instead of cURL.
+	TwitVim supports http networking through Vim's |Perl|, |Python|,
+	|Ruby|, and |Tcl| interfaces, so if you have any of those interfaces
+	compiled into your Vim program, you can use that instead of cURL.
 	
 	Generally, it is slightly faster to use one of those scripting
 	interfaces for networking because it avoids running an external
@@ -1315,6 +1325,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.0 : 2010-06-09 * Switched to OAuth for user logins.
 	0.4.7 : 2010-03-13 * Added |:MentionsTwitter| as an alias for
 			     |:RepliesTwitter|.
 			   * Support |twitvim_count| in |:MentionsTwitter|.

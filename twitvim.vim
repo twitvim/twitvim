@@ -117,6 +117,23 @@ function! s:warnmsg(msg)
     echohl None
 endfunction
 
+" Get Twitter login info from twitvim_login in vimrc.
+" Format is username:password
+" If twitvim_login_b64 exists, use that instead. This is the user:password
+" in base64 encoding.
+"
+" This function is for services with Twitter-compatible APIs that use Basic
+" authentication, e.g. identi.ca
+function! s:get_twitvim_login_noerror()
+    if exists('g:twitvim_login_b64') && g:twitvim_login_b64 != ''
+	return g:twitvim_login_b64
+    elseif exists('g:twitvim_login') && g:twitvim_login != ''
+	return g:twitvim_login
+    else
+	return ''
+    endif
+endfunction
+
 " Dummy login string to force OAuth signing in run_curl_oauth().
 let s:ologin = "oauth:oauth"
 
@@ -610,7 +627,15 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 
 	return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
     else
-	return s:run_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
+	if a:login != ''
+	    let login = s:get_twitvim_login_noerror()
+	    if login == ''
+		return [ 'Login info not set. Please add to vimrc: let twitvim_login="USER:PASS"', '' ]
+	    endif
+	else
+	    let login = a:login
+	endif
+	return s:run_curl(a:url, login, a:proxy, a:proxylogin, a:parms)
     endif
 endfunction
 
