@@ -22,6 +22,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	   twitvim.vim............................: |TwitVim-add|
 	   twitvim_proxy..........................: |twitvim_proxy|
 	   twitvim_proxy_login....................: |twitvim_proxy_login|
+	3.1. TwitVim and OAuth....................: |TwitVim-OAuth|
+	     twitvim_token_file...................: |twitvim_token_file|
+	     twitvim_disable_token_file...........: |twitvim_disable_token_file|
+	3.2. identi.ca............................: |TwitVim-identica|
+	     twitvim_login........................: |twitvim_login|
+	     twitvim_api_root.....................: |twitvim_api_root|
 	3.1. Base64-Encoded Login.................: |TwitVim-login-base64|
 	     twitvim_login_b64....................: |twitvim_login_b64|
 	     twitvim_proxy_login_b64..............: |twitvim_proxy_login_b64|
@@ -160,7 +166,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	Since version 0.2.19, TwitVim also supports other microblogging
 	services, such as identi.ca, that offer Twitter-compatible APIs. See
-	|twitvim_api_root| for information on configuring TwitVim for those
+	|TwitVim-identica| for information on configuring TwitVim for those
 	services.
 
 
@@ -266,6 +272,87 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	
 	And now you are ready to use TwitVim.
+
+
+------------------------------------------------------------------------------
+3.1. TwitVim and OAuth					*TwitVim-OAuth*
+
+	After you log into Twitter with OAuth, TwitVim stores the OAuth access
+	token in a file so that you won't have to log in again when you
+	restart TwitVim. By default, this file is $HOME/.twitvim.token
+
+						*twitvim_token_file*
+	You can change the name and location of this token file by setting
+	twitvim_token_file in your vimrc. For example:
+
+		let twitvim_token_file = "/etc/.twitvim.token"
+
+	Since the access token grants full access to your Twitter account, it
+	is recommended that you place the token file in a directory that is
+	not readable or accessible by other users.
+
+
+						*twitvim_disable_token_file*
+	If you are using TwitVim on an insecure system, you may prefer to 
+	not save access tokens at all. To turn off the token file, add
+	the following to your vimrc:
+
+		let twitvim_disable_token_file = 1
+
+	If the token file is disabled, TwitVim will initiate an OAuth
+	handshake every time you restart it.
+
+
+	If TwitVim is logged into Twitter and you need to log in as a
+	different Twitter user, use either the |:SetLoginTwitter| or
+	|:ResetLoginTwitter| commands to discard the access token. When the
+	Twitter authentication web page comes up, use the "Sign Out" link on
+	that page to switch Twitter users.
+
+
+------------------------------------------------------------------------------
+3.2. identi.ca						*TwitVim-identica*
+
+	identi.ca offers a Twitter-compatible API so you can use TwitVim with
+	identi.ca. Setting up TwitVim for identi.ca is a bit different from
+	setting up TwitVim for Twitter because identi.ca uses Basic
+	authentication instead of OAuth.
+
+	1. Install cURL
+
+	See |TwitVim-cURL|.
+
+
+	2. twitvim_login				*twitvim_login*
+
+	Add the following to your vimrc:
+
+		let twitvim_login = "USER:PASS"
+
+	Replace USER with your Twitter user name and PASS with your Twitter
+	password.
+
+	It is possible to avoid having your Twitter password in plaintext in
+	your vimrc. See |TwitVim-login-base64| for details.
+
+
+	3. Set up proxy info, if necessary.
+
+	See |twitvim_proxy| and |twitvim_proxy_login|.
+
+
+	4. Set twitvim_api_root				*twitvim_api_root*
+
+	This setting allows you to configure TwitVim to communicate with
+	servers other than twitter.com that implement a Twitter-compatible
+	API.
+
+	For identi.ca, add the following to your vimrc:
+
+		let twitvim_api_root = "http://identi.ca/api"
+
+
+	And now you are ready to use TwitVim with identi.ca.
 
 
 ------------------------------------------------------------------------------
@@ -403,7 +490,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	regular Twitter API. You configure this by setting |twitvim_api_root|
 	to the https version of the URL:
 
-		let twitvim_api_root = "https://twitter.com"
+		let twitvim_api_root = "https://api.twitter.com/1"
 
 	For identi.ca:
 
@@ -675,22 +762,21 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	:SetLoginTwitter				*:SetLoginTwitter*
 
-	This command prompts you for a Twitter username and password, which
-	will then be used for subsequent TwitVim commands. This is an
-	alternative to configuring |twitvim_login| in your vimrc.
+	This command discards the OAuth access token and initiates an OAuth
+	handshake. Use this command if you need to log out and log in as
+	another Twitter user.
 
-	If you make a mistake when entering your Twitter login information,
-	simply rerun |:SetLoginTwitter| to reenter your Twitter login
-	information or use |:ResetLoginTwitter| to remove the login
-	information so that the next TwitVim command will prompt you to log in
-	again.
+	This command has no effect in identi.ca and other Twitter-compatible
+	services that use Basic authentication.
 
 
 	:ResetLoginTwitter				*:ResetLoginTwitter*
 
-	This command removes stored Twitter login information. The next
-	TwitVim command that needs Twitter authentication will then prompt you
-	log in again.
+	This command discards the OAuth access token. The next TwitVim command
+	that needs Twitter authentication will initiate an OAuth handshake.
+
+	This command has no effect in identi.ca and other Twitter-compatible
+	services that use Basic authentication.
 
 
 ------------------------------------------------------------------------------

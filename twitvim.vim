@@ -101,6 +101,12 @@ function! s:get_token_file()
     return exists('g:twitvim_token_file') ? g:twitvim_token_file : $HOME . "/.twitvim.token"
 endfunction
 
+" User config to disable the OAuth access token file.
+function! s:get_disable_token_file()
+    return exists('g:twitvim_disable_token_file') ? g:twitvim_disable_token_file : 0
+endfunction
+
+
 " Display an error message in the message area.
 function! s:errormsg(msg)
     redraw
@@ -619,7 +625,7 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 
 	    let tokens = []
 
-	    if filereadable(s:get_token_file())
+	    if !s:get_disable_token_file() && filereadable(s:get_token_file())
 		" Try to read access tokens from token file.
 		let tokens = readfile(s:get_token_file(), "t", 3)
 	    endif
@@ -632,10 +638,12 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 		    return [ "Error from do_oauth(): ".retval, '' ]
 		endif
 
-		" Save access tokens to the token file.
-		let v:errmsg = ""
-		if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
-		    call s:errormsg('Error writing token file: '.v:errmsg)
+		if !s:get_disable_token_file()
+		    " Save access tokens to the token file.
+		    let v:errmsg = ""
+		    if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
+			call s:errormsg('Error writing token file: '.v:errmsg)
+		    endif
 		endif
 	    else
 		let [s:access_token, s:access_token_secret] = tokens
