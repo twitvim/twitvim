@@ -173,6 +173,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 3. Installation						*TwitVim-install*
 
+	
+	Note: These instructions are for configuring TwitVim for use with
+	Twitter. If you intend to use TwitVim only with identi.ca, see
+	|TwitVim-identica|.
+
+
 	1. Compile Vim with either |Python| or |Perl|.
 
 	TwitVim requires one of these scripting interfaces in order to compute
@@ -832,9 +838,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		let twitvim_old_retweet = 1
 	
 	The difference is an old-style retweet does not use the retweet API.
-	Instead, it sends the current line to the command line so that you can
-	repost it as a new tweet and optionally edit it or add your own
-	comments.
+	Instead, it copies the current line to the command line so that you
+	can repost it as a new tweet and optionally edit it or add your own
+	comments. Note that an old-style retweet may end up longer than 140
+	characters. If you have problems posting a retweet, try editing it to
+	make it shorter.
 
 						    *twitvim_retweet_format*
 	If you use old-style retweets, you can configure the retweet format.
