@@ -2560,11 +2560,27 @@ function! s:format_user_info(output)
     call add(text, 'Following: '.s:xml_get_element(output, 'friends_count'))
     call add(text, 'Followers: '.s:xml_get_element(output, 'followers_count'))
     call add(text, 'Updates: '.s:xml_get_element(output, 'statuses_count'))
+    call add(text, 'Favorites: '.s:xml_get_element(output, 'favourites_count'))
     call add(text, '')
 
-    let status = s:xml_get_element(output, 'text')
-    let pubdate = s:time_filter(s:xml_get_element(output, 'created_at'))
-    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+    call add(text, 'Protected: '.s:xml_get_element(output, 'protected'))
+    call add(text, 'Following: '.s:xml_get_element(output, 'following'))
+    call add(text, '')
+
+    let usernode = s:xml_remove_elements(output, 'status')
+    let startdate = s:time_filter(s:xml_get_element(usernode, 'created_at'))
+    call add(text, 'Started on: |'.startdate.'|')
+    let timezone = s:convert_entity(s:xml_get_element(usernode, 'time_zone'))
+    call add(text, 'Time zone: '.timezone)
+    call add(text, '')
+
+    let statusnode = s:xml_get_element(output, 'status')
+    if statusnode != ""
+	let status = s:xml_get_element(statusnode, 'text')
+	let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
+	call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+    endif
+
     return text
 endfunction
 
@@ -2578,7 +2594,7 @@ function! s:get_user_info(username)
     redraw
     echo "Querying Twitter for user information..."
 
-    let url = s:get_api_root()."/users/show/".a:username.".xml"
+    let url = s:get_api_root()."/users/show.xml?screen_name=".a:username
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	call s:errormsg("Error getting user info: ".error)
