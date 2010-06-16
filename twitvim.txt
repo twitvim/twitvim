@@ -1428,8 +1428,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.0 : 2010-06-09 * Switched to OAuth for user authentication on 
+	0.5.0 : 2010-06-16 * Switched to OAuth for user authentication on 
 			     Twitter. |TwitVim-OAuth|
+			   * Improved |:ProfileTwitter|.
 	0.4.7 : 2010-03-13 * Added |:MentionsTwitter| as an alias for
 			     |:RepliesTwitter|.
 			   * Support |twitvim_count| in |:MentionsTwitter|.
