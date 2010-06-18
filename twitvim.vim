@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 16, 2010
+" Last updated: June 18, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -586,6 +586,18 @@ function! s:do_oauth()
     " If user has not set up twitvim_browser_cmd, just display the
     " authentication URL and ask the user to visit that URL.
     if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
+
+	" Attempt to shorten the auth URL.
+	let newurl = s:call_isgd(auth_url)
+	if newurl != ""
+	    let auth_url = newurl
+	else
+	    let newurl = s:call_bitly(auth_url)
+	    if newurl != ""
+		let auth_url = newurl
+	    endif
+	endif
+
 	echo "Visit the following URL in your browser to authenticate TwitVim:"
 	echo auth_url
     else

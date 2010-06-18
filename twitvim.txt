@@ -260,6 +260,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 		let twitvim_browser_cmd = 'firefox.exe'
 
+	Note: If you do not set up twitvim_browser_cmd, TwitVim will display
+	the authentication URL and wait for you to visit it in your browser
+	and approve the application.
+
 
 	7. Sign into Twitter with OAuth.
 
@@ -1428,6 +1432,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.1 : 2010-06-18 * Shorten auth URL with is.gd/Bitly if we have
+			     to ask the user to visit it.
 	0.5.0 : 2010-06-16 * Switched to OAuth for user authentication on 
 			     Twitter. |TwitVim-OAuth|
 			   * Improved |:ProfileTwitter|.
