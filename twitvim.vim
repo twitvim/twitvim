@@ -2093,10 +2093,10 @@ function! s:get_timeline(tline_name, username, page)
 	let login = s:ologin
     endif
 
-    " user_timeline requires GET request method even if there are count and
-    " page parameters. All other timeline calls seem to require POST method if
-    " there are parameters.
-    let force_get = a:tline_name == "user"
+    " user_timeline and public_timeline require GET request method even if
+    " there are count and page parameters. All other timeline calls seem to
+    " require POST method if there are parameters.
+    let force_get = a:tline_name == "user" || a:tline_name == "public"
 
     let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
 
@@ -2109,6 +2109,13 @@ function! s:get_timeline(tline_name, username, page)
 	else
 	    let parms["page"] = a:page
 	endif
+    endif
+
+    " Include retweets.
+    if force_get
+	let url_fname = s:add_to_url(url_fname, 'include_rts=true')
+    else
+	let parms["include_rts"] = "true"
     endif
 
     " Twitter API allows you to specify a username for user_timeline to
