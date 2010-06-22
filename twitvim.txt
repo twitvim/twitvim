@@ -1434,6 +1434,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.2 : 2010-06-22 * More fixes for Twitter OAuth.
 	0.5.1 : 2010-06-19 * Shorten auth URL with is.gd/Bitly if we need
 			     to ask the user to visit it manually.
 			   * Fixed the |:PublicTwitter| invalid request error.

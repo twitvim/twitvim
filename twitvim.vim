@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 19, 2010
+" Last updated: June 22, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -504,6 +504,20 @@ function s:nonce()
     return retval
 endfunction
 
+" Split a URL into base and params.
+function s:split_url(url)
+    let urlarray = split(a:url, '?')
+    let baseurl = urlarray[0]
+    let parms = {}
+    if len(urlarray) > 1
+	for pstr in split(urlarray[1], '&')
+	    let [key, value] = split(pstr, '=')
+	    let parms[key] = value
+	endfor
+    endif
+    return [baseurl, parms]
+endfunction
+
 " Produce signed content using the parameters provided via parms using the
 " chosen method, url and provided token secret. Note that in the case of
 " getting a new Request token, the secret will be ""
@@ -520,6 +534,9 @@ function s:getOauthResponse(url, method, parms, token_secret)
 
     let parms["oauth_nonce"] = s:nonce()
 
+    let [baseurl, urlparms] = s:split_url(a:url)
+    call extend(parms, urlparms)
+
     " Alphabetically sort by key and form a string that has
     " the format key1=value1&key2=value2&...
     " Must UTF8 encode and then URL encode the values.
@@ -534,7 +551,7 @@ function s:getOauthResponse(url, method, parms, token_secret)
     " Form the signature base string which is comprised of 3
     " pieces, with each piece URL encoded.
     " [METHOD_UPPER_CASE]&[url]&content
-    let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
+    let signature_base_str = a:method . "&" . s:url_encode(baseurl) . "&" . s:url_encode(content)
     let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
     let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
 
@@ -2093,50 +2110,27 @@ function! s:get_timeline(tline_name, username, page)
 	let login = s:ologin
     endif
 
-    " user_timeline and public_timeline require GET request method even if
-    " there are count and page parameters. All other timeline calls seem to
-    " require POST method if there are parameters.
-    let force_get = a:tline_name == "user" || a:tline_name == "public"
-
     let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
-
-    let parms = {}
 
     " Support pagination.
     if a:page > 1
-	if force_get
-	    let url_fname = s:add_to_url(url_fname, 'page='.a:page)
-	else
-	    let parms["page"] = a:page
-	endif
+	let url_fname = s:add_to_url(url_fname, 'page='.a:page)
     endif
 
     " Include retweets.
-    if force_get
-	let url_fname = s:add_to_url(url_fname, 'include_rts=true')
-    else
-	let parms["include_rts"] = "true"
-    endif
+    let url_fname = s:add_to_url(url_fname, 'include_rts=true')
 
     " Twitter API allows you to specify a username for user_timeline to
     " retrieve another user's timeline.
     if a:username != ''
-	if force_get
-	    let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
-	else
-	    let parms["screen_name"] = a:username
-	endif
+	let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
     endif
 
     " Support count parameter in friends, user, mentions, and retweet timelines.
     if a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'replies' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
 	let tcount = s:get_count()
 	if tcount > 0
-	    if force_get
-		let url_fname = s:add_to_url(url_fname, 'count='.tcount)
-	    else
-		let parms["count"] = tcount
-	    endif
+	    let url_fname = s:add_to_url(url_fname, 'count='.tcount)
 	endif
     endif
 
@@ -2147,7 +2141,7 @@ function! s:get_timeline(tline_name, username, page)
 
     let url = s:get_api_root()."/statuses/".url_fname
 
-    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), parms)
+    let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
 	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".error)
