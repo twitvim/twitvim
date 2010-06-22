@@ -625,6 +625,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command will prompt you for a direct message to send to user
 	{username}.
 
+	Note: If you get a "403 Forbidden" error when you try to send a direct
+	message, check if the user you're messaging is following you. That is
+	the most common reason for this error when sending a direct message.
+
 ------------------------------------------------------------------------------
 4.2. Timeline Commands				*TwitVim-timeline-commands*
 
@@ -881,6 +885,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Under Cygwin, Alt-D is not recognized so you can use <Leader>d as an
 	alternative. The <Leader> character defaults to \ (backslash) but see
 	|mapleader| for information on customizing that.
+
+	Note: If you get a "403 Forbidden" error when you try to send a direct
+	message, check if the user you're messaging is following you. That is
+	the most common reason for this error when sending a direct message.
 
 
 							*TwitVim-goto*
