@@ -167,7 +167,8 @@ function! s:check_twitvim_login()
     endif
 
     if error != ''
-	call s:errormsg("Error logging into Twitter: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error logging into Twitter: ".(errormsg != '' ? errormsg : error))
 	return -1
     endif
 
@@ -232,13 +233,8 @@ function! s:get_twitvim_username()
     let url = s:get_api_root()."/account/verify_credentials.xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error verifying login credentials: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error verifying login credentials: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error verifying login credentials: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -1129,6 +1125,8 @@ if { $state(status) == "ok" } {
     if { [ ::http::ncode $res ] >= 400 } {
 	set error $state(http)
 	::vim::command "let error = '$error'"
+	set output [string map {' ''} $state(body)]
+	::vim::command "let output = '$output'"
     } else {
 	set output [string map {' ''} $state(body)]
 	::vim::command "let output = '$output'"
@@ -1400,7 +1398,8 @@ function! s:post_twitter(mesg, inreplyto)
 	let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
 
 	if error != ''
-	    call s:errormsg("Error posting your tweet: ".error)
+	    let errormsg = s:xml_get_element(output, 'error')
+	    call s:errormsg("Error posting your tweet: ".(errormsg != '' ? errormsg : error))
 	else
 	    call s:add_update(output)
 	    redraw
@@ -1557,7 +1556,8 @@ function! s:Retweet_2()
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	call s:errormsg("Error retweeting: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error retweeting: ".(errormsg != '' ? errormsg : error))
     else
 	call s:add_update(output)
 	redraw
@@ -1581,13 +1581,8 @@ function! s:show_inreplyto()
     let url = s:get_api_root()."/statuses/show/".inreplyto.".xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error getting in-reply-to tweet: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error getting in-reply-to tweet: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting in-reply-to tweet: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -1638,13 +1633,8 @@ function! s:do_delete_tweet()
     let url = s:get_api_root().'/'.(isdm ? "direct_messages" : "statuses")."/destroy/".id.".xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	call s:errormsg("Error deleting ".obj.": ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error deleting ".obj.": ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error deleting ".obj.": ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2152,13 +2142,8 @@ function! s:get_timeline(tline_name, username, page)
     let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2210,13 +2195,8 @@ function! s:get_list_timeline(username, listname, page)
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error getting Twitter list timeline: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error getting Twitter list timeline: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting Twitter list timeline: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2305,7 +2285,8 @@ function! s:Direct_Messages(mode, page)
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2472,11 +2453,7 @@ function! s:do_send_dm(user, mesg)
 
 	if error != ''
 	    let errormsg = s:xml_get_element(output, 'error')
-	    if errormsg != ''
-		call s:errormsg("Error sending your message: ".errormsg)
-	    else
-		call s:errormsg("Error sending your message: ".error)
-	    endif
+	    call s:errormsg("Error sending your message: ".(errormsg != '' ? errormsg : error))
 	else
 	    redraw
 	    echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
@@ -2518,13 +2495,8 @@ function! s:get_rate_limit()
     let url = s:get_api_root()."/account/rate_limit_status.xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error getting rate limit info: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error getting rate limit info: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting rate limit info: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2550,13 +2522,8 @@ function! s:set_location(loc)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	call s:errormsg("Error setting location: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error setting location: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error setting location: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
@@ -2582,11 +2549,7 @@ function! s:follow_user(user)
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
-	if errormsg != ''
-	    call s:errormsg("Error following user: ".errormsg)
-	else
-	    call s:errormsg("Error following user: ".error)
-	endif
+	call s:errormsg("Error following user: ".(errormsg != '' ? errormsg : error))
     else
 	let protected = s:xml_get_element(output, 'protected')
 	redraw
@@ -2658,13 +2621,8 @@ function! s:get_user_info(username)
     let url = s:get_api_root()."/users/show.xml?screen_name=".a:username
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error getting user info: ".error)
-	return
-    endif
-
-    let error = s:xml_get_element(output, 'error')
-    if error != ''
-	call s:errormsg("Error getting user info: ".error)
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting user info: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
