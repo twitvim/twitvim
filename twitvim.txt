@@ -69,6 +69,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :PreviousTwitter.....................: |:PreviousTwitter|
 	     :SetLoginTwitter.....................: |:SetLoginTwitter|
 	     :ResetLoginTwitter...................: |:ResetLoginTwitter|
+	     :FollowTwitter.......................: |:FollowTwitter|
+	     :UnfollowTwitter.....................: |:UnfollowTwitter|
+	     :BlockTwitter........................: |:BlockTwitter|
+	     :UnblockTwitter......................: |:UnblockTwitter|
+	     :ReportSpamTwitter...................: |:ReportSpamTwitter|
 	4.3. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
@@ -801,6 +806,37 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	services that use Basic authentication.
 
 
+	:FollowTwitter {username}			*:FollowTwitter*
+
+	Start following user {username}'s timeline. If the user's timeline is
+	protected, this command makes a request to follow that user.
+
+	Note: This command does not enable notifications for the target user.
+	If you need that, you'll have to do that separately through the web
+	interface.
+
+
+	:UnfollowTwitter {username}			*:UnfollowTwitter*
+
+	Stop following user {username}'s timeline.
+
+
+	:BlockTwitter {username}			*:BlockTwitter*
+
+	Block user {username}.
+
+
+	:UnblockTwitter {username}			*:UnblockTwitter*
+
+	Unblock user {username}.
+
+
+	:ReportSpamTwitter {username}			*:ReportSpamTwitter*
+
+	Reports user {username} for spam. This command will also block the
+	user.
+
+
 ------------------------------------------------------------------------------
 4.3. Mappings						*TwitVim-mappings*
 
@@ -1442,6 +1478,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.3 : 2010-06-22 * Improved error messages for most commands if 
+			     using Perl, Python, Ruby, or Tcl interfaces.
+			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
+			     |:BlockTwitter|, |:UnblockTwitter|,
+			     |:ReportSpamTwitter|.
 	0.5.2 : 2010-06-22 * More fixes for Twitter OAuth.
 	0.5.1 : 2010-06-19 * Shorten auth URL with is.gd/Bitly if we need
 			     to ask the user to visit it manually.
