@@ -2644,6 +2644,46 @@ if !exists(":ReportSpamTwitter")
 endif
 
 
+" Add user to a list.
+function! s:add_to_list(listname, username)
+    let user = s:get_twitvim_username()
+    if user == ''
+	call s:errormsg('Twitter login not set. Please specify a username.')
+	return -1
+    endif
+
+    redraw
+    echo "Adding ".a:username." to list ".a:listname."..."
+
+    let parms = {}
+    let parms["list_id"] = a:listname
+    let parms["id"] = a:username
+
+    let url = s:get_api_root()."/".user."/".a:listname."/members.xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error adding user to list: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo "Added ".a:username." to list ".a:listname."."
+    endif
+endfunction
+
+function! s:do_add_to_list(arg1, ...)
+    if a:0 == 0
+	call s:errormsg("Syntax: :AddToListTwitter listname username")
+    else
+	call s:add_to_list(a:arg1, a:1)
+    endif
+endfunction
+
+if !exists(":AddToListTwitter")
+    command -nargs=+ AddToListTwitter :call <SID>do_add_to_list(<f-args>)
+endif
+
+
 let s:user_winname = "TwitterUserInfo_".localtime()
 
 " Process/format the user information.
