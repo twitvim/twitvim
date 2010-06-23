@@ -2566,6 +2566,59 @@ if !exists(":FollowTwitter")
 endif
 
 
+" Stop following a user.
+function! s:unfollow_user(user)
+    redraw
+    echo "Unfollowing user ".a:user."..."
+
+    let parms = {}
+    let parms["screen_name"] = a:user
+
+    let url = s:get_api_root()."/friendships/destroy.xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error unfollowing user: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo "Stopped following ".a:user."'s timeline."
+    endif
+endfunction
+
+if !exists(":UnfollowTwitter")
+    command -nargs=1 UnfollowTwitter :call <SID>unfollow_user(<q-args>)
+endif
+
+
+" Block a user.
+function! s:block_user(user, unblock)
+    redraw
+    echo (a:unblock ? "Unblocking" : "Blocking")." user ".a:user."..."
+
+    let parms = {}
+    let parms["screen_name"] = a:user
+
+    let url = s:get_api_root()."/blocks/".(a:unblock ? "destroy" : "create").".xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error ".(a:unblock ? "unblocking" : "blocking")." user: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo "User ".a:user." is now ".(a:unblock ? "unblocked" : "blocked")."."
+    endif
+endfunction
+
+if !exists(":BlockTwitter")
+    command -nargs=1 BlockTwitter :call <SID>block_user(<q-args>, 0)
+endif
+if !exists(":UnblockTwitter")
+    command -nargs=1 UnblockTwitter :call <SID>block_user(<q-args>, 1)
+endif
+
+
 let s:user_winname = "TwitterUserInfo_".localtime()
 
 " Process/format the user information.
