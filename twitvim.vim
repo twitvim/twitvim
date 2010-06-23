@@ -2644,8 +2644,8 @@ if !exists(":ReportSpamTwitter")
 endif
 
 
-" Add user to a list.
-function! s:add_to_list(listname, username)
+" Add user to a list or remove user from a list.
+function! s:add_to_list(remove, listname, username)
     let user = s:get_twitvim_username()
     if user == ''
 	call s:errormsg('Twitter login not set. Please specify a username.')
@@ -2653,21 +2653,32 @@ function! s:add_to_list(listname, username)
     endif
 
     redraw
-    echo "Adding ".a:username." to list ".a:listname."..."
+    if a:remove
+	echo "Removing ".a:username." from list ".a:listname."..."
+    else
+	echo "Adding ".a:username." to list ".a:listname."..."
+    endif
 
     let parms = {}
     let parms["list_id"] = a:listname
     let parms["id"] = a:username
+    if a:remove
+	let parms["_method"] = "DELETE"
+    endif
 
     let url = s:get_api_root()."/".user."/".a:listname."/members.xml"
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error adding user to list: ".(errormsg != '' ? errormsg : error))
+	call s:errormsg("Error ".(a:remove ? "removing user from" : "adding user to")." list: ".(errormsg != '' ? errormsg : error))
     else
 	redraw
-	echo "Added ".a:username." to list ".a:listname."."
+	if a:remove
+	    echo "Removed ".a:username." from list ".a:listname."."
+	else
+	    echo "Added ".a:username." to list ".a:listname."."
+	endif
     endif
 endfunction
 
@@ -2675,7 +2686,7 @@ function! s:do_add_to_list(arg1, ...)
     if a:0 == 0
 	call s:errormsg("Syntax: :AddToListTwitter listname username")
     else
-	call s:add_to_list(a:arg1, a:1)
+	call s:add_to_list(0, a:arg1, a:1)
     endif
 endfunction
 
@@ -2684,39 +2695,11 @@ if !exists(":AddToListTwitter")
 endif
 
 
-" Remove user from list.
-function! s:remove_from_list(listname, username)
-    let user = s:get_twitvim_username()
-    if user == ''
-	call s:errormsg('Twitter login not set. Please specify a username.')
-	return -1
-    endif
-
-    redraw
-    echo "Removing ".a:username." from list ".a:listname."..."
-
-    let parms = {}
-    let parms["list_id"] = a:listname
-    let parms["id"] = a:username
-    let parms["_method"] = "DELETE"
-
-    let url = s:get_api_root()."/".user."/".a:listname."/members.xml"
-
-    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
-    if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error removing user from list: ".(errormsg != '' ? errormsg : error))
-    else
-	redraw
-	echo "Removed ".a:username." from list ".a:listname."."
-    endif
-endfunction
-
 function! s:do_remove_from_list(arg1, ...)
     if a:0 == 0
 	call s:errormsg("Syntax: :RemoveFromListTwitter listname username")
     else
-	call s:remove_from_list(a:arg1, a:1)
+	call s:add_to_list(1, a:arg1, a:1)
     endif
 endfunction
 
