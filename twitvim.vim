@@ -2619,6 +2619,31 @@ if !exists(":UnblockTwitter")
 endif
 
 
+" Report user for spam.
+function! s:report_spam(user)
+    redraw
+    echo "Reporting ".a:user." for spam..."
+
+    let parms = {}
+    let parms["screen_name"] = a:user
+
+    let url = s:get_api_root()."/report_spam.xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error reporting user for spam: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo "Reported user ".a:user." for spam."
+    endif
+endfunction
+
+if !exists(":ReportSpamTwitter")
+    command -nargs=1 ReportSpamTwitter :call <SID>report_spam(<q-args>)
+endif
+
+
 let s:user_winname = "TwitterUserInfo_".localtime()
 
 " Process/format the user information.
