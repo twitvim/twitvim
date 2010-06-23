@@ -829,6 +829,7 @@ try:
     out = ''.join(f.readlines())
 except urllib2.HTTPError, (httperr):
     vim.command("let error='%s'" % str(httperr).replace("'", "''"))
+    vim.command("let output='%s'" % httperr.read().replace("'", "''"))
 else:
     vim.command("let output='%s'" % out.replace("'", "''"))
 EOF
@@ -908,6 +909,10 @@ if ($response->is_success) {
     VIM::DoCommand("let output ='$output'");
 }
 else {
+    my $output = $response->content;
+    $output =~ s/'/''/g;
+    VIM::DoCommand("let output ='$output'");
+
     my $error = $response->status_line;
     $error =~ s/'/''/g;
     VIM::DoCommand("let error ='$error'");
@@ -1031,6 +1036,9 @@ begin
     else
 	error = "#{res.code} #{res.message}".gsub("'", "''")
 	VIM.command("let error='#{error}'")
+
+	output = res.body.gsub("'", "''")
+	VIM.command("let output='#{output}'")
     end
 rescue => exc
     VIM.command("let error='#{exc.message}'")
@@ -2463,7 +2471,12 @@ function! s:do_send_dm(user, mesg)
 	let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
 
 	if error != ''
-	    call s:errormsg("Error sending your message: ".error)
+	    let errormsg = s:xml_get_element(output, 'error')
+	    if errormsg != ''
+		call s:errormsg("Error sending your message: ".errormsg)
+	    else
+		call s:errormsg("Error sending your message: ".error)
+	    endif
 	else
 	    redraw
 	    echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
@@ -2554,6 +2567,41 @@ endfunction
 if !exists(":LocationTwitter")
     command -nargs=+ LocationTwitter :call <SID>set_location(<q-args>)
 endif
+
+
+" Start following a user.
+function! s:follow_user(user)
+    redraw
+    echo "Following user ".a:user."..."
+
+    let parms = {}
+    let parms["screen_name"] = a:user
+
+    let url = s:get_api_root()."/friendships/create/".a:user.".xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	if errormsg != ''
+	    call s:errormsg("Error following user: ".errormsg)
+	else
+	    call s:errormsg("Error following user: ".error)
+	endif
+    else
+	let protected = s:xml_get_element(output, 'protected')
+	redraw
+	if protected == "true"
+	    echo "Made request to follow ".a:user."'s protected timeline."
+	else
+	    echo "Now following ".a:user."'s timeline."
+	endif
+    endif
+endfunction
+
+if !exists(":FollowTwitter")
+    command -nargs=1 FollowTwitter :call <SID>follow_user(<q-args>)
+endif
+
 
 let s:user_winname = "TwitterUserInfo_".localtime()
 
