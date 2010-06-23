@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 22, 2010
+" Last updated: June 23, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2681,6 +2681,47 @@ endfunction
 
 if !exists(":AddToListTwitter")
     command -nargs=+ AddToListTwitter :call <SID>do_add_to_list(<f-args>)
+endif
+
+
+" Remove user from list.
+function! s:remove_from_list(listname, username)
+    let user = s:get_twitvim_username()
+    if user == ''
+	call s:errormsg('Twitter login not set. Please specify a username.')
+	return -1
+    endif
+
+    redraw
+    echo "Removing ".a:username." from list ".a:listname."..."
+
+    let parms = {}
+    let parms["list_id"] = a:listname
+    let parms["id"] = a:username
+    let parms["_method"] = "DELETE"
+
+    let url = s:get_api_root()."/".user."/".a:listname."/members.xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error removing user from list: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo "Removed ".a:username." from list ".a:listname."."
+    endif
+endfunction
+
+function! s:do_remove_from_list(arg1, ...)
+    if a:0 == 0
+	call s:errormsg("Syntax: :RemoveFromListTwitter listname username")
+    else
+	call s:remove_from_list(a:arg1, a:1)
+    endif
+endfunction
+
+if !exists(":RemoveFromListTwitter")
+    command -nargs=+ RemoveFromListTwitter :call <SID>do_remove_from_list(<f-args>)
 endif
 
 

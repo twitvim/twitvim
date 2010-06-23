@@ -75,6 +75,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :UnblockTwitter......................: |:UnblockTwitter|
 	     :ReportSpamTwitter...................: |:ReportSpamTwitter|
 	     :AddToListTwitter....................: |:AddToListTwitter|
+	     :RemoveFromListTwitter...............: |:RemoveFromListTwitter|
 	4.3. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
@@ -843,6 +844,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Adds user {username} to list {listname}.
 
 
+	:RemoveFromListTwitter {listname} {username}	*:RemoveFromListTwitter*
+
+	Removes user {username} from list {listname}.
+
+
 ------------------------------------------------------------------------------
 4.3. Mappings						*TwitVim-mappings*
 
@@ -1484,11 +1490,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.3 : 2010-06-22 * Improved error messages for most commands if 
+	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
 			     using Perl, Python, Ruby, or Tcl interfaces.
 			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
 			     |:BlockTwitter|, |:UnblockTwitter|,
-			     |:ReportSpamTwitter|, |:AddToListTwitter|.
+			     |:ReportSpamTwitter|, |:AddToListTwitter|,
+			     |:RemoveFromListTwitter|.
 	0.5.2 : 2010-06-22 * More fixes for Twitter OAuth.
 	0.5.1 : 2010-06-19 * Shorten auth URL with is.gd/Bitly if we need
 			     to ask the user to visit it manually.
