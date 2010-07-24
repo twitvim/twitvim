@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.5.3
+" Version: 0.5.4
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 23, 2010
+" Last updated: July 24, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -464,6 +464,36 @@ EOF
     return signature
 endfunction
 
+" Check if we can use Tcl for HMAC-SHA1 digests.
+function! s:check_tcl_hmac()
+    let can_tcl = 1
+    tcl <<EOF
+if [catch {
+    package require sha1
+    package require base64
+} result] {
+    ::vim::command "let can_tcl = 0"
+}
+EOF
+    return can_tcl
+endfunction
+
+" Compute HMAC-SHA1 digest. (Tcl version)
+function! s:tcl_hmac_sha1_digest(key, str)
+    tcl <<EOF
+package require sha1
+package require base64
+
+set key [::vim::expr a:key]
+set str [::vim::expr a:str]
+
+set signature [base64::encode [sha1::hmac -bin $key $str]]
+
+::vim::command "let signature = '$signature'"
+EOF
+    return signature
+endfunction
+
 " Find out which method we can use to compute a HMAC-SHA1 digest.
 function! s:get_hmac_method()
     if !exists('s:hmac_method')
@@ -472,6 +502,8 @@ function! s:get_hmac_method()
 	    let s:hmac_method = 'perl'
 	elseif s:get_enable_python() && has('python') && s:check_python_hmac()
 	    let s:hmac_method = 'python'
+	elseif s:get_enable_tcl() && has('tcl') && s:check_tcl_hmac()
+	    let s:hmac_method = 'tcl'
 	endif
     endif
     return s:hmac_method
@@ -480,6 +512,25 @@ endfunction
 function! s:hmac_sha1_digest(key, str)
     return s:{s:get_hmac_method()}_hmac_sha1_digest(a:key, a:str)
 endfunction
+
+function! s:reset_hmac_method()
+    unlet! s:hmac_method
+endfunction
+
+function! s:show_hmac_method()
+    echo 'Hmac Method:' s:get_hmac_method()
+endfunction
+
+" For debugging. Reset Hmac method.
+if !exists(":TwitVimResetHmacMethod")
+    command TwitVimResetHmacMethod :call <SID>reset_hmac_method()
+endif
+
+" For debugging. Show current Hmac method.
+if !exists(":TwitVimShowHmacMethod")
+    command TwitVimShowHmacMethod :call <SID>show_hmac_method()
+endif
+
 
 let s:gc_consumer_key = "HyshEU8SbcsklPQ6ouF0g"
 let s:gc_consumer_secret = "U1uvxLjZxlQAasy9Kr5L2YAFnsvYTOqx1bk7uJuezQ"
@@ -1168,13 +1219,11 @@ function! s:run_curl(url, login, proxy, proxylogin, parms)
 endfunction
 
 function! s:reset_curl_method()
-    if exists('s:curl_method')	
-	unlet s:curl_method
-    endif
+    unlet! s:curl_method
 endfunction
 
 function! s:show_curl_method()
-    echo 'Method:' s:get_curl_method()
+    echo 'Net Method:' s:get_curl_method()
 endfunction
 
 " For debugging. Reset networking method.
@@ -1186,6 +1235,7 @@ endif
 if !exists(":TwitVimShowMethod")
     command TwitVimShowMethod :call <SID>show_curl_method()
 endif
+
 
 " === End of networking code ===
 

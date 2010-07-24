@@ -186,28 +186,38 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|TwitVim-identica|.
 
 
-	1. Compile Vim with either |Python| or |Perl|.
+	1. Compile Vim with |Python|, |Perl|, or |Tcl|.
 
 	TwitVim requires one of these scripting interfaces in order to compute
 	HMAC-SHA1 digests for Twitter OAuth request signing.
 
 
 	If you compiled Vim with Perl, add the following to your vimrc:
-
+>
 		let twitvim_enable_perl = 1
-
+<
 	Also, verify that your Perl installation has the Digest::HMAC_SHA1
 	module. This module comes standard with some Perl packages, e.g.
 	ActivePerl.
 
 
 	If you compiled Vim with Python, add the following to your vimrc:
-
+>
 		let twitvim_enable_python = 1
-
+<
 	Also, verify that your Python installation has the base64, hashlib,
 	and hmac modules. All of these are in the Python standard library as
 	of Python 2.5.
+
+
+	If you compiled Vim with Tcl, add the following to your vimrc:
+>
+		let twitvim_enable_tcl = 1
+<
+	Also, verify that your Tcl installation has the base64 and sha1
+	packages. These packages are in the Tcllib library. See
+	|twitvim_enable_tcl| for help on obtaining and installing this
+	library.
 
 
 	2. Install cURL.				*TwitVim-cURL*
@@ -236,9 +246,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This step is only needed if you access the web through a HTTP proxy.
 	If you use a HTTP proxy, add the following to your vimrc:
-
+>
 		let twitvim_proxy = "proxyserver:proxyport"
-
+<
 	Replace proxyserver with the address of the HTTP proxy and proxyport
 	with the port number of the HTTP proxy.
 
@@ -247,9 +257,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	If the HTTP proxy requires authentication, add the following to your
 	vimrc:
-
+>
 		let twitvim_proxy_login = "proxyuser:proxypassword"
-
+<
 	Where proxyuser is your proxy user and proxypassword is your proxy
 	password.
 
@@ -264,9 +274,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	See |twitvim_browser_cmd| for details. For example, if you use Firefox
 	under Windows, add the following to your vimrc:
-
+>
 		let twitvim_browser_cmd = 'firefox.exe'
-
+<
 	Note: If you do not set up twitvim_browser_cmd, TwitVim will display
 	the authentication URL and wait for you to visit it in your browser
 	manually and approve the application. If possible, this auth URL
@@ -303,9 +313,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 						*twitvim_token_file*
 	You can change the name and location of this token file by setting
 	twitvim_token_file in your vimrc. For example:
-
+>
 		let twitvim_token_file = "/etc/.twitvim.token"
-
+<
 	Since the access token grants full access to your Twitter account, it
 	is recommended that you place the token file in a directory that is
 	not readable or accessible by other users.
@@ -315,9 +325,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	If you are using TwitVim on an insecure system, you may prefer to 
 	not save access tokens at all. To turn off the token file, add
 	the following to your vimrc:
-
+>
 		let twitvim_disable_token_file = 1
-
+<
 	If the token file is disabled, TwitVim will initiate an OAuth
 	handshake every time you restart it.
 
@@ -345,9 +355,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	2. twitvim_login				*twitvim_login*
 
 	Add the following to your vimrc:
-
+>
 		let twitvim_login = "USER:PASS"
-
+<
 	Replace USER with your Twitter user name and PASS with your Twitter
 	password.
 
@@ -367,9 +377,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	API.
 
 	For identi.ca, add the following to your vimrc:
-
+>
 		let twitvim_api_root = "http://identi.ca/api"
-
+<
 
 	And now you are ready to use TwitVim with identi.ca.
 
@@ -384,9 +394,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 						*twitvim_login_b64*
 	To do that, set the following in your vimrc:
-
+>
 		let twitvim_login_b64 = "base64string"
-
+<
 	Note: This is only for identi.ca and other services that use Basic
 	authentication. Twitter uses OAuth, so you do not need to add Twitter
 	login info to your vimrc.
@@ -394,9 +404,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	
 						*twitvim_proxy_login_b64*
 	If your HTTP proxy needs authentication, set the following:
-
+>
 		let twitvim_proxy_login_b64 = "base64string"
-
+<
 	Where base64string is your username:password encoded in base64.
 
 
@@ -412,9 +422,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	The result is: am9ldXNlcjpqb2VwYXNzd29yZA==
 
 	Then he adds the following to his vimrc:
-
+>
 		let twitvim_login_b64 = "am9ldXNlcjpqb2VwYXNzd29yZA=="
-
+<
 	And his setup is ready.
 
 
@@ -434,12 +444,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	and check the |+feature-list|. Then to enable this special http
 	networking code in TwitVim, add one of the following lines to your
 	vimrc:
-
+>
 		let twitvim_enable_perl = 1
 		let twitvim_enable_python = 1
 		let twitvim_enable_ruby = 1
 		let twitvim_enable_tcl = 1
-
+<
 	You can enable more than one scripting language but TwitVim will only
 	use the first one it finds.
 
@@ -448,9 +458,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	To enable TwitVim's Perl networking code, add the following to your
 	vimrc:
-
+>
 		let twitvim_enable_perl = 1
-
+<
 	TwitVim requires the MIME::Base64 and LWP::UserAgent modules. If you
 	have ActivePerl, these modules are included in the default
 	installation.
@@ -460,9 +470,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	To enable TwitVim's Python networking code, add the following to your
 	vimrc:
-
+>
 		let twitvim_enable_python = 1
-
+<
 	TwitVim requires the urllib, urllib2, and base64 modules. These
 	modules are in the Python standard library.
 
@@ -471,9 +481,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	To enable TwitVim's Ruby networking code, add the following to your
 	vimrc:
-
+>
 		let twitvim_enable_ruby = 1
-
+<
 	TwitVim requires the net/http, uri, and Base64 modules. These modules
 	are in the Ruby standard library.
 
@@ -493,18 +503,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	To enable TwitVim's Tcl networking code, add the following to your
 	vimrc:
-
+>
 		let twitvim_enable_tcl = 1
-
-	TwitVim requires the http, uri, and base64 modules. uri and base64 are
-	in the Tcllib library so you may need to install that. See
+<
+	TwitVim requires the http, uri, and base64 packages. uri and base64
+	are in the Tcllib library so you may need to install that. See
 	http://tcllib.sourceforge.net/
 
 	If you have ActiveTcl 8.5, the default installation does not include
 	Tcllib. Run the following command from the shell to add Tcllib:
-
-		teacup install tcllib
-
+>
+		teacup install tcllib85
+<
 
 ------------------------------------------------------------------------------
 3.5. Using Twitter SSL API				*TwitVim-ssl*
@@ -512,13 +522,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	For added security, TwitVim can use the Twitter SSL API instead of the
 	regular Twitter API. You configure this by setting |twitvim_api_root|
 	to the https version of the URL:
-
+>
 		let twitvim_api_root = "https://api.twitter.com/1"
-
+<
 	For identi.ca:
-
+>
 		let twitvim_api_root = "https://identi.ca/api"
-
+<
 	There are certain pre-requisites, as explained below.
 
 
@@ -531,9 +541,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Even after you've done that, cURL may complain about certificates that
 	failed verification. If you need to override certificate checking, set
 	twitvim_cert_insecure:
-
+>
 		let twitvim_cert_insecure = 1
-
+<
 
 	2. Twitter SSL via Perl interface		*TwitVim-ssl-perl*
 
@@ -544,11 +554,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	If you are using Twitter SSL over a proxy, do not set twitvim_proxy
 	and twitvim_proxy_login. Crypt::SSLeay gets proxy information from
 	the environment, so do this instead:
-
+>
 		let $HTTPS_PROXY="http://proxyserver:proxyport"
 		let $HTTPS_PROXY_USERNAME="user"
 		let $HTTPS_PROXY_PASSWORD="password"
-
+<
 	Alternatively, you can set those environment variables before starting
 	Vim.
 
@@ -594,8 +604,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	to 0:
 
 							*twitvim_show_header*
+>
 		let twitvim_show_header = 0
-
+<
 	If twitvim_show_header is unset, it defaults to 1, i.e. show the
 	header.
 
@@ -660,9 +671,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*twitvim_count*
 	You can configure the number of tweets returned by :UserTwitter by
 	setting twitvim_count. For example,
-
+>
 		let twitvim_count = 50
-
+<
 	will make :UserTwitter return 50 tweets instead of the default of 20.
 	You can set twitvim_count to any integer from 1 to 200.
 
@@ -892,9 +903,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 							*twitvim_old_retweet*
 	If you prefer old-style retweets, add this to your vimrc:
-
+>
 		let twitvim_old_retweet = 1
-	
+<	
 	The difference is an old-style retweet does not use the retweet API.
 	Instead, it copies the current line to the command line so that you
 	can repost it as a new tweet and optionally edit it or add your own
@@ -910,11 +921,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	You can customize the retweet format by adding the following to your
 	vimrc, for example:
-
+>
 		let twitvim_retweet_format = 'Retweet from %s: %t'
 
 		let twitvim_retweet_format = '%t (retweeted from %s)'
-
+<
 	When you retweet a tweet, TwitVim will replace "%s" in
 	twitvim_retweet_format with the user name of the original poster and
 	"%t" with the text of the tweet.
@@ -959,9 +970,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*twitvim_browser_cmd*
 	Before using this command, you need to tell TwitVim how to launch your
 	browser. For example, you can add the following to your vimrc:
-
+>
 		let twitvim_browser_cmd = 'firefox.exe'
-
+<
 	Of course, replace firefox.exe with the browser of your choice.
 
 
@@ -1171,8 +1182,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 							*twitvim_bitly_user*
 							*twitvim_bitly_key*
+>
 		let twitvim_bitly_user = "username"
 		let twitvim_bitly_key = "R_123456789"
+<
 
 	Replace username with your bit.ly login and R_123456789 with your
 	bit.ly API key.
@@ -1232,8 +1245,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	add the following to your vimrc:
 
 							*twitvim_urlborg_key*
+>
 		let twitvim_urlborg_key = "12345-6789"
-
+<
 	Replace 12345-6789 with your API key.
 
 	:AUrlBorg					*:AUrlBorg*
@@ -1264,15 +1278,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	following to your vimrc:
 
 							*twitvim_trim_login*
+>
 		let twitvim_trim_login = "trimuser:trimpassword"
-
+<
 	Where trimuser and trimpassword are your tr.im account user name and
 	password.
 
 	You may also specify trimuser:trimpassword as a base64 encoded string:
-
+>
 		let twitvim_trim_login = "base64string"
-
+<
 	See |TwitVim-login-base64| for information on generating base64
 	strings.
 
@@ -1303,8 +1318,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	have shortened. In order to do that, add the following to your vimrc:
 
 							*twitvim_cligs_key*
+>
 		let twitvim_cligs_key = "hexstring"
-
+<
 	where hexstring is the API key. You can get an API key by registering
 	for a user account at Cligs and then visiting http://cli.gs/user/api
 
@@ -1387,10 +1403,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	zip code, a town, coordinates, or pretty much anything.
 
 	For example:
+>
 	:LocationTwitter 10027
 	:LocationTwitter New York, NY, USA
 	:LocationTwitter 40.811583, -73.954486
-
+<
 
 ==============================================================================
 5. Timeline Highlighting				*TwitVim-highlight*
@@ -1432,12 +1449,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	TwitVim does not autorefresh. However, you can make refreshing your
 	timeline easier by mapping keys to the timeline commands. For example,
 	I use the <F8> key for that:
-
+>
 		nnoremap <F8> :FriendsTwitter<cr>
 		nnoremap <S-F8> :UserTwitter<cr>
 		nnoremap <A-F8> :RepliesTwitter<cr>
 		nnoremap <C-F8> :DMTwitter<cr>
-
+<
 
 ------------------------------------------------------------------------------
 6.2. Switching between identi.ca users			*TwitVim-switch*
@@ -1445,7 +1462,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	If you have multiple user accounts on identi.ca, you can add something
 	like to following to your vimrc to make it easy to switch between
 	those accounts:
-
+>
 		function! Switch_to_identica_user1()
 		    let g:twitvim_api_root = "http://identi.ca/api"
 
@@ -1464,7 +1481,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 		command! ToIdentica1 :call Switch_to_identica_user1()
 		command! ToIdentica2 :call Switch_to_identica_user2()
-	
+<	
 	With that in place, you can use :ToIdentica1 and :ToIdentica2 to
 	switch between user accounts. There is a call to |:FriendsTwitter| at
 	the end of each function to refresh the timeline view after switching.
@@ -1479,9 +1496,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	Add the following to your |'statusline'| to display the length of the
 	current line:
-
+>
 		%{strlen(getline('.'))}
-	
+<	
 	This is useful if you compose tweets in a separate buffer and post
 	them with |:CPosttoTwitter|. With the line length in your status line,
 	you will know when you've reached the 140-character boundary.
@@ -1490,6 +1507,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.4 : 2010-07-24 * Added Tcl version of HMAC-SHA1 digest code.
 	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
 			     using Perl, Python, Ruby, or Tcl interfaces.
 			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
