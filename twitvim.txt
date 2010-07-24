@@ -186,7 +186,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|TwitVim-identica|.
 
 
-	1. Compile Vim with |Python|, |Perl|, or |Tcl|.
+	1. Compile Vim with |Python|, |Perl|, |Ruby|, or |Tcl|.
 
 	TwitVim requires one of these scripting interfaces in order to compute
 	HMAC-SHA1 digests for Twitter OAuth request signing.
@@ -208,6 +208,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Also, verify that your Python installation has the base64, hashlib,
 	and hmac modules. All of these are in the Python standard library as
 	of Python 2.5.
+
+
+	If you compiled Vim with Ruby, add the following to your vimrc:
+>
+		let twitvim_enable_ruby = 1
+<
+	TwitVim requires the openssl and base64 modules, both of which are
+	in the Ruby standard library. However, you may need to install the
+	OpenSSL library from http://www.openssl.org if it is not already on
+	your system.
 
 
 	If you compiled Vim with Tcl, add the following to your vimrc:
@@ -1507,7 +1517,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.4 : 2010-07-24 * Added Tcl version of HMAC-SHA1 digest code.
+	0.5.4 : 2010-07-24 * Added Ruby and Tcl versions of HMAC-SHA1 digest
+			     code.
 	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
 			     using Perl, Python, Ruby, or Tcl interfaces.
 			   * Added |:FollowTwitter|, |:UnfollowTwitter|,

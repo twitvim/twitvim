@@ -464,6 +464,37 @@ EOF
     return signature
 endfunction
 
+" Check if we can use Ruby for HMAC-SHA1 digests.
+function! s:check_ruby_hmac()
+    let can_ruby = 1
+    ruby <<EOF
+begin
+    require 'openssl'
+    require 'base64'
+rescue LoadError
+    VIM.command('let can_ruby = 0')
+end
+EOF
+    return can_ruby
+endfunction
+
+" Compute HMAC-SHA1 digest. (Ruby version)
+function! s:ruby_hmac_sha1_digest(key, str)
+    ruby <<EOF
+require 'openssl'
+require 'base64'
+
+key = VIM.evaluate('a:key')
+str = VIM.evaluate('a:str')
+
+digest = OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), key, str)
+signature = Base64.encode64(digest).chomp
+
+VIM.command("let signature='#{signature}'")
+EOF
+    return signature
+endfunction
+
 " Check if we can use Tcl for HMAC-SHA1 digests.
 function! s:check_tcl_hmac()
     let can_tcl = 1
@@ -502,6 +533,8 @@ function! s:get_hmac_method()
 	    let s:hmac_method = 'perl'
 	elseif s:get_enable_python() && has('python') && s:check_python_hmac()
 	    let s:hmac_method = 'python'
+	elseif s:get_enable_ruby() && has('ruby') && s:check_ruby_hmac()
+	    let s:hmac_method = 'ruby'
 	elseif s:get_enable_tcl() && has('tcl') && s:check_tcl_hmac()
 	    let s:hmac_method = 'tcl'
 	endif
