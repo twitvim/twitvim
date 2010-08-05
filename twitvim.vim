@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: July 24, 2010
+" Last updated: August 5, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -813,7 +813,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let error = ""
     let output = ""
 
-    let curlcmd = "curl -s -f -S "
+    let curlcmd = "curl -s -S "
 
     if s:get_twitvim_cert_insecure()
 	let curlcmd .= "-k "
@@ -848,8 +848,11 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let curlcmd .= '"'.a:url.'"'
 
     let output = system(curlcmd)
+    let errormsg = s:xml_get_element(output, 'error')
     if v:shell_error != 0
 	let error = output
+    elseif errormsg != ''
+	let error = errormsg
     endif
 
     return [ error, output ]
