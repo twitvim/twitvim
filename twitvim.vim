@@ -1170,6 +1170,12 @@ proc make_base64 {s} {
 
 set url [::vim::expr a:url]
 
+if {[string tolower [string range $url 0 7]] == "https://"} {
+    # Load and register support for https URLs.
+    package require tls
+    ::http::register https 443 ::tls::socket
+}
+
 set headers [list]
 
 ::http::config -proxyhost ""

@@ -42,6 +42,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
 	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
 	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
+	     Twitter SSL via Tcl interface........: |TwitVim-ssl-tcl|
 	3.6. Hide the header in timeline buffer...: |TwitVim-hide-header|
 	     twitvim_show_header..................: |twitvim_show_header|
 	4. Manual.................................: |TwitVim-manual|
@@ -197,8 +198,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		let twitvim_enable_perl = 1
 <
 	Also, verify that your Perl installation has the Digest::HMAC_SHA1
-	module. This module comes standard with some Perl packages, e.g.
-	ActivePerl.
+	module. This module comes standard in some Perl distributions, e.g.
+	ActivePerl. In other Perl setups, you'll need to download and install
+	Digest::HMAC_SHA1 from CPAN. The Perl Package Manager PPM may be
+	helpful here.
 
 
 	If you compiled Vim with Python, add the following to your vimrc:
@@ -595,10 +598,23 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This is due to a missing feature in urllib2.
 
 
-	5. Twitter SSL via TCL interface
+	5. Twitter SSL via Tcl interface		*TwitVim-ssl-tcl*
 
-	I do not know how to make this work with Twitter SSL yet. If you
-	succeed, let me know what you did.
+	To use SSL via Tcl, you need to install the SSL libraries and Tcllib.
+	To be more specific, TwitVim needs the tls package from Tcllib.
+
+	All known versions of Vim (up to 7.3f, as of this writing) have a bug
+	that prevents the tls package from being loaded. This discussion
+	thread explains the problem:
+>
+	http://objectmix.com/tcl/15892-tcl-interp-inside-vim-throws-error-w-clock-format.html
+<
+	If you need to use Twitter SSL with the Tcl interface, you can try one
+	of the following workarounds:
+
+	a. Downgrade to Tcl 7.4.
+	b. Modify if_tcl.c in the Vim source code to remove the redefinition
+	of catch and rebuild Vim.
 
 
 ------------------------------------------------------------------------------
@@ -1522,6 +1538,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Improved error messages for cURL users.
 			   * Fix to keep |'nomodifiable'| setting from leaking
 			     out into other buffers.
+			   * Support Twitter SSL via Tcl interface.
+			     |TwitVim-ssl-tcl|
 	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
 			     using Perl, Python, Ruby, or Tcl interfaces.
 			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
