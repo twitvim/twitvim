@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 5, 2010
+" Last updated: August 11, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1430,10 +1430,10 @@ function! s:add_update(output)
 	if twit_bufnr > 0
 	    let curwin = winnr()
 	    execute twit_bufnr . "wincmd w"
-	    set modifiable
+	    setlocal modifiable
 	    call append(insline - 1, line)
 	    execute "normal! ".insline."G"
-	    set nomodifiable
+	    setlocal nomodifiable
 	    let s:curbuffer.buffer = getline(1, '$')
 	    execute curwin .  "wincmd w"
 	endif
@@ -1681,9 +1681,9 @@ function! s:show_inreplyto()
     call insert(s:curbuffer.inreplyto, s:xml_get_element(output, 'in_reply_to_status_id'), lineno + 1)
 
     " Already in the correct buffer so no need to search or switch buffers.
-    set modifiable
+    setlocal modifiable
     call append(lineno, '+ '.line)
-    set nomodifiable
+    setlocal nomodifiable
     let s:curbuffer.buffer = getline(1, '$')
 
     redraw
@@ -1732,9 +1732,9 @@ function! s:do_delete_tweet()
     endif
 
     " Already in the correct buffer so no need to search or switch buffers.
-    set modifiable
+    setlocal modifiable
     normal! dd
-    set nomodifiable
+    setlocal nomodifiable
     let s:curbuffer.buffer = getline(1, '$')
 
     redraw
@@ -2070,7 +2070,7 @@ function! s:twitter_wintext_view(text, wintype, view)
     let curwin = winnr()
     let newwin = s:twitter_win(a:wintype)
 
-    set modifiable
+    setlocal modifiable
 
     " Overwrite the entire buffer.
     " Need to use 'silent' or a 'No lines in buffer' message will appear.
@@ -2079,7 +2079,7 @@ function! s:twitter_wintext_view(text, wintype, view)
     call setline('.', a:text)
     normal! 1G
 
-    set nomodifiable
+    setlocal nomodifiable
 
     " Restore the saved view if provided.
     if a:view != {}

@@ -1517,9 +1517,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.4 : 2010-08-05 * Added Ruby and Tcl versions of HMAC-SHA1 digest
+	0.5.4 : 2010-08-11 * Added Ruby and Tcl versions of HMAC-SHA1 digest
 			     code.
 			   * Improved error messages for cURL users.
+			   * Fix to keep |'nomodifiable'| setting from leaking
+			     out into other buffers.
 	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
 			     using Perl, Python, Ruby, or Tcl interfaces.
 			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
