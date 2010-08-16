@@ -18,6 +18,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	1. Contents...............................: |TwitVim-contents|
 	2. Introduction...........................: |TwitVim-intro|
 	3. Installation...........................: |TwitVim-install|
+	   OpenSSL................................: |TwitVim-OpenSSL|
 	   cURL...................................: |TwitVim-cURL|
 	   twitvim.vim............................: |TwitVim-add|
 	   twitvim_proxy..........................: |twitvim_proxy|
@@ -187,10 +188,37 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|TwitVim-identica|.
 
 
-	1. Compile Vim with |Python|, |Perl|, |Ruby|, or |Tcl|.
+	1. Install OpenSSL or compile Vim with |Python|, |Perl|, |Ruby|, or |Tcl|.
 
-	TwitVim requires one of these scripting interfaces in order to compute
-	HMAC-SHA1 digests for Twitter OAuth request signing.
+	In order to compute HMAC-SHA1 digests and sign Twitter OAuth requests,
+	TwitVim needs to either run the openssl command line tool from the
+	OpenSSL toolkit or call a HMAC-SHA1 digest function from one of the
+	above scripting interfaces.
+
+	
+							*TwitVim-OpenSSL*
+	If you are using a precompiled Vim executable and do not wish to
+	recompile Vim to add a scripting interface, then the OpenSSL approach
+	is the simplest.
+
+	If OpenSSL is not already on your system, you can download it from
+	http://openssl.org/  If you are using Windows, check the OpenSSL FAQ
+	for a link to a precompiled OpenSSL for Windows.
+
+	After installing OpenSSL, make sure that the directory where the
+	openssl executable resides is listed in your PATH environment
+	variable so that TwitVim can find it.
+
+	Note: TwitVim uses the openssl -hmac option, which is not available in
+	old versions of OpenSSL. I recommend updating to OpenSSL 0.9.8o,
+	1.0.0a, or later to get the -hmac option and the latest security
+	fixes.
+
+
+	Instead of using the openssl command line tool, you can also have
+	TwitVim compute HMAC-SHA1 digests via a Vim scripting interface. This
+	approach is significantly faster because it does not need to run an
+	external program. You can use Perl, Python, Ruby, or Tcl.
 
 
 	If you compiled Vim with Perl, add the following to your vimrc:
@@ -240,10 +268,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	directory listed in your PATH environment variable, or the equivalent
 	for your system.
 
-	Since you already have Vim compiled with Perl or Python for Step 1, it
-	is recommended that you use it instead of installing cURL. See
-	|TwitVim-non-cURL| for setup details. TwitVim also supports Ruby and
-	Tcl, if your Vim installation has those scripting interfaces compiled.
+	If you have already compiled Vim with Perl, Python, Ruby, or Tcl for
+	Step 1, I recommend that you use the scripting interface instead of
+	installing cURL. See |TwitVim-non-cURL| for setup details. Using a
+	scripting interface for network I/O is faster because it avoids the
+	overhead of running an external program.
 
 
 	3. twitvim.vim					*TwitVim-add*
@@ -1533,6 +1562,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
+			     using the openssl command line tool from the
+			     OpenSSL toolkit. |TwitVim-OpenSSL|
 	0.5.4 : 2010-08-11 * Added Ruby and Tcl versions of HMAC-SHA1 digest
 			     code.
 			   * Improved error messages for cURL users.

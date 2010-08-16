@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.5.4
+" Version: 0.5.5
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 11, 2010
+" Last updated: August 16, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -525,10 +525,26 @@ EOF
     return signature
 endfunction
 
+" Compute HMAC-SHA1 digest by running openssl command line utility.
+function! s:openssl_hmac_sha1_digest(key, str)
+    let output = system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
+    if v:shell_error != 0
+	call s:errormsg("Error running openssl command: ".output)
+	return ""
+    endif
+
+    " Chop off all trailing newlines.
+    while output[-1:] == "\n"
+	let output = output[:-2]
+    endwhile
+
+    return output
+endfunction
+
 " Find out which method we can use to compute a HMAC-SHA1 digest.
 function! s:get_hmac_method()
     if !exists('s:hmac_method')
-	let s:hmac_method = 'perl'
+	let s:hmac_method = 'openssl'
 	if s:get_enable_perl() && has('perl') && s:check_perl_hmac()
 	    let s:hmac_method = 'perl'
 	elseif s:get_enable_python() && has('python') && s:check_python_hmac()
