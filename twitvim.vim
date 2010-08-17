@@ -533,10 +533,8 @@ function! s:openssl_hmac_sha1_digest(key, str)
 	return ""
     endif
 
-    " Chop off all trailing newlines.
-    while output[-1:] == "\n"
-	let output = output[:-2]
-    endwhile
+    " Remove trailing newlines.
+    let output = substitute(output, '\n\+$', '', '')
 
     return output
 endfunction
