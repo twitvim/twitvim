@@ -881,6 +881,7 @@ try:
     import urllib
     import urllib2
     import base64
+    import sys
 except:
     vim.command('let can_python = 0')
 EOF
@@ -895,6 +896,7 @@ function! s:python_curl(url, login, proxy, proxylogin, parms)
 import urllib
 import urllib2
 import base64
+import sys
 import vim
 
 def make_base64(s):
@@ -927,6 +929,11 @@ try:
 except urllib2.HTTPError, (httperr):
     vim.command("let error='%s'" % str(httperr).replace("'", "''"))
     vim.command("let output='%s'" % httperr.read().replace("'", "''"))
+except:
+    exctype, value = sys.exc_info()[:2]
+    errmsg = (exctype.__name__ + ': ' + value).replace("'", "''")
+    vim.command("let error='%s'" % errmsg)
+    vim.command("let output='%s'" % errmsg)
 else:
     vim.command("let output='%s'" % out.replace("'", "''"))
 EOF
