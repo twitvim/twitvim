@@ -931,7 +931,7 @@ except urllib2.HTTPError, (httperr):
     vim.command("let output='%s'" % httperr.read().replace("'", "''"))
 except:
     exctype, value = sys.exc_info()[:2]
-    errmsg = (exctype.__name__ + ': ' + value).replace("'", "''")
+    errmsg = (exctype.__name__ + ': ' + str(value)).replace("'", "''")
     vim.command("let error='%s'" % errmsg)
     vim.command("let output='%s'" % errmsg)
 else:
