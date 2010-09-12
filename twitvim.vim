@@ -1978,7 +1978,10 @@ function! s:nr2enc_char(charcode)
     endif
     let char = s:nr2byte(a:charcode)
     if strlen(char) > 1
-	let char = strtrans(iconv(char, 'utf-8', &encoding))
+	let iconv_str = iconv(char, 'utf-8', &encoding)
+	if iconv_str != ""
+	    let char = strtrans(iconv_str)
+	endif
     endif
     return char
 endfunction
