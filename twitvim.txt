@@ -1562,6 +1562,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.6 : 2010-09-12 * Exception handling for Python net interface.
+			   * Added converter functions for non-UTF8 encoding
+			     by @mattn_jp.
 	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
 			     using the openssl command line tool from the
 			     OpenSSL toolkit. |TwitVim-OpenSSL|

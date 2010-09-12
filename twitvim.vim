@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.5.5
+" Version: 0.5.6
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 16, 2010
+" Last updated: September 12, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1957,6 +1957,33 @@ function! s:do_user_info(s)
     call s:get_user_info(s)
 endfunction
 
+" nr2byte() and nr2enc_char() converter functions for non-UTF8 encoding
+" provided by @mattn_jp
+
+" Get bytes from character code.
+function! s:nr2byte(nr)
+    if a:nr < 0x80
+	return nr2char(a:nr)
+    elseif a:nr < 0x800
+	return nr2char(a:nr/64+192).nr2char(a:nr%64+128)
+    else
+	return nr2char(a:nr/4096%16+224).nr2char(a:nr/64%64+128).nr2char(a:nr%64+128)
+    endif
+endfunction
+
+" Convert character code from utf-8 to encoding.
+function! s:nr2enc_char(charcode)
+    if &encoding == 'utf-8'
+	return nr2char(a:charcode)
+    endif
+    let char = s:nr2byte(a:charcode)
+    if strlen(char) > 1
+	let char = strtrans(iconv(char, 'utf-8', &encoding))
+    endif
+    return char
+endfunction
+
+
 " Decode HTML entities. Twitter gives those to us a little weird. For example,
 " a '<' character comes to us as &amp;lt;
 function! s:convert_entity(str)
@@ -1965,7 +1992,8 @@ function! s:convert_entity(str)
     let s = substitute(s, '&lt;', '<', 'g')
     let s = substitute(s, '&gt;', '>', 'g')
     let s = substitute(s, '&quot;', '"', 'g')
-    let s = substitute(s, '&#\(\d\+\);','\=nr2char(submatch(1))', 'g')
+    " let s = substitute(s, '&#\(\d\+\);','\=nr2char(submatch(1))', 'g')
+    let s = substitute(s, '&#\(\d\+\);','\=s:nr2enc_char(submatch(1))', 'g')
     return s
 endfunction
 
