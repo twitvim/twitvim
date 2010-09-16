@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 12, 2010
+" Last updated: September 16, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2859,13 +2859,13 @@ function! s:format_user_info(output)
     let text = []
     let output = a:output
 
-    let name = s:xml_get_element(output, 'name')
+    let name = s:convert_entity(s:xml_get_element(output, 'name'))
     let screen = s:xml_get_element(output, 'screen_name')
     call add(text, 'Name: '.screen.' ('.name.')')
 
-    call add(text, 'Location: '.s:xml_get_element(output, 'location'))
+    call add(text, 'Location: '.s:convert_entity(s:xml_get_element(output, 'location')))
     call add(text, 'Website: '.s:xml_get_element(output, 'url'))
-    call add(text, 'Bio: '.s:xml_get_element(output, 'description'))
+    call add(text, 'Bio: '.s:convert_entity(s:xml_get_element(output, 'description')))
     call add(text, '')
     call add(text, 'Following: '.s:xml_get_element(output, 'friends_count'))
     call add(text, 'Followers: '.s:xml_get_element(output, 'followers_count'))
