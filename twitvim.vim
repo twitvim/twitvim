@@ -1277,6 +1277,10 @@ function! s:get_curl_method()
     return s:curl_method
 endfunction
 
+" We need to convert our parameters to UTF-8. In curl_curl() this is already
+" handled as part of our url_encode() function, so we only need to do this for
+" other net methods. Also, of course, we don't have to do anything if the
+" encoding is already UTF-8.
 function! s:iconv_parms(parms)
     if s:get_curl_method() == 'curl' || &encoding == 'utf-8'
 	return a:parms
