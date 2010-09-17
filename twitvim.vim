@@ -1277,8 +1277,23 @@ function! s:get_curl_method()
     return s:curl_method
 endfunction
 
+function! s:iconv_parms(parms)
+    if s:get_curl_method() == 'curl' || &encoding == 'utf-8'
+	return a:parms
+    endif
+    let parms2 = {}
+    for k in keys(a:parms)
+	let v = iconv(a:parms[k], &encoding, 'utf-8')
+	if v == ''
+	    let v = a:parms[k]
+	endif
+	let parms2[k] = v
+    endfor
+    return parms2
+endfunction
+
 function! s:run_curl(url, login, proxy, proxylogin, parms)
-    return s:{s:get_curl_method()}_curl(a:url, a:login, a:proxy, a:proxylogin, a:parms)
+    return s:{s:get_curl_method()}_curl(a:url, a:login, a:proxy, a:proxylogin, s:iconv_parms(a:parms))
 endfunction
 
 function! s:reset_curl_method()
