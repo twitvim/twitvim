@@ -1569,6 +1569,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     location. (Suggested by code933k)
 			   * Fix for posting foreign chars when encoding is
 			     not UTF8 and net method is not Curl.
+			   * Support |twitvim_count| in |:DMTwitter| and
+			     |:DMSentTwitter|.
 	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
 			     using the openssl command line tool from the
 			     OpenSSL toolkit. |TwitVim-OpenSSL|

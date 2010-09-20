@@ -2434,16 +2434,22 @@ function! s:Direct_Messages(mode, page)
     let sent = (a:mode == "dmsent")
     let s_or_r = (sent ? "sent" : "received")
 
-    " Support pagination.
-    let pagearg = ''
-    if a:page > 1
-	let pagearg = '?page='.a:page
-    endif
-
     redraw
     echo "Sending direct messages ".s_or_r." timeline request to Twitter..."
 
-    let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".xml".pagearg
+    let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".xml"
+
+    " Support pagination.
+    let pagearg = ''
+    if a:page > 1
+	let url = s:add_to_url(url, 'page='.a:page)
+    endif
+
+    " Support count parameter.
+    let tcount = s:get_count()
+    if tcount > 0
+	let url = s:add_to_url(url, 'count='.tcount)
+    endif
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
