@@ -1812,6 +1812,34 @@ function! s:delete_tweet()
     endif
 endfunction
 
+" Fave or Unfave tweet on current line.
+function! s:fave_tweet(unfave)
+    let id = get(s:curbuffer.statuses, line('.'))
+    if id == 0
+	call s:warnmsg('Nothing to '.(a:unfave ? 'unfavorite' : 'favorite').' on current line.')
+	return
+    endif
+
+    redraw
+    echo (a:unfave ? 'Unfavoriting' : 'Favoriting') 'the tweet...'
+
+    " favorites/create and favorites/destroy both require POST, not GET, so we
+    " supply a fake parameter to force run_curl() to use POST.
+    let parms = {}
+    let parms['id'] = id
+
+    let url = s:get_api_root().'/favorites/'.(a:unfave ? 'destroy' : 'create').'/'.id.'.xml'
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    redraw
+    echo 'Tweet' (a:unfave ? 'unfavorited.' : 'favorited.')
+endfunction
+
 " Prompt user for tweet.
 if !exists(":PosttoTwitter")
     command PosttoTwitter :call <SID>CmdLine_Twitter('', 0)
@@ -2129,6 +2157,11 @@ function! s:twitter_win(wintype)
 
 	    " Previous page in timeline.
 	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageTimeline()<cr>
+
+	    " Favorite a tweet.
+	    nnoremap <buffer> <silent> <Leader>f :call <SID>fave_tweet(0)<cr>
+	    " Unfavorite a tweet.
+	    nnoremap <buffer> <silent> <Leader><C-f> :call <SID>fave_tweet(1)<cr>
 
 	endif
 

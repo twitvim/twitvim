@@ -106,6 +106,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     <Leader>@............................: |TwitVim-Leader-@|
 	     Delete...............................: |TwitVim-delete|
 	     <Leader>X............................: |TwitVim-Leader-X|
+	     <Leader>f............................: |TwitVim-Leader-f|
+	     <Leader>Ctrl-F.......................: |TwitVim-Leader-C-f|
 	     Ctrl-O...............................: |TwitVim-C-o|
 	     Ctrl-I...............................: |TwitVim-C-i|
 	     Refresh..............................: |TwitVim-refresh|
@@ -1096,6 +1098,22 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	You can delete direct messages that you sent or received.
 
 
+							*TwitVim-fave*
+							*TwitVim-Leader-f*
+	<Leader>f
+
+	This mapping is local to the timeline buffer. It adds the tweet on the
+	current line to your favorites.
+
+
+							*TwitVim-unfave*
+							*TwitVim-Leader-C-f*
+	<Leader>Ctrl-F
+
+	This mapping is local to the timeline buffer. It removes the tweet on
+	the current line from your favorites.
+
+
 	Ctrl-O						*TwitVim-C-o*
 
 	This mapping takes you to the previous timeline in the timeline stack.
@@ -1582,6 +1600,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Support |twitvim_count| in |:DMTwitter| and
 			     |:DMSentTwitter|.
 			   * Added |:FavTwitter|.
+			   * Added mappings to favorite and unfavorite tweets.
+			     |TwitVim-Leader-f| |TwitVim-Leader-C-f|
 	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
 			     using the openssl command line tool from the
 			     OpenSSL toolkit. |TwitVim-OpenSSL|
