@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 16, 2010
+" Last updated: September 19, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -383,7 +383,7 @@ function! s:parse_time(str)
 endfunction
 
 " Convert the Twitter timestamp to local time and simplify it.
-function s:time_filter(str)
+function! s:time_filter(str)
     if !exists("*strftime")
 	return a:str
     endif
@@ -587,7 +587,7 @@ let s:gc_access_url = "http://api.twitter.com/oauth/access_token"
 let s:gc_authorize_url = "http://api.twitter.com/oauth/authorize"
 
 " Simple nonce value generator. This needs to be randomized better.
-function s:nonce()
+function! s:nonce()
     if !exists("s:nonce_val") || s:nonce_val < 1
 	let s:nonce_val = localtime() + 109
     endif
@@ -599,7 +599,7 @@ function s:nonce()
 endfunction
 
 " Split a URL into base and params.
-function s:split_url(url)
+function! s:split_url(url)
     let urlarray = split(a:url, '?')
     let baseurl = urlarray[0]
     let parms = {}
@@ -615,7 +615,7 @@ endfunction
 " Produce signed content using the parameters provided via parms using the
 " chosen method, url and provided token secret. Note that in the case of
 " getting a new Request token, the secret will be ""
-function s:getOauthResponse(url, method, parms, token_secret)
+function! s:getOauthResponse(url, method, parms, token_secret)
     let parms = copy(a:parms)
 
     " Add some constants to hash
@@ -1325,7 +1325,7 @@ endif
 
 " Each buffer record holds the following fields:
 "
-" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies, list
+" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies, list, retweeted_by_me, retweeted_to_me, favorites
 " user: For user buffers if other than current user
 " list: List slug if displaying a Twitter list.
 " page: Keep track of pagination.
@@ -2271,7 +2271,7 @@ function! s:get_timeline(tline_name, username, page)
 	let login = s:ologin
     endif
 
-    let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
+    let url_fname = (a:tline_name == "favorites" || a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
 
     " Support pagination.
     if a:page > 1
@@ -2287,8 +2287,8 @@ function! s:get_timeline(tline_name, username, page)
 	let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
     endif
 
-    " Support count parameter in friends, user, mentions, and retweet timelines.
-    if a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'replies' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
+    " Support count parameter in favorites, friends, user, mentions, and retweet timelines.
+    if a:tline_name == 'favorites' || a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'replies' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
 	let tcount = s:get_count()
 	if tcount > 0
 	    let url_fname = s:add_to_url(url_fname, 'count='.tcount)
@@ -2300,7 +2300,7 @@ function! s:get_timeline(tline_name, username, page)
     redraw
     echo "Sending" tl_name "timeline request to Twitter..."
 
-    let url = s:get_api_root()."/statuses/".url_fname
+    let url = s:get_api_root().(a:tline_name == 'favorites' ? '/' : "/statuses/").url_fname
 
     let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
@@ -2473,7 +2473,7 @@ endfunction
 " Function to load a timeline from the given parameters. For use by refresh and
 " next/prev pagination commands.
 function! s:load_timeline(buftype, user, list, page)
-    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me"
+    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me" || a:buftype == 'favorites'
 	call s:get_timeline(a:buftype, a:user, a:page)
     elseif a:buftype == "list"
 	call s:get_list_timeline(a:user, a:list, a:page)
@@ -2557,6 +2557,9 @@ endif
 if !exists(":RetweetedToMeTwitter")
     command -count=1 RetweetedToMeTwitter :call <SID>get_timeline("retweeted_to_me", '', <count>)
 endif
+if !exists(":FavTwitter")
+    command -count=1 FavTwitter :call <SID>get_timeline('favorites', '', <count>)
+endif
 
 nnoremenu Plugin.TwitVim.-Sep1- :
 nnoremenu Plugin.TwitVim.&Friends\ Timeline :call <SID>get_timeline("friends", '', 1)<cr>
@@ -2568,6 +2571,7 @@ nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '',
 
 nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1)<cr>
 nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call <SID>get_timeline("retweeted_to_me", '', 1)<cr>
+nnoremenu Plugin.TwitVim.Fa&vorites :call <SID>get_timeline("favorites", '', 1)<cr>
 
 if !exists(":RefreshTwitter")
     command RefreshTwitter :call <SID>RefreshTimeline()

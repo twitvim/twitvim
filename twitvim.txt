@@ -64,6 +64,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :ListTwitter.........................: |:ListTwitter|
 	     :RetweetedToMeTwitter................: |:RetweetedToMeTwitter|
 	     :RetweetedByMeTwitter................: |:RetweetedByMeTwitter|
+	     :FavTwitter..........................: |:FavTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -819,6 +820,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	retweets timeline.
 
 
+	:[count]FavTwitter				*:FavTwitter*
+
+	This command displays a timeline of your favorites.
+
+	If you specify [count], that number is used as the page number. For
+	example, :2FavTwitter displays the second page from the favorites
+	timeline.
+
+
 	:BackTwitter					*:BackTwitter*
 
 	This command takes you back to the previous timeline in the timeline
@@ -1562,7 +1572,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.6 : 2010-09-16 * Exception handling for Python net interface.
+	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
 			     by @mattn_jp.
 			   * Convert entities in profile name, bio, and
@@ -1571,6 +1581,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     not UTF8 and net method is not Curl.
 			   * Support |twitvim_count| in |:DMTwitter| and
 			     |:DMSentTwitter|.
+			   * Added |:FavTwitter|.
 	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
 			     using the openssl command line tool from the
 			     OpenSSL toolkit. |TwitVim-OpenSSL|
