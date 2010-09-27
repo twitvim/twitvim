@@ -3380,7 +3380,7 @@ function! s:show_summize(searchres, page)
     let s:curbuffer.dmids = []
 
     let channel = s:xml_remove_elements(a:searchres, 'entry')
-    let title = s:xml_get_element(channel, 'title')
+    let title = s:convert_entity(s:xml_get_element(channel, 'title'))
 
     if a:page > 1
 	let title .= ' (page '.a:page.')'
