@@ -1337,6 +1337,14 @@ endif
 
 let s:curbuffer = {}
 
+" The info buffer record holds the following fields:
+"
+" buftype: profile, friends, followers
+" next_cursor: Used for paging.
+" prev_cursor: Used for paging.
+
+let s:infobuffer = {}
+
 let s:bufstack = []
 
 " Maximum items in the buffer stack. Adding a new item after this limit will
@@ -2975,7 +2983,11 @@ function! s:get_user_info(username)
 	return
     endif
 
+    let s:infobuffer = {}
     call s:twitter_wintext(s:format_user_info(output), "userinfo")
+    let s:infobuffer.buftype = 'profile'
+    let s:infobuffer.next_cursor = -1
+    let s:infobuffer.prev_cursor = -1
 
     redraw
     echo "User information retrieved."
