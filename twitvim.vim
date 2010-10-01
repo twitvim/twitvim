@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.5.6
+" Version: 0.5.7
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 19, 2010
+" Last updated: October 1, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
