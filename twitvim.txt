@@ -65,6 +65,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :RetweetedToMeTwitter................: |:RetweetedToMeTwitter|
 	     :RetweetedByMeTwitter................: |:RetweetedByMeTwitter|
 	     :FavTwitter..........................: |:FavTwitter|
+	     :FollowingTwitter....................: |:FollowingTwitter|
+	     :FollowersTwitter....................: |:FollowersTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -116,6 +118,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Ctrl-PageDown........................: |TwitVim-C-PageDown|
 	     Previous page........................: |TwitVim-previous|
 	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
+	     <Leader>u............................: |TwitVim-Leader-u|
 	4.4. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
@@ -831,6 +834,22 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	timeline.
 
 
+	:FollowingTwitter				*:FollowingTwitter*
+
+	This command displays a list of people you're following.
+
+	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
+	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
+	:FollowersTwitter				*:FollowersTwitter*
+
+	This command displays a list of people who follow you.
+
+	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
+	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
 	:BackTwitter					*:BackTwitter*
 
 	This command takes you back to the previous timeline in the timeline
@@ -1068,7 +1087,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	It displays the information in a user profile buffer.
 
 	If you visually select text before invoking this mapping, it uses the
-	selected text as is for the user name.
+	selected text for the user name.
+
+	This mapping also works in friends and followers lists.
 
 	See also |:ProfileTwitter|.
 
@@ -1137,6 +1158,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This mapping loads the next (older) page in the timeline.
 	See |:NextTwitter|.
 
+	This mapping also works in friends and followers lists.
+
 	
 							*TwitVim-previous*
 	Ctrl-PageUp					*TwitVim-C-PageUp*
@@ -1144,6 +1167,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command loads the previous (newer) page in the timeline. If the
 	timeline is on the first page, it issues a warning and doesn't do
 	anything. See |:PreviousTwitter|.
+
+	This mapping also works in friends and followers lists.
+
+
+	<Leader>u					*TwitVim-Leader-u*
+
+	This mapping works only in friends and followers lists. If the cursor
+	is on a "Name:" line, it retrieves the user timeline for the user
+	named there.
+
+	If you visually select text before invoking this mapping, it uses the
+	selected text for the user name.
+
+	See also |:UserTwitter|.
 
 
 ------------------------------------------------------------------------------
@@ -1590,6 +1627,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.5.7 : 2010-10-01 * Added |:FollowingTwitter|, |:FollowersTwitter|,
+			     and a mapping to launch user timeline from those 
+			     displays. |TwitVim-Leader-u|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
 			     by @mattn_jp.
