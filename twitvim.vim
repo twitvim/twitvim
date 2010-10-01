@@ -2133,8 +2133,13 @@ function! s:twitter_win(wintype)
 	nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
 	vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
 
-	if a:wintype != "userinfo"
+	if a:wintype == "userinfo"
+	    " Next page in info buffer.
+	    nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageInfo()<cr>
 
+	    " Previous page in info buffer.
+	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageInfo()<cr>
+	else
 	    " Quick reply feature for replying from the timeline.
 	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
 	    nnoremap <buffer> <silent> <Leader>r :call <SID>Quick_Reply()<cr>
@@ -3089,6 +3094,42 @@ function! s:get_followers(cursor)
 
     redraw
     echo "Followers list retrieved."
+endfunction
+
+" Function to load an info buffer from the given parameters.
+" For use by next/prev pagination commands.
+function! s:load_info(buftype, cursor)
+    if a:buftype == "friends"
+	call s:get_friends(a:cursor)
+    elseif a:buftype == "followers"
+	call s:get_followers(a:cursor)
+    endif
+endfunction
+
+" Go to next page in info buffer.
+function! s:NextPageInfo()
+    if s:infobuffer != {}
+	if s:infobuffer.next_cursor == 0
+	    call s:warnmsg("No next page in info buffer.")
+	else
+	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor)
+	endif
+    else
+	call s:warnmsg("No info buffer.")
+    endif
+endfunction
+
+" Go to previous page in info buffer.
+function! s:PrevPageInfo()
+    if s:infobuffer != {}
+	if s:infobuffer.prev_cursor == 0
+	    call s:warnmsg("No previous page in info buffer.")
+	else
+	    call s:load_info(s:infobuffer.buftype, s:infobuffer.prev_cursor)
+	endif
+    else
+	call s:warnmsg("No info buffer.")
+    endif
 endfunction
 
 if !exists(":FollowingTwitter")
