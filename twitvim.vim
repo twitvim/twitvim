@@ -1943,6 +1943,25 @@ function! s:launch_url_cword()
     call s:launch_browser(s)
 endfunction
 
+" Extract name from current line in info buffer, if possible.
+function! s:info_getname()
+    let matchres = matchlist(getline('.'), '^Name: \(\w\+\)')
+    if matchres != []
+	return matchres[1]
+    else
+	return ''
+    endif
+endfunction
+
+" From info buffer, get user timeline.
+function! s:do_info_user_timeline(s)
+    let s = a:s == '' ? s:info_getname() : a:s
+    if s == ''
+	return
+    endif
+    call s:get_timeline('user', s, 1)
+endfunction
+
 " Call LongURL API on a shorturl to expand it.
 function! s:call_longurl(url)
     redraw
@@ -2139,6 +2158,11 @@ function! s:twitter_win(wintype)
 
 	    " Previous page in info buffer.
 	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageInfo()<cr>
+	    
+	    " Get user timeline for name field or selection.
+	    nnoremap <buffer> <silent> <Leader>u :call <SID>do_info_user_timeline("")<cr>
+	    vnoremap <buffer> <silent> <Leader>u y:call <SID>do_info_user_timeline(@")<cr>
+
 	else
 	    " Quick reply feature for replying from the timeline.
 	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
