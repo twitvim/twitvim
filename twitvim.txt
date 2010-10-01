@@ -67,6 +67,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :FavTwitter..........................: |:FavTwitter|
 	     :FollowingTwitter....................: |:FollowingTwitter|
 	     :FollowersTwitter....................: |:FollowersTwitter|
+	     :MembersOfListTwitter................: |:MembersOfListTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -851,6 +852,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
 	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
+	:MembersOfListTwitter {list}			*:MembersOfListTwitter*
+	:MembersOfListTwitter {user} {list}
+
+	This command displays the members of the Twitter list {list} owned by 
+	user {user}. If not specified, {user} is the currently logged-in user.
 
 
 	:BackTwitter					*:BackTwitter*
@@ -1662,6 +1670,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	0.5.7 : 2010-10-01 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
+			   * Added |:MembersOfListTwitter|.
 			   * Added support for goo.gl. |:Googl|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding

@@ -1339,9 +1339,11 @@ let s:curbuffer = {}
 
 " The info buffer record holds the following fields:
 "
-" buftype: profile, friends, followers
+" buftype: profile, friends, followers, listmembers
 " next_cursor: Used for paging.
 " prev_cursor: Used for paging.
+" user: User name
+" list: List name
 
 let s:infobuffer = {}
 
@@ -3019,6 +3021,8 @@ function! s:get_user_info(username)
     let s:infobuffer.buftype = 'profile'
     let s:infobuffer.next_cursor = 0
     let s:infobuffer.prev_cursor = 0
+    let s:infobuffer.user = user
+    let s:infobuffer.list = ''
 
     redraw
     echo "User information retrieved."
@@ -3096,6 +3100,8 @@ function! s:get_friends(cursor)
     let s:infobuffer.buftype = 'friends'
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.user = ''
+    let s:infobuffer.list = ''
 
     redraw
     echo "Friends list retrieved."
@@ -3119,18 +3125,68 @@ function! s:get_followers(cursor)
     let s:infobuffer.buftype = 'followers'
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.user = ''
+    let s:infobuffer.list = ''
 
     redraw
     echo "Followers list retrieved."
 endfunction
 
+" Call Twitter API to get members of list.
+function! s:get_list_members(cursor, user, list)
+    let user = a:user
+    if user == ''
+	let user = s:get_twitvim_username()
+	if user == ''
+	    call s:errormsg('Twitter login not set. Please specify a username.')
+	    return
+	endif
+    endif
+
+    redraw
+    echo "Querying Twitter for list members..."
+
+    let url = s:get_api_root().'/'.user.'/'.a:list.'/members.xml?cursor='.a:cursor
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting list members: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_user_list(output, 'Members of list '.user.'/'.a:list, 1), 'userinfo')
+    let s:infobuffer.buftype = 'listmembers'
+    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.user = user
+    let s:infobuffer.list = a:list
+
+    redraw
+    echo "List members retrieved."
+endfunction
+
+" Get Twitter list members. Need to do a little fiddling because the 
+" username argument is optional.
+function! s:DoListMembers(arg1, ...)
+    let user = ''
+    let list = a:arg1
+    if a:0 > 0
+	let user = a:arg1
+	let list = a:1
+    endif
+    call s:get_list_members(-1, user, list)
+endfunction
+
 " Function to load an info buffer from the given parameters.
 " For use by next/prev pagination commands.
-function! s:load_info(buftype, cursor)
+function! s:load_info(buftype, cursor, user, list)
     if a:buftype == "friends"
 	call s:get_friends(a:cursor)
     elseif a:buftype == "followers"
 	call s:get_followers(a:cursor)
+    elseif a:buftype == "listmembers"
+	call s:get_list_members(a:cursor, a:user, a:list)
     endif
 endfunction
 
@@ -3140,7 +3196,7 @@ function! s:NextPageInfo()
 	if s:infobuffer.next_cursor == 0
 	    call s:warnmsg("No next page in info buffer.")
 	else
-	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor)
+	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor, s:infobuffer.user, s:infobuffer.list)
 	endif
     else
 	call s:warnmsg("No info buffer.")
@@ -3153,7 +3209,7 @@ function! s:PrevPageInfo()
 	if s:infobuffer.prev_cursor == 0
 	    call s:warnmsg("No previous page in info buffer.")
 	else
-	    call s:load_info(s:infobuffer.buftype, s:infobuffer.prev_cursor)
+	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor, s:infobuffer.user, s:infobuffer.list)
 	endif
     else
 	call s:warnmsg("No info buffer.")
@@ -3165,6 +3221,9 @@ if !exists(":FollowingTwitter")
 endif
 if !exists(":FollowersTwitter")
     command FollowersTwitter :call <SID>get_followers(-1)
+endif
+if !exists(":MembersOfListTwitter")
+    command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(<f-args>)
 endif
 
 " Call Tweetburner API to shorten a URL.
