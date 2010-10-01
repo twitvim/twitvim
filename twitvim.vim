@@ -2084,12 +2084,10 @@ function! s:twitter_win_syntax(wintype)
 	" character.
 	syntax match twitterLink "\S\@<!#\w\+"
 
-	if a:wintype != "userinfo"
-	    " Use the extra star at the end to recognize the title but hide the
-	    " star.
-	    syntax match twitterTitle /^.\+\*$/ contains=twitterTitleStar
-	    syntax match twitterTitleStar /\*$/ contained
-	endif
+	" Use the extra star at the end to recognize the title but hide the
+	" star.
+	syntax match twitterTitle /^.\+\*$/ contains=twitterTitleStar
+	syntax match twitterTitleStar /\*$/ contained
 
 	highlight default link twitterUser Identifier
 	highlight default link twitterTime String
@@ -2922,7 +2920,7 @@ if !exists(":RemoveFromListTwitter")
 endif
 
 
-let s:user_winname = "TwitterUserInfo_".localtime()
+let s:user_winname = "TwitterInfo_".localtime()
 
 " Process/format the user information.
 function! s:format_user_info(output)
@@ -2986,8 +2984,8 @@ function! s:get_user_info(username)
     let s:infobuffer = {}
     call s:twitter_wintext(s:format_user_info(output), "userinfo")
     let s:infobuffer.buftype = 'profile'
-    let s:infobuffer.next_cursor = -1
-    let s:infobuffer.prev_cursor = -1
+    let s:infobuffer.next_cursor = 0
+    let s:infobuffer.prev_cursor = 0
 
     redraw
     echo "User information retrieved."
@@ -2997,6 +2995,107 @@ if !exists(":ProfileTwitter")
     command -nargs=1 ProfileTwitter :call <SID>get_user_info(<q-args>)
 endif
 
+" Format a list of users, e.g. friends/followers list.
+function! s:format_user_list(output, title, show_following)
+    let matchcount = 1
+    let text = []
+
+    let showheader = s:get_show_header()
+    if showheader
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, a:title.'*')
+	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+    endif
+
+    while 1
+	let user = s:xml_get_nth(a:output, 'user', matchcount)
+	if user == ""
+	    break
+	endif
+	let matchcount += 1
+
+	let following_str = ''
+	if a:show_following
+	    let following = s:xml_get_element(user, 'following')
+	    if following == 'true'
+		let following_str = ' Following'
+	    else
+		let follow_req = s:xml_get_element(user, 'follow_request_sent')
+		let following_str = follow_req == 'true' ? ' Follow request sent' : ' Not following'
+	    endif
+	endif
+
+	let name = s:convert_entity(s:xml_get_element(user, 'name'))
+	let screen = s:xml_get_element(user, 'screen_name')
+	let location = s:convert_entity(s:xml_get_element(user, 'location'))
+	call add(text, 'Name: '.screen.' ('.name.'|'.location.')'.following_str)
+
+	let statusnode = s:xml_get_element(user, 'status')
+	if statusnode != ""
+	    let status = s:xml_get_element(statusnode, 'text')
+	    let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
+	    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+	endif
+
+	call add(text, '')
+    endwhile
+    return text
+endfunction
+
+" Call Twitter API to get friends list.
+function! s:get_friends(cursor)
+    redraw
+    echo "Querying Twitter for friends list..."
+
+    let url = s:get_api_root()."/statuses/friends.xml?cursor=".a:cursor
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting friends list: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_user_list(output, "People you're following", 0), "userinfo")
+    let s:infobuffer.buftype = 'friends'
+    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+
+    redraw
+    echo "Friends list retrieved."
+endfunction
+
+" Call Twitter API to get followers list.
+function! s:get_followers(cursor)
+    redraw
+    echo "Querying Twitter for followers list..."
+
+    let url = s:get_api_root()."/statuses/followers.xml?cursor=".a:cursor
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting followers list: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_user_list(output, "People following you", 1), "userinfo")
+    let s:infobuffer.buftype = 'followers'
+    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+
+    redraw
+    echo "Followers list retrieved."
+endfunction
+
+if !exists(":FollowingTwitter")
+    command FollowingTwitter :call <SID>get_friends(-1)
+endif
+if !exists(":FollowersTwitter")
+    command FollowersTwitter :call <SID>get_followers(-1)
+endif
 
 " Call Tweetburner API to shorten a URL.
 function! s:call_tweetburner(url)
