@@ -3420,6 +3420,38 @@ function! s:call_zima(url)
     return output
 endfunction
 
+" Call Goo.gl API to shorten a URL.
+function! s:call_googl(url)
+    let url = "http://goo.gl/api/url"
+    let parms = { "url": a:url }
+
+    redraw
+    echo "Sending request to goo.gl..."
+
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
+
+    let matchres = matchlist(output, '"error_message":"\([^"]*\)"')
+    if matchres != []
+	call s:errormsg("Error calling goo.gl API: ".matchres[1])
+	return ""
+    endif
+
+    let matchres = matchlist(output, '"short_url":"\([^"]*\)"')
+    if matchres != []
+	redraw
+	echo "Received response from goo.gl."
+	return matchres[1]
+    endif
+
+    if error != ''
+	call s:errormsg("Error calling goo.gl API: ".error)
+	return ""
+    endif
+
+    call s:errormsg("No result returned by goo.gl API.")
+    return ""
+endfunction
+
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
@@ -3548,6 +3580,16 @@ if !exists(":AZima")
 endif
 if !exists(":PZima")
     command -nargs=? PZima :call <SID>GetShortURL("cmdline", <q-args>, "call_zima")
+endif
+
+if !exists(":Googl")
+    command -nargs=? Googl :call <SID>GetShortURL("insert", <q-args>, "call_googl")
+endif
+if !exists(":AGoogl")
+    command -nargs=? AGoogl :call <SID>GetShortURL("append", <q-args>, "call_googl")
+endif
+if !exists(":PGoogl")
+    command -nargs=? PGoogl :call <SID>GetShortURL("cmdline", <q-args>, "call_googl")
 endif
 
 " Parse and format search results from Twitter Search API.

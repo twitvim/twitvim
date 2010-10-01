@@ -155,6 +155,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :Zima................................: |:Zima|
 	     :AZima...............................: |:AZima|
 	     :PZima...............................: |:PZima|
+	     :Googl...............................: |:Googl|
+	     :AGoogl..............................: |:AGoogl|
+	     :PGoogl..............................: |:PGoogl|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
@@ -1480,6 +1483,31 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
+	:Googl						*:Googl*
+	:Googl {url}
+
+	Goo.gl is Google's URL forwarding and shortening service.
+	See http://goo.gl/
+
+	This command calls the goo.gl API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	:AGoogl						*:AGoogl*
+	:AGoogl {url}
+
+	Same as :Googl but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PGoogl						*:PGoogl*
+	:PGoogl {url}
+	
+	Same as :Googl but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
+
 	:[count]SearchTwitter					*:SearchTwitter*
 	:[count]SearchTwitter {query}
 	
@@ -1630,6 +1658,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	0.5.7 : 2010-10-01 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
+			   * Added support for goo.gl. |:Googl|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
 			     by @mattn_jp.
