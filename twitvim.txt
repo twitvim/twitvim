@@ -1535,11 +1535,15 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	rate limit. This command does not work on identi.ca.
 
 
-	:ProfileTwitter {username}			*:ProfileTwitter*
+	:ProfileTwitter					*:ProfileTwitter*
+	:ProfileTwitter {username}
 
 	This command calls the Twitter API to retrieve user profile
 	information (e.g. name, location, bio, update count) for the specified
-	user. It displays the information in a user profile buffer.
+	user {username}. It displays the information in a user profile buffer.
+
+	If {username} is not specified, this command will retrieve
+	information for the currently logged-in user.
 
 	See also |TwitVim-Leader-p|.
 

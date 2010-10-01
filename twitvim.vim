@@ -2994,15 +2994,19 @@ endfunction
 
 " Call Twitter API to get user's info.
 function! s:get_user_info(username)
-    if a:username == ''
-	call s:errormsg("Please specify a user name to retrieve info on.")
-	return
+    let user = a:username
+    if user == ''
+	let user = s:get_twitvim_username()
+	if user == ''
+	    call s:errormsg('Twitter login not set. Please specify a username.')
+	    return
+	endif
     endif
 
     redraw
     echo "Querying Twitter for user information..."
 
-    let url = s:get_api_root()."/users/show.xml?screen_name=".a:username
+    let url = s:get_api_root()."/users/show.xml?screen_name=".user
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
@@ -3021,7 +3025,7 @@ function! s:get_user_info(username)
 endfunction
 
 if !exists(":ProfileTwitter")
-    command -nargs=1 ProfileTwitter :call <SID>get_user_info(<q-args>)
+    command -nargs=? ProfileTwitter :call <SID>get_user_info(<q-args>)
 endif
 
 " Format a list of users, e.g. friends/followers list.
