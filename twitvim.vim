@@ -1339,7 +1339,7 @@ let s:curbuffer = {}
 
 " The info buffer record holds the following fields:
 "
-" buftype: profile, friends, followers, listmembers, userlists, userlistmem, userlistsubs
+" buftype: profile, friends, followers, listmembers, listsubs, userlists, userlistmem, userlistsubs
 " next_cursor: Used for paging.
 " prev_cursor: Used for paging.
 " user: User name
@@ -3132,8 +3132,8 @@ function! s:get_followers(cursor)
     echo "Followers list retrieved."
 endfunction
 
-" Call Twitter API to get members of list.
-function! s:get_list_members(cursor, user, list)
+" Call Twitter API to get members or subscribers of list.
+function! s:get_list_members(cursor, user, list, subscribers)
     let user = a:user
     if user == ''
 	let user = s:get_twitvim_username()
@@ -3143,39 +3143,51 @@ function! s:get_list_members(cursor, user, list)
 	endif
     endif
 
-    redraw
-    echo "Querying Twitter for list members..."
+    if a:subscribers
+	let item = "list subscribers"
+	let query = "/subscribers"
+	let buftype = "listsubs"
+	let title = 'Subscribers to list '.user.'/'.a:list
+    else
+	let item = "list members"
+	let query = "/members"
+	let buftype = "listmembers"
+	let title = 'Members of list '.user.'/'.a:list
+    endif
 
-    let url = s:get_api_root().'/'.user.'/'.a:list.'/members.xml?cursor='.a:cursor
+    redraw
+    echo "Querying Twitter for ".item."..."
+
+    let url = s:get_api_root().'/'.user.'/'.a:list.query.'.xml?cursor='.a:cursor
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting list members: ".(errormsg != '' ? errormsg : error))
+	call s:errormsg("Error getting ".item.": ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, 'Members of list '.user.'/'.a:list, 1), 'userinfo')
-    let s:infobuffer.buftype = 'listmembers'
+    call s:twitter_wintext(s:format_user_list(output, title, 1), 'userinfo')
+    let s:infobuffer.buftype = buftype
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
     let s:infobuffer.user = user
     let s:infobuffer.list = a:list
 
     redraw
-    echo "List members retrieved."
+    echo "Retrieved ".item."."
 endfunction
 
 " Get Twitter list members. Need to do a little fiddling because the 
 " username argument is optional.
-function! s:DoListMembers(arg1, ...)
+function! s:DoListMembers(subscribers, arg1, ...)
     let user = ''
     let list = a:arg1
     if a:0 > 0
 	let user = a:arg1
 	let list = a:1
     endif
-    call s:get_list_members(-1, user, list)
+    call s:get_list_members(-1, user, list, a:subscribers)
 endfunction
 
 " Format a list of lists, e.g. user's list memberships or list subscriptions.
@@ -3271,7 +3283,9 @@ function! s:load_info(buftype, cursor, user, list)
     elseif a:buftype == "followers"
 	call s:get_followers(a:cursor)
     elseif a:buftype == "listmembers"
-	call s:get_list_members(a:cursor, a:user, a:list)
+	call s:get_list_members(a:cursor, a:user, a:list, 0)
+    elseif a:buftype == "listsubs"
+	call s:get_list_members(a:cursor, a:user, a:list, 1)
     elseif a:buftype == "userlists"
 	call s:get_user_lists(a:cursor, a:user, 'owned')
     elseif a:buftype == "userlistmem"
@@ -3314,7 +3328,10 @@ if !exists(":FollowersTwitter")
     command FollowersTwitter :call <SID>get_followers(-1)
 endif
 if !exists(":MembersOfListTwitter")
-    command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(<f-args>)
+    command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(0, <f-args>)
+endif
+if !exists(":SubsOfListTwitter")
+    command -nargs=+ SubsOfListTwitter :call <SID>DoListMembers(1, <f-args>)
 endif
 if !exists(":OwnedListsTwitter")
     command -nargs=? OwnedListsTwitter :call <SID>get_user_lists(-1, <q-args>, "owned")

@@ -68,6 +68,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :FollowingTwitter....................: |:FollowingTwitter|
 	     :FollowersTwitter....................: |:FollowersTwitter|
 	     :MembersOfListTwitter................: |:MembersOfListTwitter|
+	     :SubsOfListTwitter...................: |:SubsOfListTwitter|
 	     :OwnedListsTwitter...................: |:OwnedListsTwitter|
 	     :MemberListsTwitter..................: |:MemberListsTwitter|
 	     :SubsListsTwitter....................: |:SubsListsTwitter|
@@ -860,7 +861,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	:MembersOfListTwitter {list}			*:MembersOfListTwitter*
 	:MembersOfListTwitter {user} {list}
 
-	This command displays the members of the Twitter list {list} owned by 
+	This command displays members of the Twitter list {list} owned by 
+	user {user}. If not specified, {user} is the currently logged-in user.
+
+
+	:SubsOfListTwitter {list}			*:SubsOfListTwitter*
+	:SubsOfListTwitter {user} {list}
+
+	This command displays subscribers to the Twitter list {list} owned by 
 	user {user}. If not specified, {user} is the currently logged-in user.
 
 
@@ -1695,8 +1703,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
 			   * Added |:MembersOfListTwitter|,
-			     |:OwnedListsTwitter|, |:MemberListsTwitter|,
-			     |:SubsListsTwitter|.
+			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
+			     |:MemberListsTwitter|, |:SubsListsTwitter|.
 			   * Added support for goo.gl. |:Googl|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
