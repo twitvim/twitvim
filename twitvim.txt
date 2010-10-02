@@ -1206,6 +1206,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This mapping refreshes the timeline. See |:RefreshTwitter|.
 
+	This mapping also works in friends and followers lists but is
+	of limited utility there.
+
 
 							*TwitVim-next*
 	Ctrl-PageDown					*TwitVim-C-PageDown*

@@ -1342,6 +1342,7 @@ let s:curbuffer = {}
 " buftype: profile, friends, followers, listmembers, listsubs, userlists, userlistmem, userlistsubs
 " next_cursor: Used for paging.
 " prev_cursor: Used for paging.
+" cursor: Used for refresh.
 " user: User name
 " list: List name
 
@@ -2161,6 +2162,9 @@ function! s:twitter_win(wintype)
 	    " Previous page in info buffer.
 	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageInfo()<cr>
 	    
+	    " Refresh info buffer.
+	    nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshInfo()<cr>
+
 	    " Get user timeline for name field or selection.
 	    nnoremap <buffer> <silent> <Leader>u :call <SID>do_info_user_timeline("")<cr>
 	    vnoremap <buffer> <silent> <Leader>u y:call <SID>do_info_user_timeline(@")<cr>
@@ -3021,6 +3025,7 @@ function! s:get_user_info(username)
     let s:infobuffer.buftype = 'profile'
     let s:infobuffer.next_cursor = 0
     let s:infobuffer.prev_cursor = 0
+    let s:infobuffer.cursor = 0
     let s:infobuffer.user = user
     let s:infobuffer.list = ''
 
@@ -3100,6 +3105,7 @@ function! s:get_friends(cursor)
     let s:infobuffer.buftype = 'friends'
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = ''
     let s:infobuffer.list = ''
 
@@ -3125,6 +3131,7 @@ function! s:get_followers(cursor)
     let s:infobuffer.buftype = 'followers'
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = ''
     let s:infobuffer.list = ''
 
@@ -3171,6 +3178,7 @@ function! s:get_list_members(cursor, user, list, subscribers)
     let s:infobuffer.buftype = buftype
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = user
     let s:infobuffer.list = a:list
 
@@ -3268,6 +3276,7 @@ function! s:get_user_lists(cursor, user, what)
     let s:infobuffer.buftype = buftype
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = user
     let s:infobuffer.list = ''
 
@@ -3292,6 +3301,8 @@ function! s:load_info(buftype, cursor, user, list)
 	call s:get_user_lists(a:cursor, a:user, 'memberships')
     elseif a:buftype == "userlistsubs"
 	call s:get_user_lists(a:cursor, a:user, 'subscriptions')
+    elseif a:buftype == "profile"
+	call s:get_user_info(a:user)
     endif
 endfunction
 
@@ -3314,8 +3325,17 @@ function! s:PrevPageInfo()
 	if s:infobuffer.prev_cursor == 0
 	    call s:warnmsg("No previous page in info buffer.")
 	else
-	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor, s:infobuffer.user, s:infobuffer.list)
+	    call s:load_info(s:infobuffer.buftype, s:infobuffer.prev_cursor, s:infobuffer.user, s:infobuffer.list)
 	endif
+    else
+	call s:warnmsg("No info buffer.")
+    endif
+endfunction
+
+" Refresh info buffer.
+function! s:RefreshInfo()
+    if s:infobuffer != {}
+	call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
     else
 	call s:warnmsg("No info buffer.")
     endif
