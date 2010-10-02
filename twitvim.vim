@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 1, 2010
+" Last updated: October 2, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -3341,6 +3341,51 @@ if !exists(":MemberListsTwitter")
 endif
 if !exists(":SubsListsTwitter")
     command -nargs=? SubsListsTwitter :call <SID>get_user_lists(-1, <q-args>, "subscriptions")
+endif
+
+" Follow or unfollow a list.
+function! s:follow_list(unfollow, arg1, ...)
+    if a:0 < 1
+	call s:errormsg('Please specify both a username and a list.')
+	return
+    endif
+    let user = a:arg1
+    let list = a:1
+
+    if a:unfollow
+	let v1 = "Unfollowing"
+	let v2 = "unfollowing"
+	let v3 = "Stopped following"
+    else
+	let v1 = "Following"
+	let v2 = "following"
+	let v3 = "Now following"
+    endif
+
+    redraw
+    echo v1." list ".user."/".list."..."
+
+    let parms = { "list_id" : list }
+    if a:unfollow
+	let parms["_method"] = "DELETE"
+    endif
+    let url = s:get_api_root()."/".user."/".list."/subscribers.xml"
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error ".v2." list: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo v3." list ".user."/".list."."
+    endif
+endfunction
+
+if !exists(":FollowListTwitter")
+    command -nargs=+ FollowListTwitter :call <SID>follow_list(0, <f-args>)
+endif
+if !exists(":UnfollowListTwitter")
+    command -nargs=+ UnfollowListTwitter :call <SID>follow_list(1, <f-args>)
 endif
 
 " Call Tweetburner API to shorten a URL.

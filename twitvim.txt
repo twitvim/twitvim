@@ -72,6 +72,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :OwnedListsTwitter...................: |:OwnedListsTwitter|
 	     :MemberListsTwitter..................: |:MemberListsTwitter|
 	     :SubsListsTwitter....................: |:SubsListsTwitter|
+	     :FollowListTwitter...................: |:FollowListTwitter|
+	     :UnfollowListTwitter.................: |:UnfollowListTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -893,6 +895,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	{user} is the currently logged-in user.
 
 
+	:FollowListTwitter {user} {list}		*:FollowListTwitter*
+
+	Start following the list {list} owned by {user}.
+
+
+	:UnfollowListTwitter {user} {list}		*:UnfollowListTwitter*
+
+	Stop following the list {list} owned by {user}.
+
+
 	:BackTwitter					*:BackTwitter*
 
 	This command takes you back to the previous timeline in the timeline
@@ -1699,12 +1711,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.7 : 2010-10-01 * Added |:FollowingTwitter|, |:FollowersTwitter|,
+	0.5.7 : 2010-10-02 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
 			   * Added |:MembersOfListTwitter|,
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
-			     |:MemberListsTwitter|, |:SubsListsTwitter|.
+			     |:MemberListsTwitter|, |:SubsListsTwitter|,
+			     |:FollowListTwitter|, |:UnfollowListTwitter|.
 			   * Added support for goo.gl. |:Googl|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
