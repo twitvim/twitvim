@@ -68,6 +68,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :FollowingTwitter....................: |:FollowingTwitter|
 	     :FollowersTwitter....................: |:FollowersTwitter|
 	     :MembersOfListTwitter................: |:MembersOfListTwitter|
+	     :OwnedListsTwitter...................: |:OwnedListsTwitter|
+	     :MemberListsTwitter..................: |:MemberListsTwitter|
+	     :SubsListsTwitter....................: |:SubsListsTwitter|
 	     :BackTwitter.........................: |:BackTwitter|
 	     :ForwardTwitter......................: |:ForwardTwitter|
 	     :RefreshTwitter......................: |:RefreshTwitter|
@@ -859,6 +862,27 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command displays the members of the Twitter list {list} owned by 
 	user {user}. If not specified, {user} is the currently logged-in user.
+
+
+	:OwnedListsTwitter				*:OwnedListsTwitter*
+	:OwnedListsTwitter {user}
+
+	This command displays the lists owned by {user}. If not specified,
+	{user} is the currently logged-in user.
+
+
+	:MemberListsTwitter				*:MemberListsTwitter*
+	:MemberListsTwitter {user}
+
+	This command displays the lists following {user}. If not specified,
+	{user} is the currently logged-in user.
+
+
+	:SubsListsTwitter				*:SubsListsTwitter*
+	:SubsListsTwitter {user}
+
+	This command displays the lists followed by {user}. If not specified,
+	{user} is the currently logged-in user.
 
 
 	:BackTwitter					*:BackTwitter*
@@ -1670,7 +1694,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	0.5.7 : 2010-10-01 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
-			   * Added |:MembersOfListTwitter|.
+			   * Added |:MembersOfListTwitter|,
+			     |:OwnedListsTwitter|, |:MemberListsTwitter|,
+			     |:SubsListsTwitter|.
 			   * Added support for goo.gl. |:Googl|
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding

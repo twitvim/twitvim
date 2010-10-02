@@ -1339,7 +1339,7 @@ let s:curbuffer = {}
 
 " The info buffer record holds the following fields:
 "
-" buftype: profile, friends, followers, listmembers
+" buftype: profile, friends, followers, listmembers, userlists, userlistmem, userlistsubs
 " next_cursor: Used for paging.
 " prev_cursor: Used for paging.
 " user: User name
@@ -3178,6 +3178,91 @@ function! s:DoListMembers(arg1, ...)
     call s:get_list_members(-1, user, list)
 endfunction
 
+" Format a list of lists, e.g. user's list memberships or list subscriptions.
+function! s:format_list_list(output, title)
+    let matchcount = 1
+    let text = []
+
+    let showheader = s:get_show_header()
+    if showheader
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, a:title.'*')
+	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+    endif
+
+    while 1
+	let list = s:xml_get_nth(a:output, 'list', matchcount)
+	if list == ""
+	    break
+	endif
+	let matchcount += 1
+
+	let name = s:xml_get_element(list, 'full_name')
+	let following = s:xml_get_element(list, 'member_count')
+	let followers = s:xml_get_element(list, 'subscriber_count')
+	call add(text, 'List: '.name.' (Following: '.following.' Followers: '.followers.')')
+	let desc = s:convert_entity(s:xml_get_element(list, 'description'))
+	if desc != ""
+	    call add(text, desc)
+	endif
+	call add(text, '')
+    endwhile
+    return text
+endfunction
+
+" Call Twitter API to get a user's lists, list memberships, or list subscriptions.
+function! s:get_user_lists(cursor, user, what)
+    let user = a:user
+    if user == ''
+	let user = s:get_twitvim_username()
+	if user == ''
+	    call s:errormsg('Twitter login not set. Please specify a username.')
+	    return
+	endif
+    endif
+
+    if a:what == "owned"
+	let item = "lists"
+	let query = "lists"
+	let title = "Lists owned by ".user
+	let buftype = 'userlists'
+    elseif a:what == "memberships"
+	let item = "list memberships"
+	let query = "lists/memberships"
+	let title = "Lists following ".user
+	let buftype = 'userlistmem'
+    else
+	let item = "list subscriptions"
+	let query = "lists/subscriptions"
+	let title = "Lists followed by ".user
+	let buftype = 'userlistsubs'
+    endif
+
+    redraw
+    echo "Querying Twitter for user's ".item."..."
+
+    let url = s:get_api_root().'/'.user.'/'.query.'.xml?cursor='.a:cursor
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting user's ".item.": ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_list_list(output, title), 'userinfo')
+    let s:infobuffer.buftype = buftype
+    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.user = user
+    let s:infobuffer.list = ''
+
+    redraw
+    echo "User's ".item." retrieved."
+endfunction
+
 " Function to load an info buffer from the given parameters.
 " For use by next/prev pagination commands.
 function! s:load_info(buftype, cursor, user, list)
@@ -3187,6 +3272,12 @@ function! s:load_info(buftype, cursor, user, list)
 	call s:get_followers(a:cursor)
     elseif a:buftype == "listmembers"
 	call s:get_list_members(a:cursor, a:user, a:list)
+    elseif a:buftype == "userlists"
+	call s:get_user_lists(a:cursor, a:user, 'owned')
+    elseif a:buftype == "userlistmem"
+	call s:get_user_lists(a:cursor, a:user, 'memberships')
+    elseif a:buftype == "userlistsubs"
+	call s:get_user_lists(a:cursor, a:user, 'subscriptions')
     endif
 endfunction
 
@@ -3224,6 +3315,15 @@ if !exists(":FollowersTwitter")
 endif
 if !exists(":MembersOfListTwitter")
     command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(<f-args>)
+endif
+if !exists(":OwnedListsTwitter")
+    command -nargs=? OwnedListsTwitter :call <SID>get_user_lists(-1, <q-args>, "owned")
+endif
+if !exists(":MemberListsTwitter")
+    command -nargs=? MemberListsTwitter :call <SID>get_user_lists(-1, <q-args>, "memberships")
+endif
+if !exists(":SubsListsTwitter")
+    command -nargs=? SubsListsTwitter :call <SID>get_user_lists(-1, <q-args>, "subscriptions")
 endif
 
 " Call Tweetburner API to shorten a URL.
