@@ -2098,13 +2098,13 @@ function! s:twitter_win_syntax(wintype)
 	syntax match twitterLink "\<https://\S\+"
 	syntax match twitterLink "\<ftp://\S\+"
 
-	" An @-reply must be preceded by whitespace and ends at a non-word
-	" character.
-	syntax match twitterReply "\S\@<!@\w\+"
+	" An @-reply must be preceded by a non-word character and ends at a
+	" non-word character.
+	syntax match twitterReply "\w\@<!@\w\+"
 
-	" A #-hashtag must be preceded by whitespace and ends at a non-word
-	" character.
-	syntax match twitterLink "\S\@<!#\w\+"
+	" A #-hashtag must be preceded by a non-word character and ends at a
+	" non-word character.
+	syntax match twitterLink "\w\@<!#\w\+"
 
 	" Use the extra star at the end to recognize the title but hide the
 	" star.
