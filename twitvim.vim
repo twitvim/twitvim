@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 2, 2010
+" Last updated: October 6, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1924,6 +1924,13 @@ function! s:launch_url_cword()
     let matchres = matchlist(s, '^@\(\w\+\)')
     if matchres != []
 	call s:get_timeline("user", matchres[1], 1)
+	return
+    endif
+
+    " Handle a "Name: " line by showing that user's timeline.
+    let name = s:info_getname()
+    if name != ''
+	call s:get_timeline("user", name, 1)
 	return
     endif
 

@@ -1104,6 +1104,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	user:, TwitVim will display that user's timeline in the timeline
 	buffer. This will not launch the web browser.
 
+	Also, this mapping recognizes the Name: line in a user profile or a
+	following/followers list and displays that user's timeline.
+
 	In addition, if the cursor is on a word of the form #hashtag, TwitVim
 	will do a Twitter Search for that #hashtag. This too will not launch
 	the web browser.
@@ -1714,7 +1717,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.7 : 2010-10-02 * Added |:FollowingTwitter|, |:FollowersTwitter|,
+	0.5.7 : 2010-10-06 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
 			   * Added |:MembersOfListTwitter|,
@@ -1722,6 +1725,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     |:MemberListsTwitter|, |:SubsListsTwitter|,
 			     |:FollowListTwitter|, |:UnfollowListTwitter|.
 			   * Added support for goo.gl. |:Googl|
+			   * Extend |TwitVim-Leader-g| to support Name: lines
+			     in user profile and following/followers lists.
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
 			     by @mattn_jp.
