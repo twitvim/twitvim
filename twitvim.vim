@@ -3713,6 +3713,23 @@ function! s:call_googl(url)
     return ""
 endfunction
 
+" Call Rga.la API to shorten a URL.
+function! s:call_rgala(url)
+    let url = 'http://rga.la/?url='.s:url_encode(a:url).'&format=plain'
+    redraw
+    echo "Sending request to Rga.la..."
+
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg("Error calling Rga.la API: ".error)
+	return ""
+    endif
+
+    redraw
+    echo "Received response from Rga.la."
+    return output
+endfunction
+
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
@@ -3851,6 +3868,16 @@ if !exists(":AGoogl")
 endif
 if !exists(":PGoogl")
     command -nargs=? PGoogl :call <SID>GetShortURL("cmdline", <q-args>, "call_googl")
+endif
+
+if !exists(":Rgala")
+    command -nargs=? Rgala :call <SID>GetShortURL("insert", <q-args>, "call_rgala")
+endif
+if !exists(":ARgala")
+    command -nargs=? ARgala :call <SID>GetShortURL("append", <q-args>, "call_rgala")
+endif
+if !exists(":PRgala")
+    command -nargs=? PRgala :call <SID>GetShortURL("cmdline", <q-args>, "call_rgala")
 endif
 
 " Parse and format search results from Twitter Search API.

@@ -165,6 +165,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :Googl...............................: |:Googl|
 	     :AGoogl..............................: |:AGoogl|
 	     :PGoogl..............................: |:PGoogl|
+	     :Rgala...............................: |:Rgala|
+	     :ARgala..............................: |:ARgala|
+	     :PRgala..............................: |:PRgala|
 	     :SearchTwitter.......................: |:SearchTwitter|
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
@@ -1573,6 +1576,29 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
+	:Rgala						*:Rgala*
+	:Rgala {url}
+
+	Rga.la is SoFurry.com's URL forwarding and shortening service.
+	See http://rga.la/
+
+	This command calls the Rga.la API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	:ARgala						*:ARgala*
+	:ARgala {url}
+
+	Same as :Rgala but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PRgala						*:PRgala*
+	:PRgala {url}
+	
+	Same as :Rgala but prompts for a tweet on the command line with the
+	short URL already inserted.
+
 
 	:[count]SearchTwitter					*:SearchTwitter*
 	:[count]SearchTwitter {query}
@@ -1732,8 +1758,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
 			     |:MemberListsTwitter|, |:SubsListsTwitter|,
 			     |:FollowListTwitter|, |:UnfollowListTwitter|.
-			   * Added support for goo.gl. |:Googl|
-			   * Extend |TwitVim-Leader-g| to support Name: lines
+			   * Added support for goo.gl |:Googl| and Rga.la.
+			     |:Rgala|
+			   * Extended |TwitVim-Leader-g| to support Name: lines
 			     in user profile and following/followers lists.
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
