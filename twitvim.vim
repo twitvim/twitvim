@@ -3143,7 +3143,7 @@ function! s:get_friends(cursor, user, followers)
     endif
 
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, title, 0), "userinfo")
+    call s:twitter_wintext(s:format_user_list(output, title, a:followers), "userinfo")
     let s:infobuffer.buftype = buftype
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
