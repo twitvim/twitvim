@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 6, 2010
+" Last updated: October 7, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -3094,56 +3094,56 @@ function! s:format_user_list(output, title, show_following)
     return text
 endfunction
 
-" Call Twitter API to get friends list.
-function! s:get_friends(cursor)
-    redraw
-    echo "Querying Twitter for friends list..."
+" Call Twitter API to get friends or followers list.
+function! s:get_friends(cursor, user, followers)
+    if a:followers
+	let buftype = 'followers'
+	let query = '/statuses/followers.xml'
+	if a:user != ''
+	    let what = 'followers list of '.a:user
+	    let title = 'People following '.a:user
+	else
+	    let what = 'followers list'
+	    let title = 'People following you'
+	endif
+    else
+	let buftype = 'friends'
+	let query = '/statuses/friends.xml'
+	if a:user != ''
+	    let what = 'friends list of '.a:user
+	    let title = 'People '.a:user.' is following'
+	else
+	    let what = 'friends list'
+	    let title = "People you're following"
+	endif
+    endif
 
-    let url = s:get_api_root()."/statuses/friends.xml?cursor=".a:cursor
+    redraw
+    echo "Querying Twitter for ".what."..."
+
+    let url = s:add_to_url(s:get_api_root().query, 'cursor='.a:cursor)
+    if a:user != ''
+	let url = s:add_to_url(url, 'screen_name='.a:user)
+    endif
+
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting friends list: ".(errormsg != '' ? errormsg : error))
+	call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, "People you're following", 0), "userinfo")
-    let s:infobuffer.buftype = 'friends'
+    call s:twitter_wintext(s:format_user_list(output, title, 0), "userinfo")
+    let s:infobuffer.buftype = buftype
     let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
     let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
     let s:infobuffer.cursor = a:cursor
-    let s:infobuffer.user = ''
+    let s:infobuffer.user = a:user
     let s:infobuffer.list = ''
 
     redraw
-    echo "Friends list retrieved."
-endfunction
-
-" Call Twitter API to get followers list.
-function! s:get_followers(cursor)
-    redraw
-    echo "Querying Twitter for followers list..."
-
-    let url = s:get_api_root()."/statuses/followers.xml?cursor=".a:cursor
-    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting followers list: ".(errormsg != '' ? errormsg : error))
-	return
-    endif
-
-    let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, "People following you", 1), "userinfo")
-    let s:infobuffer.buftype = 'followers'
-    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
-    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
-    let s:infobuffer.cursor = a:cursor
-    let s:infobuffer.user = ''
-    let s:infobuffer.list = ''
-
-    redraw
-    echo "Followers list retrieved."
+    echo substitute(what,'^.','\u&','') 'retrieved.'
 endfunction
 
 " Call Twitter API to get members or subscribers of list.
@@ -3295,9 +3295,9 @@ endfunction
 " For use by next/prev pagination commands.
 function! s:load_info(buftype, cursor, user, list)
     if a:buftype == "friends"
-	call s:get_friends(a:cursor)
+	call s:get_friends(a:cursor, a:user, 0)
     elseif a:buftype == "followers"
-	call s:get_followers(a:cursor)
+	call s:get_friends(a:cursor, a:user, 1)
     elseif a:buftype == "listmembers"
 	call s:get_list_members(a:cursor, a:user, a:list, 0)
     elseif a:buftype == "listsubs"
@@ -3349,10 +3349,10 @@ function! s:RefreshInfo()
 endfunction
 
 if !exists(":FollowingTwitter")
-    command FollowingTwitter :call <SID>get_friends(-1)
+    command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
 endif
 if !exists(":FollowersTwitter")
-    command FollowersTwitter :call <SID>get_followers(-1)
+    command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
 endif
 if !exists(":MembersOfListTwitter")
     command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(0, <f-args>)

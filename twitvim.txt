@@ -845,16 +845,24 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 	:FollowingTwitter				*:FollowingTwitter*
+	:FollowingTwitter {user}
 
 	This command displays a list of people you're following.
+
+	If {user} is specified, this command displays a list of people that
+	user is following.
 
 	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
 	this list. See |TwitVim-previous| and |TwitVim-next|.
 
 
 	:FollowersTwitter				*:FollowersTwitter*
+	:FollowersTwitter {user}
 
 	This command displays a list of people who follow you.
+
+	If {user} is specified, this command displays a list of people
+	following that user.
 
 	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
 	this list. See |TwitVim-previous| and |TwitVim-next|.
@@ -1717,7 +1725,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.7 : 2010-10-06 * Added |:FollowingTwitter|, |:FollowersTwitter|,
+	0.5.7 : 2010-10-07 * Added |:FollowingTwitter|, |:FollowersTwitter|,
 			     and a mapping to launch user timeline from those 
 			     displays. |TwitVim-Leader-u|
 			   * Added |:MembersOfListTwitter|,
