@@ -1969,15 +1969,6 @@ function! s:info_getname()
     endif
 endfunction
 
-" From info buffer, get user timeline.
-function! s:do_info_user_timeline(s)
-    let s = a:s == '' ? s:info_getname() : a:s
-    if s == ''
-	return
-    endif
-    call s:get_timeline('user', s, 1)
-endfunction
-
 " Call LongURL API on a shorturl to expand it.
 function! s:call_longurl(url)
     redraw
@@ -2177,10 +2168,6 @@ function! s:twitter_win(wintype)
 	    
 	    " Refresh info buffer.
 	    nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshInfo()<cr>
-
-	    " Get user timeline for name field or selection.
-	    nnoremap <buffer> <silent> <Leader>u :call <SID>do_info_user_timeline("")<cr>
-	    vnoremap <buffer> <silent> <Leader>u y:call <SID>do_info_user_timeline(@")<cr>
 
 	    " We need this to be handled specially in the info buffer.
 	    nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>

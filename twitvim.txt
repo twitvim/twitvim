@@ -125,7 +125,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Ctrl-PageDown........................: |TwitVim-C-PageDown|
 	     Previous page........................: |TwitVim-previous|
 	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
-	     <Leader>u............................: |TwitVim-Leader-u|
 	4.4. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
@@ -1243,18 +1242,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This mapping also works in friends and followers lists.
 
 
-	<Leader>u					*TwitVim-Leader-u*
-
-	This mapping works only in friends and followers lists. If the cursor
-	is on a "Name:" line, it retrieves the user timeline for the user
-	named there.
-
-	If you visually select text before invoking this mapping, it uses the
-	selected text for the user name.
-
-	See also |:UserTwitter|.
-
-
 ------------------------------------------------------------------------------
 4.4. Utility Commands					*TwitVim-utility*
 
@@ -1751,9 +1738,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.7 : 2010-10-07 * Added |:FollowingTwitter|, |:FollowersTwitter|,
-			     and a mapping to launch user timeline from those 
-			     displays. |TwitVim-Leader-u|
+	0.5.7 : 2010-10-07 * Added |:FollowingTwitter|, |:FollowersTwitter|.
 			   * Added |:MembersOfListTwitter|,
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
 			     |:MemberListsTwitter|, |:SubsListsTwitter|,
