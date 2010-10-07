@@ -1917,7 +1917,7 @@ endfunction
 " function will try to recognize a URL within the current word. Otherwise,
 " it'll just use the whole word.
 " If the cWORD happens to be @user or user:, show that user's timeline.
-function! s:launch_url_cword()
+function! s:launch_url_cword(infobuf)
     let s = expand("<cWORD>")
 
     " Handle @-replies by showing that user's timeline.
@@ -1927,19 +1927,25 @@ function! s:launch_url_cword()
 	return
     endif
 
-    " Handle a "Name: " line by showing that user's timeline.
-    let name = s:info_getname()
-    if name != ''
-	call s:get_timeline("user", name, 1)
-	return
+    if a:infobuf
+	" Handle a "Name: " line by showing that user's timeline.
+	let name = s:info_getname()
+	if name != ''
+	    call s:get_timeline("user", name, 1)
+	    return
+	endif
     endif
 
-    " Handle username: at the beginning of the line by showing that user's
-    " timeline.
-    let matchres = matchlist(s, '^\(\w\+\):$')
-    if matchres != []
-	call s:get_timeline("user", matchres[1], 1)
-	return
+    " Don't match ^word: if in profile buffer. It leads to all kinds of false
+    " matches.
+    if !a:infobuf
+	" Handle username: at the beginning of the line by showing that user's
+	" timeline.
+	let matchres = matchlist(s, '^\(\w\+\):$')
+	if matchres != []
+	    call s:get_timeline("user", matchres[1], 1)
+	    return
+	endif
     endif
 
     " Handle #-hashtags by showing the Twitter Search for that hashtag.
@@ -2149,8 +2155,8 @@ function! s:twitter_win(wintype)
 	setlocal nospell
 
 	" Launch browser with URL in visual selection or at cursor position.
-	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword()<cr>
-	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword()<cr>
+	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(0)<cr>
+	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(0)<cr>
 	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
 	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
 
@@ -2176,6 +2182,9 @@ function! s:twitter_win(wintype)
 	    nnoremap <buffer> <silent> <Leader>u :call <SID>do_info_user_timeline("")<cr>
 	    vnoremap <buffer> <silent> <Leader>u y:call <SID>do_info_user_timeline(@")<cr>
 
+	    " We need this to be handled specially in the info buffer.
+	    nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>
+	    nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(1)<cr>
 	else
 	    " Quick reply feature for replying from the timeline.
 	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
