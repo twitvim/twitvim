@@ -2270,6 +2270,13 @@ function! s:format_status_xml(item)
     return user.': '.text.' |'.pubdate.'|'
 endfunction
 
+" Get in-reply-to from a status element. If this is a retweet, use the id of
+" the retweeted status as the in-reply-to.
+function! s:get_in_reply_to(status)
+    let rt = s:xml_get_element(a:status, 'retweeted_status')
+    return rt != '' ? s:xml_get_element(rt, 'id') : s:xml_get_element(a:status, 'in_reply_to_status_id')
+endfunction
+
 " Show a timeline from XML stream data.
 function! s:show_timeline_xml(timeline, tline_name, username, page)
     let matchcount = 1
@@ -2323,7 +2330,7 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	endif
 
 	call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
-	call add(s:curbuffer.inreplyto, s:xml_get_element(item, 'in_reply_to_status_id'))
+	call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
 
 	let line = s:format_status_xml(item)
 	call add(text, line)
