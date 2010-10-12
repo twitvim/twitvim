@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 7, 2010
+" Last updated: October 12, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1348,120 +1348,182 @@ let s:curbuffer = {}
 
 let s:infobuffer = {}
 
-let s:bufstack = []
+" ptr = Buffer stack pointer. -1 if no items yet. May not point to the end of
+" the list if user has gone back one or more buffers.
+let s:bufstack = { 'ptr': -1, 'stack': [] }
+
+let s:infobufstack = { 'ptr': -1, 'stack': [] }
 
 " Maximum items in the buffer stack. Adding a new item after this limit will
 " get rid of the first item.
 let s:bufstackmax = 10
 
-" Buffer stack pointer. -1 if no items yet. May not point to the end of the
-" list if user has gone back one or more buffers.
-let s:bufstackptr = -1
 
 " Add current buffer to the buffer stack at the next position after current.
 " Remove all buffers after that.
-function! s:add_buffer()
+function! s:add_buffer(infobuf)
+
+    let stack = a:infobuf ? s:infobufstack : s:bufstack
+    let cur = a:infobuf ? s:infobuffer : s:curbuffer
 
     " If stack is already full, remove the buffer at the bottom of the stack to
     " make room.
-    if s:bufstackptr >= s:bufstackmax
-	call remove(s:bufstack, 0)
-	let s:bufstackptr -= 1
+    if stack.ptr >= s:bufstackmax
+	call remove(stack.stack, 0)
+	let stack.ptr -= 1
     endif
 
-    let s:bufstackptr += 1
+    let stack.ptr += 1
 
     " Suppress errors because there may not be anything to remove after current
     " position.
-    silent! call remove(s:bufstack, s:bufstackptr, -1)
+    silent! call remove(stack.stack, stack.ptr, -1)
 
-    call add(s:bufstack, s:curbuffer)
+    call add(stack.stack, cur)
 endfunction
 
 " If current buffer is same type as the buffer at the buffer stack pointer then
 " just copy it into the buffer stack. Otherwise, add it to buffer stack.
-function! s:save_buffer()
-    if s:curbuffer == {}
+function! s:save_buffer(infobuf)
+    let stack = a:infobuf ? s:infobufstack : s:bufstack
+    let cur = a:infobuf ? s:infobuffer : s:curbuffer
+    let winname = a:infobuf ? s:user_winname : s:twit_winname
+
+    if cur == {}
 	return
     endif
 
     " Save buffer contents and cursor position.
-    let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
+    let twit_bufnr = bufwinnr('^'.winname.'$')
     if twit_bufnr > 0
 	let curwin = winnr()
 	execute twit_bufnr . "wincmd w"
-	let s:curbuffer.buffer = getline(1, '$')
-	let s:curbuffer.view = winsaveview()
+	let cur.buffer = getline(1, '$')
+	let cur.view = winsaveview()
 	execute curwin .  "wincmd w"
     else
-	let s:curbuffer.view = {}
+	let cur.view = {}
     endif
 
     " If current buffer is the same type as buffer at the top of the stack,
     " then just copy it.
-    if s:bufstackptr >= 0 && s:curbuffer.buftype == s:bufstack[s:bufstackptr].buftype && s:curbuffer.list == s:bufstack[s:bufstackptr].list && s:curbuffer.user == s:bufstack[s:bufstackptr].user && s:curbuffer.page == s:bufstack[s:bufstackptr].page
+    if stack.ptr >= 0
 
-	let s:bufstack[s:bufstackptr] = deepcopy(s:curbuffer)
-	return
+	let issame = 0
+	
+	if a:infobuf
+	    if cur.buftype == stack.stack[stack.ptr].buftype && cur.cursor == stack.stack[stack.ptr].cursor && cur.user == stack.stack[stack.ptr].user && cur.list == stack.stack[stack.ptr].list
+		let issame = 1
+	    endif
+	else
+	    if cur.buftype == stack.stack[stack.ptr].buftype && cur.list == stack.stack[stack.ptr].list && cur.user == stack.stack[stack.ptr].user && cur.page == stack.stack[stack.ptr].page
+		let issame = 1
+	    endif
+	endif
+
+	if issame
+	    let stack.stack[stack.ptr] = deepcopy(cur)
+	    return
+	endif
     endif
 
     " Otherwise, push the current buffer onto the stack.
-    call s:add_buffer()
+    call s:add_buffer(a:infobuf)
 endfunction
 
 " Go back one buffer in the buffer stack.
-function! s:back_buffer()
-    call s:save_buffer()
+function! s:back_buffer(infobuf)
+    let stack = a:infobuf ? s:infobufstack : s:bufstack
 
-    if s:bufstackptr < 1
+    call s:save_buffer(a:infobuf)
+
+    if stack.ptr < 1
 	call s:warnmsg("Already at oldest buffer. Can't go back further.")
 	return -1
     endif
 
-    let s:bufstackptr -= 1
-    let s:curbuffer = deepcopy(s:bufstack[s:bufstackptr])
+    let stack.ptr -= 1
+    if a:infobuf
+	let s:infobuffer = deepcopy(stack.stack[stack.ptr])
+    else
+	let s:curbuffer = deepcopy(stack.stack[stack.ptr])
+    endif
+    let cur = a:infobuf ? s:infobuffer : s:curbuffer
+    let wintype = a:infobuf ? 'userinfo' : 'timeline'
 
-    call s:twitter_wintext_view(s:curbuffer.buffer, "timeline", s:curbuffer.view)
+    call s:twitter_wintext_view(cur.buffer, wintype, cur.view)
     return 0
 endfunction
 
 " Go forward one buffer in the buffer stack.
-function! s:fwd_buffer()
-    call s:save_buffer()
+function! s:fwd_buffer(infobuf)
+    let stack = a:infobuf ? s:infobufstack : s:bufstack
 
-    if s:bufstackptr + 1 >= len(s:bufstack)
+    call s:save_buffer(a:infobuf)
+
+    if stack.ptr + 1 >= len(stack.stack)
 	call s:warnmsg("Already at newest buffer. Can't go forward.")
 	return -1
     endif
 
-    let s:bufstackptr += 1
-    let s:curbuffer = deepcopy(s:bufstack[s:bufstackptr])
+    let stack.ptr += 1
+    if a:infobuf
+	let s:infobuffer = deepcopy(stack.stack[stack.ptr])
+    else
+	let s:curbuffer = deepcopy(stack.stack[stack.ptr])
+    endif
+    let cur = a:infobuf ? s:infobuffer : s:curbuffer
+    let wintype = a:infobuf ? 'userinfo' : 'timeline'
 
-    call s:twitter_wintext_view(s:curbuffer.buffer, "timeline", s:curbuffer.view)
+    call s:twitter_wintext_view(cur.buffer, wintype, cur.view)
     return 0
 endfunction
 
 if !exists(":BackTwitter")
-    command BackTwitter :call <SID>back_buffer()
+    command BackTwitter :call <SID>back_buffer(0)
 endif
 if !exists(":ForwardTwitter")
-    command ForwardTwitter :call <SID>fwd_buffer()
+    command ForwardTwitter :call <SID>fwd_buffer(0)
+endif
+if !exists(":BackInfoTwitter")
+    command BackInfoTwitter :call <SID>back_buffer(1)
+endif
+if !exists(":ForwardInfoTwitter")
+    command ForwardInfoTwitter :call <SID>fwd_buffer(1)
 endif
 
 " For debugging. Show the buffer stack.
-function! s:show_bufstack()
-    for i in range(len(s:bufstack) - 1, 0, -1)
-	echo i.':' 'type='.s:bufstack[i].buftype 'user='.s:bufstack[i].user 'page='.s:bufstack[i].page
+function! s:show_bufstack(infobuf)
+    let stack = a:infobuf ? s:infobufstack : s:bufstack
+
+    for i in range(len(stack.stack) - 1, 0, -1)
+	let s = i.':'
+	let s .= ' type='.stack.stack[i].buftype
+	let s .= ' user='.stack.stack[i].user
+	let s .= ' list='.stack.stack[i].list
+	if a:infobuf
+	    let s .= ' cursor='.stack.stack[i].cursor
+	else
+	    let s .= ' page='.stack.stack[i].page
+	endif
+	echo s
     endfor
 endfunction
 
 if !exists(":TwitVimShowBufstack")
-    command TwitVimShowBufstack :call <SID>show_bufstack()
+    command TwitVimShowBufstack :call <SID>show_bufstack(0)
+endif
+if !exists(":TwitVimShowInfoBufstack")
+    command TwitVimShowInfoBufstack :call <SID>show_bufstack(1)
 endif
 
 " For debugging. Show curbuffer variable.
 if !exists(":TwitVimShowCurbuffer")
     command TwitVimShowCurbuffer :echo s:curbuffer
+endif
+" For debugging. Show infobuffer variable.
+if !exists(":TwitVimShowInfobuffer")
+    command TwitVimShowInfobuffer :echo s:infobuffer
 endif
 
 " === End of buffer stack code ===
@@ -2172,6 +2234,10 @@ function! s:twitter_win(wintype)
 	    " We need this to be handled specially in the info buffer.
 	    nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>
 	    nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(1)<cr>
+	    
+	    " Go back and forth through buffer stack.
+	    nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(1)<cr>
+	    nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(1)<cr>
 	else
 	    " Quick reply feature for replying from the timeline.
 	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
@@ -2207,11 +2273,10 @@ function! s:twitter_win(wintype)
 	    " Unfavorite a tweet.
 	    nnoremap <buffer> <silent> <Leader><C-f> :call <SID>fave_tweet(1)<cr>
 
+	    " Go back and forth through buffer stack.
+	    nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(0)<cr>
+	    nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(0)<cr>
 	endif
-
-	" Go back and forth through buffer stack.
-	nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer()<cr>
-	nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer()<cr>
     endif
 
     call s:twitter_win_syntax(a:wintype)
@@ -2394,7 +2459,7 @@ function! s:get_timeline(tline_name, username, page)
 	return
     endif
 
-    call s:save_buffer()
+    call s:save_buffer(0)
     let s:curbuffer = {}
     call s:show_timeline_xml(output, a:tline_name, a:username, a:page)
     let s:curbuffer.buftype = a:tline_name
@@ -2447,7 +2512,7 @@ function! s:get_list_timeline(username, listname, page)
 	return
     endif
 
-    call s:save_buffer()
+    call s:save_buffer(0)
     let s:curbuffer = {}
     call s:show_timeline_xml(output, "list", user."/".a:listname, a:page)
     let s:curbuffer.buftype = "list"
@@ -2543,7 +2608,7 @@ function! s:Direct_Messages(mode, page)
 	return
     endif
 
-    call s:save_buffer()
+    call s:save_buffer(0)
     let s:curbuffer = {}
     call s:show_dm_xml(s_or_r, output, a:page)
     let s:curbuffer.buftype = a:mode
@@ -3030,6 +3095,7 @@ function! s:get_user_info(username)
 	return
     endif
 
+    call s:save_buffer(1)
     let s:infobuffer = {}
     call s:twitter_wintext(s:format_user_info(output), "userinfo")
     let s:infobuffer.buftype = 'profile'
@@ -3141,6 +3207,7 @@ function! s:get_friends(cursor, user, followers)
 	return
     endif
 
+    call s:save_buffer(1)
     let s:infobuffer = {}
     call s:twitter_wintext(s:format_user_list(output, title, a:followers || a:user != ''), "userinfo")
     let s:infobuffer.buftype = buftype
@@ -3188,6 +3255,7 @@ function! s:get_list_members(cursor, user, list, subscribers)
 	return
     endif
 
+    call s:save_buffer(1)
     let s:infobuffer = {}
     call s:twitter_wintext(s:format_user_list(output, title, 1), 'userinfo')
     let s:infobuffer.buftype = buftype
@@ -3286,6 +3354,7 @@ function! s:get_user_lists(cursor, user, what)
 	return
     endif
 
+    call s:save_buffer(1)
     let s:infobuffer = {}
     call s:twitter_wintext(s:format_list_list(output, title), 'userinfo')
     let s:infobuffer.buftype = buftype
@@ -3355,6 +3424,16 @@ function! s:RefreshInfo()
 	call s:warnmsg("No info buffer.")
     endif
 endfunction
+
+if !exists(":RefreshInfoTwitter")
+    command RefreshInfoTwitter :call <SID>RefreshInfo()
+endif
+if !exists(":NextInfoTwitter")
+    command NextInfoTwitter :call <SID>NextPageInfo()
+endif
+if !exists(":PreviousInfoTwitter")
+    command PreviousInfoTwitter :call <SID>PrevPageInfo()
+endif
 
 if !exists(":FollowingTwitter")
     command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
@@ -3960,7 +4039,7 @@ function! s:get_summize(query, page)
 	return
     endif
 
-    call s:save_buffer()
+    call s:save_buffer(0)
     let s:curbuffer = {}
     call s:show_summize(output, a:page)
     let s:curbuffer.buftype = "search"
