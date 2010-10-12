@@ -47,12 +47,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3.6. Hide the header in timeline buffer...: |TwitVim-hide-header|
 	     twitvim_show_header..................: |twitvim_show_header|
 	4. Manual.................................: |TwitVim-manual|
-	4.1. Update Commands......................: |TwitVim-update-commands|
+	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
+	4.2. Update Commands......................: |TwitVim-update-commands|
 	     :PosttoTwitter.......................: |:PosttoTwitter|
 	     :CPosttoTwitter......................: |:CPosttoTwitter|
 	     :BPosttoTwitter......................: |:BPosttoTwitter|
 	     :SendDMTwitter.......................: |:SendDMTwitter|
-	4.2. Timeline Commands....................: |TwitVim-timeline-commands|
+	4.3. Timeline Commands....................: |TwitVim-timeline-commands|
 	     :UserTwitter.........................: |:UserTwitter|
 	     twitvim_count........................: |twitvim_count|
 	     :FriendsTwitter......................: |:FriendsTwitter|
@@ -93,7 +94,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :ReportSpamTwitter...................: |:ReportSpamTwitter|
 	     :AddToListTwitter....................: |:AddToListTwitter|
 	     :RemoveFromListTwitter...............: |:RemoveFromListTwitter|
-	4.3. Mappings.............................: |TwitVim-mappings|
+	4.4. Mappings.............................: |TwitVim-mappings|
 	     Alt-T................................: |TwitVim-A-t|
 	     Ctrl-T...............................: |TwitVim-C-t|
 	     Reply Feature........................: |TwitVim-reply|
@@ -130,7 +131,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Ctrl-PageDown........................: |TwitVim-C-PageDown|
 	     Previous page........................: |TwitVim-previous|
 	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
-	4.4. Utility Commands.....................: |TwitVim-utility|
+	4.5. Utility Commands.....................: |TwitVim-utility|
 	     :Tweetburner.........................: |:Tweetburner|
 	     :ATweetburner........................: |:ATweetburner|
 	     :PTweetburner........................: |:PTweetburner|
@@ -670,13 +671,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.6. Hide the header in timeline buffer			*TwitVim-hide-header*
+3.6. Hide the header in timeline and info buffers	*TwitVim-hide-header*
 
-	In a timeline buffer, the first two lines are header lines. The first
-	line tells you the type of buffer it is (e.g. friends, user, replies,
-	direct messages, search) and other relevant buffer information. (e.g.
-	user name, search terms, page number) The second line is a separator
-	line.
+	In the timeline and info buffers, the first two lines are header
+	lines. The first line tells you the type of buffer it is (e.g.
+	friends, user, replies, direct messages, search in the timeline
+	buffer; friends, followers, user profile in the info buffer) and other
+	relevant buffer information. (e.g. user name, search terms, page
+	number) The second line is a separator line.
 
 	If you wish to suppress the header display, set twitvim_show_header
 	to 0:
@@ -689,7 +691,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	header.
 
 	Note: Setting twitvim_show_header does not change the timeline buffer
-	immediately. Use |:RefreshTwitter| to refresh the timeline to see the
+	immediately. Use |:RefreshTwitter| to refresh the timeline (or
+	|:RefreshInfoTwitter| to refresh the info buffer) to see the
 	effect. Also, twitvim_show_header does not retroactively alter
 	previous timelines in the timeline stack.
 
@@ -698,11 +701,37 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 4. TwitVim Manual					*TwitVim-manual*
 
 ------------------------------------------------------------------------------
-4.1. Update Commands				*TwitVim-update-commands*
+4.1. TwitVim's Buffers					*TwitVim-buffers*
+
+	TwitVim has 2 buffers, a timeline buffer and an info buffer.
+
+	Commands such as |:FriendsTwitter|, |:MentionsTwitter|, |:DMTwitter|,
+	and |:ListTwitter| bring up a timeline buffer. This buffer consists of
+	a list of tweets or messages. See |TwitVim-mappings| for a list of
+	mappings that are local to this buffer.
+
+	Commands such as |:ProfileTwitter|, |:FollowingTwitter|,
+	|:FollowersTwitter|, and |:OwnedListsTwitter| bring up an info buffer.
+	This buffer may consist of a list of users or a list of Twitter lists.
+	In the case of |:ProfileTwitter|, it is a list of fields from one user
+	profile. Only a subset of the mappings in |:TwitVim-mappings| will
+	work in the info buffer.
+
+	TwitVim brings up a new timeline buffer only if one does not already
+	exist. Otherwise, it reuses the existing timeline buffer. The same
+	behavior applies to the info buffer.
+
+
+------------------------------------------------------------------------------
+4.2. Update Commands				*TwitVim-update-commands*
 
 	These commands post an update to your Twitter account. If the friends,
 	user, or public timeline is visible, TwitVim will insert the update
 	into the timeline view after posting it.
+
+	Note: If you are replying to a tweet, use the <Leader>r mapping in the
+	timeline buffer instead. See |TwitVim-reply|. That mapping will set
+	the in-reply-to field, which :PosttoTwitter can't handle.
 
 	:PosttoTwitter					*:PosttoTwitter*
 
@@ -726,7 +755,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	the most common reason for this error when sending a direct message.
 
 ------------------------------------------------------------------------------
-4.2. Timeline Commands				*TwitVim-timeline-commands*
+4.3. Timeline Commands				*TwitVim-timeline-commands*
 
 	These commands retrieve a Twitter timeline and display it in a special
 	Twitter buffer. TwitVim applies syntax highlighting to highlight
@@ -1047,7 +1076,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-4.3. Mappings						*TwitVim-mappings*
+4.4. Mappings						*TwitVim-mappings*
 
 	Alt-T						*TwitVim-A-t*
 	Ctrl-T						*TwitVim-C-t*
@@ -1168,7 +1197,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*TwitVim-LongURL*
 	<Leader>e					*TwitVim-Leader-e*
 
-	This mapping is local to the timeline and user profile buffers. It
+	This mapping is local to the timeline and info buffers. It
 	calls the LongURL API (see http://longurl.org/) to expand the short
 	URL at the cursor position. A short URL is a URL from a URL shortening
 	service such as TinyURL, SnipURL, etc. Use this feature if you wish to
@@ -1187,7 +1216,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This mapping is local to the timeline and info buffers. It
 	calls the Twitter API to retrieve user profile information (e.g. name,
 	location, bio, update count) for the user name at the cursor position.
-	It displays the information in a user profile buffer.
+	It displays the profile information in an info buffer.
 
 	If you visually select text before invoking this mapping, it uses the
 	selected text for the user name.
@@ -1288,7 +1317,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-4.4. Utility Commands					*TwitVim-utility*
+4.5. Utility Commands					*TwitVim-utility*
 
 	:Tweetburner					*:Tweetburner*
 	:Tweetburner {url}
@@ -1664,7 +1693,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command calls the Twitter API to retrieve user profile
 	information (e.g. name, location, bio, update count) for the specified
-	user {username}. It displays the information in a user profile buffer.
+	user {username}. It displays the information in an info buffer.
 
 	If {username} is not specified, this command will retrieve
 	information for the currently logged-in user.
