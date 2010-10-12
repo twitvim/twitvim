@@ -3085,6 +3085,11 @@ function! s:format_user_list(output, title, show_following)
 	let slocation = location == '' ? '' : '|'.location
 	call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
 
+	let desc = s:xml_get_element(user, 'description')
+	if desc != ''
+	    call add(text, 'Bio: '.s:convert_entity(desc))
+	endif
+
 	let statusnode = s:xml_get_element(user, 'status')
 	if statusnode != ""
 	    let status = s:xml_get_element(statusnode, 'text')
