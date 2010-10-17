@@ -2320,6 +2320,17 @@ function! s:twitter_wintext(text, wintype)
     call s:twitter_wintext_view(a:text, a:wintype, {})
 endfunction
 
+" Format a retweeted status, if available.
+function! s:format_retweeted_status(item)
+    let rt = s:xml_get_element(a:item, 'retweeted_status')
+    if rt == ''
+	return ''
+    endif
+    let user = s:xml_get_element(rt, 'screen_name')
+    let text = s:convert_entity(s:xml_get_element(rt, 'text'))
+    return 'RT @'.user.': '.text
+endfunction
+
 " Format XML status as a display line.
 function! s:format_status_xml(item)
     let item = a:item
@@ -2329,7 +2340,10 @@ function! s:format_status_xml(item)
     let item = s:xml_remove_elements(item, 'retweeted_status')
 
     let user = s:xml_get_element(item, 'screen_name')
-    let text = s:convert_entity(s:xml_get_element(item, 'text'))
+    let text = s:format_retweeted_status(a:item)
+    if text == ''
+	let text = s:convert_entity(s:xml_get_element(item, 'text'))
+    endif
     let pubdate = s:time_filter(s:xml_get_element(item, 'created_at'))
 
     return user.': '.text.' |'.pubdate.'|'
