@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 12, 2010
+" Last updated: October 19, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1983,7 +1983,9 @@ function! s:launch_url_cword(infobuf)
     let s = expand("<cWORD>")
 
     " Handle @-replies by showing that user's timeline.
-    let matchres = matchlist(s, '^@\(\w\+\)')
+    " An @-reply must be preceded by a non-word character and ends at a
+    " non-word character.
+    let matchres = matchlist(s, '\w\@<!@\(\w\+\)')
     if matchres != []
 	call s:get_timeline("user", matchres[1], 1)
 	return
@@ -2011,7 +2013,9 @@ function! s:launch_url_cword(infobuf)
     endif
 
     " Handle #-hashtags by showing the Twitter Search for that hashtag.
-    let matchres = matchlist(s, '^\(#\w\+\)')
+    " A #-hashtag must be preceded by a non-word character and ends at a
+    " non-word character.
+    let matchres = matchlist(s, '\w\@<!\(#\w\+\)')
     if matchres != []
 	call s:get_summize(matchres[1], 1)
 	return
