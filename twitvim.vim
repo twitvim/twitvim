@@ -1975,6 +1975,8 @@ function! s:launch_browser(url)
     return 0
 endfunction
 
+let s:URLMATCH = '\%(http\|https\|ftp\)://\S\+'
+
 " Launch web browser with the URL at the cursor position. If possible, this
 " function will try to recognize a URL within the current word. Otherwise,
 " it'll just use the whole word.
@@ -1997,6 +1999,20 @@ function! s:launch_url_cword(infobuf)
 	let name = s:info_getname()
 	if name != ''
 	    call s:get_timeline("user", name, 1)
+	    return
+	endif
+
+	" Parse a Website: line specially.
+	let matchres = matchlist(getline('.'), '^Website: \('.s:URLMATCH.'\)')
+	if matchres != []
+	    call s:launch_browser(matchres[1])
+	    return
+	endif
+
+	" Don't do anything on field labels in profile buffer.
+	" Otherwise, the code below will needlessly launch a web browser.
+	let matchres = matchlist(s, '^\(\w\+\):$')
+	if matchres != []
 	    return
 	endif
     else
@@ -2028,7 +2044,7 @@ function! s:launch_url_cword(infobuf)
 	return
     endif
 
-    let s = substitute(s, '.*\<\(\(http\|https\|ftp\)://\S\+\)', '\1', "")
+    let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
     call s:launch_browser(s)
 endfunction
 
@@ -2079,7 +2095,7 @@ function! s:do_longurl(s)
     let s = a:s
     if s == ""
 	let s = expand("<cWORD>")
-	let s = substitute(s, '.*\<\(\(http\|https\|ftp\)://\S\+\)', '\1', "")
+	let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
     endif
     let result = s:call_longurl(s)
     if result != ""
@@ -2171,9 +2187,7 @@ function! s:twitter_win_syntax(wintype)
 	syntax match twitterTimeBar /|/ contained
 
 	" Highlight links in tweets.
-	syntax match twitterLink "\<http://\S\+"
-	syntax match twitterLink "\<https://\S\+"
-	syntax match twitterLink "\<ftp://\S\+"
+	execute 'syntax match twitterLink "\<'.s:URLMATCH.'"'
 
 	" An @-reply must be preceded by a non-word character and ends at a
 	" non-word character.
@@ -3083,9 +3097,9 @@ function! s:format_user_info(output)
 
     let usernode = s:xml_remove_elements(output, 'status')
     let startdate = s:time_filter(s:xml_get_element(usernode, 'created_at'))
-    call add(text, 'Started on: |'.startdate.'|')
+    call add(text, 'Started: |'.startdate.'|')
     let timezone = s:convert_entity(s:xml_get_element(usernode, 'time_zone'))
-    call add(text, 'Time zone: '.timezone)
+    call add(text, 'Timezone: '.timezone)
     call add(text, '')
 
     let statusnode = s:xml_get_element(output, 'status')
