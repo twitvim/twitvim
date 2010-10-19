@@ -1992,17 +1992,24 @@ function! s:launch_url_cword(infobuf)
     endif
 
     if a:infobuf
-	" Handle a "Name: " line by showing that user's timeline.
+	" Don't match ^word: if in profile buffer. It leads to all kinds of
+	" false matches. Instead, parse a Name: line specially.
 	let name = s:info_getname()
 	if name != ''
 	    call s:get_timeline("user", name, 1)
 	    return
 	endif
-    endif
+    else
+	if col('.') == 1 && s == '+'
+	    " If the cursor is on the '+' in a reply expansion, use the second
+	    " word instead.
+	    let matchres = matchlist(getline('.'), '^+ \(\w\+\):')
+	    if matchres != []
+		call s:get_timeline("user", matchres[1], 1)
+		return
+	    endif
+	endif
 
-    " Don't match ^word: if in profile buffer. It leads to all kinds of false
-    " matches.
-    if !a:infobuf
 	" Handle username: at the beginning of the line by showing that user's
 	" timeline.
 	let matchres = matchlist(s, '^\(\w\+\):$')
