@@ -2304,6 +2304,7 @@ function! s:twitter_win(wintype)
 	endif
     endif
 
+    setlocal filetype=twitvim
     call s:twitter_win_syntax(a:wintype)
     return newwin
 endfunction
