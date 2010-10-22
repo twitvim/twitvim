@@ -3072,6 +3072,18 @@ endif
 
 let s:user_winname = "TwitterInfo_".localtime()
 
+" Convert true/false into yes/no.
+function! s:yesorno(s)
+    let s = tolower(a:s)
+    if s == "true" || s == "yes"
+	return "yes"
+    elseif s == "false" || s == "no" || s == ""
+	return "no"
+    else
+	return s
+    endif
+endfunction
+
 " Process/format the user information.
 function! s:format_user_info(output)
     let text = []
@@ -3092,8 +3104,8 @@ function! s:format_user_info(output)
     call add(text, 'Favorites: '.s:xml_get_element(output, 'favourites_count'))
     call add(text, '')
 
-    call add(text, 'Protected: '.s:xml_get_element(output, 'protected'))
-    call add(text, 'Following: '.s:xml_get_element(output, 'following'))
+    call add(text, 'Protected: '.s:yesorno(s:xml_get_element(output, 'protected')))
+    call add(text, 'Following: '.s:yesorno(s:xml_get_element(output, 'following')))
     call add(text, '')
 
     let usernode = s:xml_remove_elements(output, 'status')
