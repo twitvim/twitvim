@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 19, 2010
+" Last updated: October 25, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2104,6 +2104,19 @@ function! s:do_longurl(s)
     endif
 endfunction
 
+
+" Just like do_user_info() but handle Name: lines in info buffer specially.
+function! s:do_user_info_infobuf()
+    let name = s:info_getname()
+    if name != ''
+	call s:get_user_info(name)
+	return
+    endif
+
+    " Fall back to original user info function.
+    call s:do_user_info('')
+endfunction
+
 " Get info on the given user. If no user is provided, use the current word and
 " strip off the @ or : if the current word is @user or user:. 
 function! s:do_user_info(s)
@@ -2260,6 +2273,9 @@ function! s:twitter_win(wintype)
 	    nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>
 	    nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(1)<cr>
 	    
+	    " This also needs to be handled specially for Name: lines.
+	    nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info_infobuf()<cr>
+
 	    " Go back and forth through buffer stack.
 	    nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(1)<cr>
 	    nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(1)<cr>
