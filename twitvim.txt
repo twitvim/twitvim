@@ -1812,7 +1812,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.5.7 : 2010-10-12 * Added |:FollowingTwitter|, |:FollowersTwitter|.
+	0.6.0 : 2010-10-27 * Added |:FollowingTwitter|, |:FollowersTwitter|.
 			   * Added |:MembersOfListTwitter|,
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
 			     |:MemberListsTwitter|, |:SubsListsTwitter|,
@@ -1821,9 +1821,23 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     |:Rgala|
 			   * Extended |TwitVim-Leader-g| to support Name: lines
 			     in user profile and following/followers lists.
+			   * Added history stack for info buffer.
 			   * Added |:BackInfoTwitter|, |:ForwardInfoTwitter|,
 			     |:RefreshInfoTwitter|, |:NextInfoTwitter|,
-			     |:PreviousInfoTwitter| for the info buffer.
+			     |:PreviousInfoTwitter| for the info buffer. Also
+			     added support for |TwitVim-C-PageDown| and
+			     |TwitVim-C-PageUp| in info buffer.
+			   * Added twitvim filetype for user customization
+			     via autocommands.
+			   * Changed display of retweets to show the full
+			     version instead of the truncated version
+			     when the retweeted status is near the 
+			     character limit.
+			   * |:ProfileTwitter| with no argument now shows
+			     info on logged-in user.
+			   * Make |TwitVim-Leader-@| work on new-style
+			     retweets by showing the retweeted status
+			     as the parent.
 	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
 			   * Added converter functions for non-UTF8 encoding
 			     by @mattn_jp.
