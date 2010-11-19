@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.6.0
+" Version: 0.6.1
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 27, 2010
+" Last updated: November 19, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1333,6 +1333,7 @@ endif
 " inreplyto: IDs of predecessor messages for @-replies.
 " dmids: Direct Message IDs.
 " buffer: The buffer text.
+" view: viewport saved with winsaveview()
 " showheader: 1 if header is shown in this buffer, 0 if header is hidden.
 
 let s:curbuffer = {}
@@ -1345,6 +1346,9 @@ let s:curbuffer = {}
 " cursor: Used for refresh.
 " user: User name
 " list: List name
+" buffer: The buffer text.
+" view: viewport saved with winsaveview()
+" showheader: 1 if header is shown in this buffer, 0 if header is hidden.
 
 let s:infobuffer = {}
 
@@ -1382,6 +1386,22 @@ function! s:add_buffer(infobuf)
     call add(stack.stack, cur)
 endfunction
 
+" Check if two buffers show the same info based on attributes.
+function! s:is_same(infobuf, a, b)
+    let a = a:a
+    let b = a:b
+    if a:infobuf
+	if a.buftype == b.buftype && a.cursor == b.cursor && a.user == b.user && a.list == b.list
+	    return 1
+	endif
+    else
+	if a.buftype == b.buftype && a.list == b.list && a.user == b.user && a.page == b.page
+	    return 1
+	endif
+    endif
+    return 0
+endfunction
+
 " If current buffer is same type as the buffer at the buffer stack pointer then
 " just copy it into the buffer stack. Otherwise, add it to buffer stack.
 function! s:save_buffer(infobuf)
@@ -1401,34 +1421,19 @@ function! s:save_buffer(infobuf)
 	let cur.buffer = getline(1, '$')
 	let cur.view = winsaveview()
 	execute curwin .  "wincmd w"
-    else
-	let cur.view = {}
-    endif
-
-    " If current buffer is the same type as buffer at the top of the stack,
-    " then just copy it.
-    if stack.ptr >= 0
-
-	let issame = 0
 	
-	if a:infobuf
-	    if cur.buftype == stack.stack[stack.ptr].buftype && cur.cursor == stack.stack[stack.ptr].cursor && cur.user == stack.stack[stack.ptr].user && cur.list == stack.stack[stack.ptr].list
-		let issame = 1
-	    endif
-	else
-	    if cur.buftype == stack.stack[stack.ptr].buftype && cur.list == stack.stack[stack.ptr].list && cur.user == stack.stack[stack.ptr].user && cur.page == stack.stack[stack.ptr].page
-		let issame = 1
-	    endif
-	endif
-
-	if issame
+	" If current buffer is the same type as buffer at the top of the stack,
+	" then just copy it.
+	if stack.ptr >= 0 && s:is_same(a:infobuf, cur, stack.stack[stack.ptr])
 	    let stack.stack[stack.ptr] = deepcopy(cur)
-	    return
+	else
+	    " Otherwise, push the current buffer onto the stack.
+	    call s:add_buffer(a:infobuf)
 	endif
     endif
 
-    " Otherwise, push the current buffer onto the stack.
-    call s:add_buffer(a:infobuf)
+    " If twit_bufnr returned -1, the user closed the window manually. So we
+    " have nothing to save. Do not alter the buffer stack.
 endfunction
 
 " Go back one buffer in the buffer stack.
@@ -2523,6 +2528,7 @@ function! s:get_timeline(tline_name, username, page)
     let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
+    call s:save_buffer(0)
 
     let foruser = a:username == '' ? '' : ' for user '.a:username
 
@@ -2576,6 +2582,7 @@ function! s:get_list_timeline(username, listname, page)
     let s:curbuffer.list = a:listname
     let s:curbuffer.page = a:page
     redraw
+    call s:save_buffer(0)
 
     " Uppercase the first letter in the timeline name.
     echo "List timeline updated for ".user."/".a:listname
@@ -2672,6 +2679,7 @@ function! s:Direct_Messages(mode, page)
     let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
+    call s:save_buffer(0)
     echo "Direct messages ".s_or_r." timeline updated."
 endfunction
 
@@ -3172,8 +3180,8 @@ function! s:get_user_info(username)
     let s:infobuffer.cursor = 0
     let s:infobuffer.user = user
     let s:infobuffer.list = ''
-
     redraw
+    call s:save_buffer(1)
     echo "User information retrieved."
 endfunction
 
@@ -3284,8 +3292,8 @@ function! s:get_friends(cursor, user, followers)
     let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = a:user
     let s:infobuffer.list = ''
-
     redraw
+    call s:save_buffer(1)
     echo substitute(what,'^.','\u&','') 'retrieved.'
 endfunction
 
@@ -3332,8 +3340,8 @@ function! s:get_list_members(cursor, user, list, subscribers)
     let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = user
     let s:infobuffer.list = a:list
-
     redraw
+    call s:save_buffer(1)
     echo "Retrieved ".item."."
 endfunction
 
@@ -3431,8 +3439,8 @@ function! s:get_user_lists(cursor, user, what)
     let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = user
     let s:infobuffer.list = ''
-
     redraw
+    call s:save_buffer(1)
     echo "User's ".item." retrieved."
 endfunction
 
@@ -4118,6 +4126,7 @@ function! s:get_summize(query, page)
     let s:curbuffer.list = ''
     let s:curbuffer.page = a:page
     redraw
+    call s:save_buffer(0)
     echo "Received search results from Twitter Search."
 endfunction
 
