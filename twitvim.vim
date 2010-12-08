@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 19, 2010
+" Last updated: December 7, 2010
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -584,7 +584,7 @@ let s:gc_consumer_secret = "U1uvxLjZxlQAasy9Kr5L2YAFnsvYTOqx1bk7uJuezQ"
 
 let s:gc_req_url = "http://api.twitter.com/oauth/request_token"
 let s:gc_access_url = "http://api.twitter.com/oauth/access_token"
-let s:gc_authorize_url = "http://api.twitter.com/oauth/authorize"
+let s:gc_authorize_url = "https://api.twitter.com/oauth/authorize"
 
 " Simple nonce value generator. This needs to be randomized better.
 function! s:nonce()
@@ -667,14 +667,26 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     return content
 endfunction
 
+" Convert an OAuth endpoint to https if API root is https.
+function! s:to_https(url)
+    let url = a:url
+    if s:get_api_root()[:5] == 'https:'
+	if url[:4] == 'http:'
+	    let url = 'https:'.url[5:]
+	endif
+    endif
+    return url
+endfunction
+
 " Perform the OAuth dance to authorize this client with Twitter.
 function! s:do_oauth()
     " Call oauth/request_token to get request token from Twitter.
 
     let parms = { "oauth_callback": "oob", "dummy" : "1" }
-    let oauth_hdr = s:getOauthResponse(s:gc_req_url, "POST", parms, "")
+    let req_url = s:to_https(s:gc_req_url)
+    let oauth_hdr = s:getOauthResponse(req_url, "POST", parms, "")
 
-    let [error, output] = s:run_curl(s:gc_req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
+    let [error, output] = s:run_curl(req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
 
     if error != ''
 	call s:errormsg("Error from oauth/request_token: ".error)
@@ -729,9 +741,10 @@ function! s:do_oauth()
     " Call oauth/access_token to swap request token for access token.
     
     let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
-    let oauth_hdr = s:getOauthResponse(s:gc_access_url, "POST", parms, token_secret)
+    let access_url = s:to_https(s:gc_access_url)
+    let oauth_hdr = s:getOauthResponse(access_url, "POST", parms, token_secret)
 
-    let [error, output] = s:run_curl(s:gc_access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
+    let [error, output] = s:run_curl(access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
 
     if error != ''
 	call s:errormsg("Error from oauth/access_token: ".error)

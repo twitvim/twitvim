@@ -405,6 +405,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	that page to switch Twitter users.
 
 
+	Note: If you have set up TwitVim to use the Twitter SSL API (See
+	|TwitVim-ssl|), TwitVim will also use SSL endpoints to do the OAuth
+	handshake. If you are running TwitVim on an insecure network,
+	especially an open wireless network, it is recommended that you set up
+	TwitVim for SSL before using :SetLoginTwitter. Failure to do so may
+	expose your OAuth access token to packet sniffers.
+
+
 ------------------------------------------------------------------------------
 3.2. identi.ca						*TwitVim-identica*
 
@@ -1812,6 +1820,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.6.1 : 2010-12-07 * Fix for buffer stack if user has closed
+			     a window manually.
+			   * Use https OAuth endpoints if user has set up
+			     https API root.
 	0.6.0 : 2010-10-27 * Added |:FollowingTwitter|, |:FollowersTwitter|.
 			   * Added |:MembersOfListTwitter|,
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
