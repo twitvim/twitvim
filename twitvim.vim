@@ -1993,7 +1993,7 @@ function! s:launch_browser(url)
     return 0
 endfunction
 
-let s:URLMATCH = '\%(http\|https\|ftp\)://\S\+'
+let s:URLMATCH = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://\S\+'
 
 " Launch web browser with the URL at the cursor position. If possible, this
 " function will try to recognize a URL within the current word. Otherwise,
