@@ -1820,11 +1820,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.1 : 2010-12-30 * Fix for buffer stack if user has closed
+	0.6.1 : 2011-01-06 * Fix for buffer stack bug if user closes
 			     a window manually.
 			   * Use https OAuth endpoints if user has set up
 			     https API root.
-			   * Recognize URL even if prefix is in mixed case.
+			   * Match a URL even if prefix is in mixed case.
 	0.6.0 : 2010-10-27 * Added |:FollowingTwitter|, |:FollowersTwitter|.
 			   * Added |:MembersOfListTwitter|,
 			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
