@@ -3043,6 +3043,44 @@ if !exists(":ReportSpamTwitter")
 endif
 
 
+" Enable/disable retweets from user.
+function! s:enable_retweets(user, enable)
+    if a:enable
+	let msg1 = "Enabling"
+	let msg2 = "Enabled"
+    else
+	let msg1 = "Disabling"
+	let msg2 = "Disabled"
+    endif
+    let msg3 = substitute(msg1, '^.', '\l&', '')
+
+    redraw
+    echo msg1." retweets for user ".a:user."..."
+
+    let url = s:get_api_root()."/friendships/update.xml"
+
+    let parms = {}
+    let parms['screen_name'] = a:user
+    let parms['retweets'] = a:enable ? 'true' : 'false'
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error ".msg3." retweets from user: ".(errormsg != '' ? errormsg : error))
+    else
+	redraw
+	echo msg2." retweets from user ".a:user."."
+    endif
+endfunction
+
+if !exists(":EnableRetweetsTwitter")
+    command -nargs=1 EnableRetweetsTwitter :call <SID>enable_retweets(<q-args>, 1)
+endif
+if !exists(":DisableRetweetsTwitter")
+    command -nargs=1 DisableRetweetsTwitter :call <SID>enable_retweets(<q-args>, 0)
+endif
+
+
 " Add user to a list or remove user from a list.
 function! s:add_to_list(remove, listname, username)
     let user = s:get_twitvim_username()
@@ -3199,7 +3237,7 @@ function! s:get_user_info(username)
     let [error, fship_output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(fship_output, 'error')
-	call s:errormsg("Error getting user info: ".(errormsg != '' ? errormsg : error))
+	call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
 	return
     endif
 
