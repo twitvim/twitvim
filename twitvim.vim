@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.6.1
+" Version: 0.6.2
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 6, 2011
+" Last updated: February 15, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -3122,9 +3122,10 @@ function! s:yesorno(s)
 endfunction
 
 " Process/format the user information.
-function! s:format_user_info(output)
+function! s:format_user_info(output, fship_output)
     let text = []
     let output = a:output
+    let fship_output = a:fship_output
 
     let name = s:convert_entity(s:xml_get_element(output, 'name'))
     let screen = s:xml_get_element(output, 'screen_name')
@@ -3143,6 +3144,14 @@ function! s:format_user_info(output)
 
     call add(text, 'Protected: '.s:yesorno(s:xml_get_element(output, 'protected')))
     call add(text, 'Following: '.s:yesorno(s:xml_get_element(output, 'following')))
+
+    let fship_source = s:xml_get_element(fship_output, 'source')
+    call add(text, 'Followed_by: '.s:yesorno(s:xml_get_element(fship_source, 'followed_by')))
+    call add(text, 'Blocked: '.s:yesorno(s:xml_get_element(fship_source, 'blocking')))
+    call add(text, 'Marked_spam: '.s:yesorno(s:xml_get_element(fship_source, 'marked_spam')))
+    call add(text, 'Retweets: '.s:yesorno(s:xml_get_element(fship_source, 'want_retweets')))
+    call add(text, 'Notifications: '.s:yesorno(s:xml_get_element(fship_source, 'notifications_enabled')))
+
     call add(text, '')
 
     let usernode = s:xml_remove_elements(output, 'status')
@@ -3158,6 +3167,8 @@ function! s:format_user_info(output)
 	let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
 	call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
     endif
+
+    " call add(text, fship_output)
 
     return text
 endfunction
@@ -3184,9 +3195,17 @@ function! s:get_user_info(username)
 	return
     endif
 
+    let url = s:get_api_root()."/friendships/show.xml?target_screen_name=".user
+    let [error, fship_output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(fship_output, 'error')
+	call s:errormsg("Error getting user info: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
     call s:save_buffer(1)
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_info(output), "userinfo")
+    call s:twitter_wintext(s:format_user_info(output, fship_output), "userinfo")
     let s:infobuffer.buftype = 'profile'
     let s:infobuffer.next_cursor = 0
     let s:infobuffer.prev_cursor = 0
