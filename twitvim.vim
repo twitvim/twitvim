@@ -1193,7 +1193,12 @@ def make_base64(s):
 try:
     url = vim.eval("a:url")
     parms = vim.eval("a:parms")
-    req = parms == {} and urllib2.Request(url) or urllib2.Request(url, urllib.urlencode(parms))
+
+    if parms.get('__json') is not None:
+	req = urllib2.Request(url, parms['__json'])
+	req.add_header('Content-Type', 'application/json')
+    else:
+	req = parms == {} and urllib2.Request(url) or urllib2.Request(url, urllib.urlencode(parms))
 
     login = vim.eval("a:login")
     if login != "":
@@ -1292,7 +1297,14 @@ if ($login ne '') {
 
 # VIM::Msg($url, "ErrorMsg");
 # VIM::Msg(join(' ', keys(%parms)), "ErrorMsg");
-my $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
+my $response;
+
+if (defined $parms{'__json'}) {
+    $response = $ua->post($url, Content => $parms{'__json'});
+}
+else {
+    $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
+}
 if ($response->is_success) {
     my $output = $response->content;
     $output =~ s/'/''/g;
