@@ -257,6 +257,269 @@ function! s:get_twitvim_cert_insecure()
     return exists('g:twitvim_cert_insecure') ? g:twitvim_cert_insecure : 0
 endfunction
 
+" === JSON parser ===
+
+let s:parse_string = {}
+
+function! s:set_parse_string(s)
+    let s:parse_string = { 'str' : a:s, 'ptr' : 0 }
+endfunction
+
+function! s:is_digit(c)
+    return a:c =~ '\d'
+endfunction
+
+function! s:is_hexdigit(c)
+    return a:c =~ '\x'
+endfunction
+
+function! s:is_alpha(c)
+    return a:c =~ '\a'
+endfunction
+
+" Get next character. If peek is true, don't advance string pointer.
+function! s:lookahead_char(peek)
+    let str = s:parse_string.str
+    let len = strlen(str)
+    let ptr = s:parse_string.ptr
+    if ptr >= len
+	return ''
+    endif
+    if str[ptr] == '\'
+	if ptr + 1 < len
+	    if stridx('"\/bfnrt', str[ptr + 1]) >= 0
+		let s = eval('"\'.str[ptr + 1].'"')
+		if !a:peek
+		    let s:parse_string.ptr = ptr + 2
+		endif
+		" Tokenizer needs to distinguish " from \" inside a string.
+		return '\'.s
+	    elseif str[ptr + 1] == 'u'
+		let s = ''
+		for i in range(ptr + 2, ptr + 5)
+		    if i < len && s:is_hexdigit(str[i])
+			let s .= str[i]
+		    endif
+		endfor
+		if s != ''
+		    let s2 = eval('"\u'.s.'"')
+		    if !a:peek
+			let s:parse_string.ptr = ptr + 2 + strlen(s)
+		    endif
+		    return s2
+		endif
+	    endif
+	endif
+    endif
+
+    " If we don't recognize any longer char tokens, just return the current
+    " char.
+    let s = str[ptr]
+    if !a:peek
+	let s:parse_string.ptr = ptr + 1
+    endif
+    return s
+endfunction
+
+function! s:getchar()
+    return s:lookahead_char(0)
+endfunction
+
+function! s:peekchar()
+    return s:lookahead_char(1)
+endfunction
+
+function! s:peekstr(n)
+    return strpart(s:parse_string.str, s:parse_string.ptr, a:n)
+endfunction
+
+function! s:parse_error_msg(what)
+    return printf("Parse error near '%s': %s", s:peekstr(30), a:what)
+endfunction
+
+" Get next token from JSON string.
+" Returns: [ tokentype, value ]
+function! s:get_token()
+    while 1
+	let c = s:getchar()
+
+	if c == ''
+	    return [ 'eof', '' ]
+	
+	elseif c == '"'
+	    let s = ''
+	    while 1
+		let c = s:getchar()
+		if c == '"' || c == ''
+		    return ['string', s]
+		endif
+		" Strip off the escaping backslash.
+		if c[0] == '\'
+		    let c = c[1]
+		endif
+		let s .= c
+	    endwhile
+
+	elseif stridx('{}[],:', c) >= 0
+	    return [ 'char', c ]
+
+	elseif s:is_alpha(c)
+	    let s = c
+	    while s:is_alpha(s:peekchar())
+		let c = s:getchar()
+		let s .= c
+	    endwhile
+	    return [ 'keyword', s ]
+
+	elseif s:is_digit(c) || c == '-'
+	    " number = [-]d[d...][.d[d...]][(e|E)[(-|+)]d[d...]]
+	    let mode = 'int'
+	    let s = c
+	    while 1
+		let c = s:peekchar()
+		if s:is_digit(c)
+		    let c = s:getchar()
+		    let s .= c
+		elseif c == '.' && mode == 'int'
+		    let mode = 'frac'
+		    let c = s:getchar()
+		    let s .= c
+		elseif (c == 'e' || c == 'E') && (mode == 'int' || mode == 'frac')
+		    let mode = 'exp'
+		    let c = s:getchar()
+		    let s .= c
+
+		    let c = s:peekchar()
+		    if c == '-' || c == '+'
+			let c = s:getchar()
+			let s .= c
+		    endif
+		else
+		    " Clean up some malformed floating-point numbers that Vim
+		    " would reject.
+		    let s = substitute(s, '^\.', '0.', '')
+		    let s = substitute(s, '-\.', '-0.', '')
+		    let s = substitute(s, '\.[eE]', '.0E', '')
+		    let s = substitute(s, '[-+eE.]$', '&0', '')
+
+		    " This takes care of the case where there is
+		    " an exponent but no frac part.
+		    if s =~ '[Ee]' && s != '\.'
+			let s = substitute(s, '[Ee]', '.0&', '')
+		    endif
+
+		    return ['number', eval(s)]
+		endif
+	    endwhile
+	endif
+    endwhile
+endfunction
+
+" value = string | number | object | array | true | false | null
+function! s:parse_value(tok)
+    let tok = a:tok
+    if tok[0] == 'string' || tok[0] == 'number'
+	return [ tok[1], s:get_token() ]
+    elseif tok == [ 'char', '{' ]
+	return s:parse_object(tok)
+    elseif tok == [ 'char', '[' ]
+	return s:parse_array(tok)
+    elseif tok[0] == 'keyword'
+	if tok[1] == 'true'
+	    return [ 1, s:get_token() ]
+	elseif tok[1] == 'false'
+	    return [ 0, s:get_token() ]
+	elseif tok[1] == 'null'
+	    return [ {}, s:get_token() ]
+	else
+	    throw s:parse_error_msg("unrecognized keyword '".tok[1]."'")
+	endif
+    elseif tok[0] == 'eof'
+	throw s:parse_error_msg("unexpected EOF")
+    endif
+endfunction
+
+" elements = value | value ',' elements
+function! s:parse_elements(tok)
+    let [ resultx, tok ] = s:parse_value(a:tok)
+    let result = [ resultx ]
+    if tok == [ 'char', ',' ]
+	let [ result2, tok ] = s:parse_elements(s:get_token())
+	call extend(result, result2)
+    endif
+    return [ result, tok ]
+endfunction
+
+" array = '[' ']' | '[' elements ']'
+function! s:parse_array(tok)
+    if a:tok == [ 'char', '[' ]
+	let tok = s:get_token()
+	if tok == [ 'char', ']' ]
+	    return [ [], s:get_token() ]
+	endif
+	let [ result, tok ] = s:parse_elements(tok)
+	if tok != [ 'char', ']' ]
+	    throw s:parse_error_msg("']' expected")
+	endif
+	return [ result, s:get_token() ]
+    else
+	throw s:parse_error_msg("'[' expected")
+    endif
+endfunction
+
+" pair = string ':' value
+function! s:parse_pair(tok)
+    if a:tok[0] == 'string'
+	let key = a:tok[1]
+	let tok = s:get_token()
+	if tok == [ 'char', ':' ]
+	    let [ result, tok ] = s:parse_value(s:get_token())
+	    return [ { key : result }, tok ]
+	else
+	    throw s:parse_error_msg("':' expected")
+	endif
+    else
+	throw s:parse_error_msg("string (key name) expected")
+    endif
+endfunction
+
+" members = pair | pair ',' members
+function! s:parse_members(tok)
+    let [ result, tok ] = s:parse_pair(a:tok)
+    if tok == [ 'char', ',' ]
+	let [ result2, tok ] = s:parse_members(s:get_token())
+	call extend(result, result2)
+    endif
+    return [ result, tok ]
+endfunction
+
+" object = '{' '}' | '{' members '}'
+function! s:parse_object(tok)
+    if a:tok == [ 'char', '{' ]
+	let tok = s:get_token()
+	if tok == [ 'char', '}' ]
+	    return [ {}, s:get_token() ]
+	endif
+	let [ result, tok ] = s:parse_members(tok)
+	if tok != [ 'char', '}' ]
+	    throw s:parse_error_msg("'}' expected")
+	endif
+	return [ result, s:get_token() ]
+    else
+	throw s:parse_error_msg("'{' expected")
+    endif
+endfunction
+
+function! s:parse_json(str)
+    try
+	call s:set_parse_string(a:str)
+	let [ result, tok ] = s:parse_object(s:get_token())
+	return result
+    catch /^Parse error/
+	echoerr v:exception
+    endtry
+endfunction
+
 " === XML helper functions ===
 
 " Get the content of the n'th element in a series of elements.
@@ -868,9 +1131,19 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 	endif
     endif
 
+    let got_json = 0
     for [k, v] in items(a:parms)
-	let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
+	if k == '__json'
+	    let got_json = 1
+	    let curlcmd .= '-d "'.substitute(v, '"', '\\"', 'g').'" '
+	else
+	    let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
+	endif
     endfor
+
+    if got_json
+	let curlcmd .= '-H "Content-Type: application/json" '
+    endif
 
     let curlcmd .= '"'.a:url.'"'
 
@@ -3905,6 +4178,39 @@ function! s:call_zima(url)
     return output
 endfunction
 
+" Call Goo.gl API (documented version) to shorten a URL.
+function! s:call_googl2(url)
+    let url = 'https://www.googleapis.com/urlshortener/v1/url'
+    let parms = { '__json' : '{ "longUrl" : "'.a:url.'" }' }
+
+    redraw
+    echo "Sending request to goo.gl..."
+
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
+
+    let result = s:parse_json(output)
+
+    if has_key(result, 'error') && has_key(result.error, 'message')
+	call s:errormsg("Error calling goo.gl API: ".result.error.message)
+	return ""
+    endif
+
+    if has_key(result, 'id')
+	redraw
+	echo "Received response from goo.gl."
+	return result.id
+    endif
+
+    if error != ''
+	call s:errormsg("Error calling goo.gl API: ".error)
+	return ""
+    endif
+
+    call s:errormsg("No result returned by goo.gl API.")
+    return ""
+endfunction
+
+
 " Call Goo.gl API to shorten a URL.
 function! s:call_googl(url)
     let url = "http://goo.gl/api/url"
@@ -4092,6 +4398,16 @@ if !exists(":AGoogl")
 endif
 if !exists(":PGoogl")
     command -nargs=? PGoogl :call <SID>GetShortURL("cmdline", <q-args>, "call_googl")
+endif
+
+if !exists(":Googl2")
+    command -nargs=? Googl2 :call <SID>GetShortURL("insert", <q-args>, "call_googl2")
+endif
+if !exists(":AGoogl2")
+    command -nargs=? AGoogl2 :call <SID>GetShortURL("append", <q-args>, "call_googl2")
+endif
+if !exists(":PGoogl2")
+    command -nargs=? PGoogl2 :call <SID>GetShortURL("cmdline", <q-args>, "call_googl2")
 endif
 
 if !exists(":Rgala")
