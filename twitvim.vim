@@ -1147,6 +1147,8 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 
     let curlcmd .= '"'.a:url.'"'
 
+    " echomsg curlcmd
+
     let output = system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
     if v:shell_error != 0
@@ -1300,7 +1302,9 @@ if ($login ne '') {
 my $response;
 
 if (defined $parms{'__json'}) {
-    $response = $ua->post($url, Content => $parms{'__json'});
+    $response = $ua->post($url, 
+	'Content-Type' => 'application/json',
+	Content => $parms{'__json'});
 }
 else {
     $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
@@ -4199,6 +4203,8 @@ function! s:call_googl2(url)
     echo "Sending request to goo.gl..."
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
+
+    " echomsg output
 
     let result = s:parse_json(output)
 
