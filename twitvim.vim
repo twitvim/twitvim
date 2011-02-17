@@ -22,6 +22,9 @@ let loaded_twitvim = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+" User agent header string.
+let s:user_agent = 'TwitVim 0.6.2 2011-02-17'
+
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
 " case. So 140 is now the hard limit.
@@ -1144,6 +1147,8 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     if got_json
 	let curlcmd .= '-H "Content-Type: application/json" '
     endif
+    
+    let curlcmd .= '-H "User-Agent: '.s:user_agent.'" '
 
     let curlcmd .= '"'.a:url.'"'
 
@@ -1214,6 +1219,8 @@ try:
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
 	req.add_header('Proxy-Authorization', 'Basic %s' % make_base64(proxylogin))
+
+    req.add_header('User-Agent', vim.eval("s:user_agent"))
 
     f = urllib2.urlopen(req)
     out = ''.join(f.readlines())
@@ -1293,6 +1300,8 @@ if ($login ne '') {
 	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
     }
 }
+
+$ua->default_header('User-Agent' => VIM::Eval("s:user_agent"));
 
 my $response;
 
@@ -1427,6 +1436,8 @@ begin
 	    end
 	end
 
+	req['User-Agent'] = VIM.evaluate("s:user_agent")
+
 	http.request(req)
     }
     case res
@@ -1516,6 +1527,8 @@ if { $login != "" } {
 	lappend headers "Authorization" "Basic [make_base64 $login]"
     }
 }
+
+lappend headers "User-Agent" [::vim::expr "s:user_agent"]
 
 set parms [list]
 set keys [split [::vim::expr "keys(a:parms)"] "\n"]
