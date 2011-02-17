@@ -1838,10 +1838,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.2 : 2011-02-15 * Added more user relationship info to
+	0.6.2 : 2011-02-17 * Added more user relationship info to
 			     |:ProfileTwitter|.
 			   * Added |:EnableRetweetsTwitter| and
 			     |:DisableRetweetsTwitter|.
+			   * Switch to new (documented) goo.gl API.
 	0.6.1 : 2011-01-06 * Fix for buffer stack bug if user closes
 			     a window manually.
 			   * Use https OAuth endpoints if user has set up
