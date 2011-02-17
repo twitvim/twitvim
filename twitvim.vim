@@ -1414,6 +1414,10 @@ begin
 	path = "#{url.path}?#{url.query}"
 	if parms == {}
 	    req = Net::HTTP::Get.new(path)
+	elsif parms.has_key?('__json')
+	    req = Net::HTTP::Post.new(path)
+	    req.body = parms['__json']
+	    req.set_content_type('application/json')
 	else
 	    req = Net::HTTP::Post.new(path)
 	    req.set_form_data(parms)
