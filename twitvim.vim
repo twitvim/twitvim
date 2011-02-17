@@ -1530,10 +1530,15 @@ if { $login != "" } {
 set parms [list]
 set keys [split [::vim::expr "keys(a:parms)"] "\n"]
 if { [llength $keys] > 0 } {
-    foreach key $keys {
-	lappend parms $key [::vim::expr "a:parms\['$key']"]
+    if { [lsearch -exact $keys "__json"] != -1 } {	
+	set query [::vim::expr "a:parms\['__json']"]
+	lappend headers "Content-Type" "application/json"
+    } else {
+	foreach key $keys {
+	    lappend parms $key [::vim::expr "a:parms\['$key']"]
+	}
+	set query [eval [concat ::http::formatQuery $parms]]
     }
-    set query [eval [concat ::http::formatQuery $parms]]
     set res [::http::geturl $url -headers $headers -query $query]
 } else {
     set res [::http::geturl $url -headers $headers]
