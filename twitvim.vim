@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: February 15, 2011
+" Last updated: February 17, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1147,8 +1147,6 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 
     let curlcmd .= '"'.a:url.'"'
 
-    " echomsg curlcmd
-
     let output = system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
     if v:shell_error != 0
@@ -1290,15 +1288,12 @@ my $login = VIM::Eval('a:login');
 if ($login ne '') {
     if ($login =~ /^OAuth /) {
 	$ua->default_header('Authorization' => $login);
-	# VIM::Msg($login, "ErrorMsg");
     }
     else {
 	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
     }
 }
 
-# VIM::Msg($url, "ErrorMsg");
-# VIM::Msg(join(' ', keys(%parms)), "ErrorMsg");
 my $response;
 
 if (defined $parms{'__json'}) {
@@ -1431,11 +1426,6 @@ begin
 		req.add_field 'Authorization', "Basic #{make_base64(login)}"
 	    end
 	end
-
-	#    proxylogin = VIM.evaluate('a:proxylogin')
-	#    if proxylogin != ''
-	#	req.add_field 'Proxy-Authorization', "Basic #{make_base64(proxylogin)}"
-	#    end
 
 	http.request(req)
     }
@@ -4203,17 +4193,17 @@ function! s:call_zima(url)
     return output
 endfunction
 
+let s:googl_api_key = 'AIzaSyDvAhCUJppsPnPHgazgKktMoYap-QXCy5c'
+
 " Call Goo.gl API (documented version) to shorten a URL.
-function! s:call_googl2(url)
-    let url = 'https://www.googleapis.com/urlshortener/v1/url'
+function! s:call_googl(url)
+    let url = 'https://www.googleapis.com/urlshortener/v1/url?key='.s:googl_api_key
     let parms = { '__json' : '{ "longUrl" : "'.a:url.'" }' }
 
     redraw
     echo "Sending request to goo.gl..."
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
-
-    " echomsg output
 
     let result = s:parse_json(output)
 
@@ -4238,8 +4228,8 @@ function! s:call_googl2(url)
 endfunction
 
 
-" Call Goo.gl API to shorten a URL.
-function! s:call_googl(url)
+" Call Goo.gl API (old version) to shorten a URL.
+function! s:_call_googl(url)
     let url = "http://goo.gl/api/url"
     let parms = { "url": a:url }
 
@@ -4248,17 +4238,17 @@ function! s:call_googl(url)
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
 
-    let matchres = matchlist(output, '"error_message":"\([^"]*\)"')
-    if matchres != []
-	call s:errormsg("Error calling goo.gl API: ".matchres[1])
+    let result = s:parse_json(output)
+
+    if has_key(result, 'error_message')
+	call s:errormsg("Error calling goo.gl API: ".result.error_message)
 	return ""
     endif
 
-    let matchres = matchlist(output, '"short_url":"\([^"]*\)"')
-    if matchres != []
+    if has_key(result, 'short_url')
 	redraw
 	echo "Received response from goo.gl."
-	return matchres[1]
+	return result.short_url
     endif
 
     if error != ''
@@ -4427,14 +4417,14 @@ if !exists(":PGoogl")
     command -nargs=? PGoogl :call <SID>GetShortURL("cmdline", <q-args>, "call_googl")
 endif
 
-if !exists(":Googl2")
-    command -nargs=? Googl2 :call <SID>GetShortURL("insert", <q-args>, "call_googl2")
+if !exists(":OldGoogl")
+    command -nargs=? OldGoogl :call <SID>GetShortURL("insert", <q-args>, "_call_googl")
 endif
-if !exists(":AGoogl2")
-    command -nargs=? AGoogl2 :call <SID>GetShortURL("append", <q-args>, "call_googl2")
+if !exists(":AOldGoogl")
+    command -nargs=? AOldGoogl :call <SID>GetShortURL("append", <q-args>, "_call_googl")
 endif
-if !exists(":PGoogl2")
-    command -nargs=? PGoogl2 :call <SID>GetShortURL("cmdline", <q-args>, "call_googl2")
+if !exists(":POldGoogl")
+    command -nargs=? POldGoogl :call <SID>GetShortURL("cmdline", <q-args>, "_call_googl")
 endif
 
 if !exists(":Rgala")
