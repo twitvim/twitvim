@@ -68,6 +68,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :FavTwitter..........................: |:FavTwitter|
 	     :FollowingTwitter....................: |:FollowingTwitter|
 	     :FollowersTwitter....................: |:FollowersTwitter|
+	     :ListInfoTwitter.....................: |:ListInfoTwitter|
 	     :MembersOfListTwitter................: |:MembersOfListTwitter|
 	     :SubsOfListTwitter...................: |:SubsOfListTwitter|
 	     :OwnedListsTwitter...................: |:OwnedListsTwitter|
@@ -912,6 +913,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
 	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
+	:ListInfoTwitter {list}				*:ListInfoTwitter*
+	:ListInfoTwitter {user} {list}
+
+	This command displays summary information on the Twitter list {list}
+	owned by user {user}. If not specified, {user} is the currently
+	logged-in user.
 
 
 	:MembersOfListTwitter {list}			*:MembersOfListTwitter*
@@ -1838,11 +1847,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.2 : 2011-02-17 * Added more user relationship info to
+	0.6.2 : 2011-02-21 * Added more user relationship info to
 			     |:ProfileTwitter|.
 			   * Added |:EnableRetweetsTwitter| and
 			     |:DisableRetweetsTwitter|.
 			   * Switch to new (documented) goo.gl API.
+			   * Added |:ListInfoTwitter|.
 	0.6.1 : 2011-01-06 * Fix for buffer stack bug if user closes
 			     a window manually.
 			   * Use https OAuth endpoints if user has set up

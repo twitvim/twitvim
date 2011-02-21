@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: February 17, 2011
+" Last updated: February 21, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1639,7 +1639,8 @@ endif
 
 " Each buffer record holds the following fields:
 "
-" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, replies, list, retweeted_by_me, retweeted_to_me, favorites
+" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, 
+"   replies, list, retweeted_by_me, retweeted_to_me, favorites
 " user: For user buffers if other than current user
 " list: List slug if displaying a Twitter list.
 " page: Keep track of pagination.
@@ -1654,7 +1655,8 @@ let s:curbuffer = {}
 
 " The info buffer record holds the following fields:
 "
-" buftype: profile, friends, followers, listmembers, listsubs, userlists, userlistmem, userlistsubs
+" buftype: profile, friends, followers, listmembers, listsubs, userlists, 
+"   userlistmem, userlistsubs, listinfo
 " next_cursor: Used for paging.
 " prev_cursor: Used for paging.
 " cursor: Used for refresh.
@@ -3560,6 +3562,75 @@ if !exists(":ProfileTwitter")
     command -nargs=? ProfileTwitter :call <SID>get_user_info(<q-args>)
 endif
 
+" Format the list information.
+function! s:format_list_info(output)
+    let text = []
+    let output = a:output
+    call add(text, 'Name: '.s:convert_entity(s:xml_get_element(output, 'full_name')))
+    call add(text, 'Description: '.s:convert_entity(s:xml_get_element(output, 'description')))
+    call add(text, '')
+    call add(text, 'Members: '.s:xml_get_element(output, 'member_count'))
+    call add(text, 'Subscribers: '.s:xml_get_element(output, 'subscriber_count'))
+    call add(text, '')
+    call add(text, 'Following: '.s:yesorno(s:xml_get_element(output, 'following')))
+    call add(text, 'Mode: '.s:xml_get_element(output, 'mode'))
+    return text
+endfunction
+
+" Call Twitter API to get list info.
+function! s:get_list_info(username, listname)
+    let user = a:username
+    if user == ''
+	let user = s:get_twitvim_username()
+	if user == ''
+	    call s:errormsg('Twitter login not set. Please specify a username.')
+	    return
+	endif
+    endif
+
+    let list = a:listname
+
+    redraw
+    echo 'Querying Twitter for information on list '.user.'/'.list.'...'
+
+    let url = s:get_api_root().'/'.user.'/lists/'.list.'.xml'
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg('Error getting information on list '.user.'/'.list.': '.(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    call s:save_buffer(1)
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_list_info(output), "userinfo")
+    let s:infobuffer.buftype = 'listinfo'
+    let s:infobuffer.next_cursor = 0
+    let s:infobuffer.prev_cursor = 0
+    let s:infobuffer.cursor = 0
+    let s:infobuffer.user = user
+    let s:infobuffer.list = list
+    redraw
+    call s:save_buffer(1)
+    echo 'List information retrieved.'
+endfunction
+
+" Get info on a Twitter list. Need to do a little fiddling because the username
+" argument is optional.
+function! s:DoListInfo(arg1, ...)
+    let user = ''
+    let list = a:arg1
+    if a:0 > 0
+	let user = a:arg1
+	let list = a:1
+    endif
+    call s:get_list_info(user, list)
+endfunction
+
+if !exists(":ListInfoTwitter")
+    command -nargs=+ ListInfoTwitter :call <SID>DoListInfo(<f-args>)
+endif
+
 " Format a list of users, e.g. friends/followers list.
 function! s:format_user_list(output, title, show_following)
     let matchcount = 1
@@ -3834,6 +3905,8 @@ function! s:load_info(buftype, cursor, user, list)
 	call s:get_user_lists(a:cursor, a:user, 'subscriptions')
     elseif a:buftype == "profile"
 	call s:get_user_info(a:user)
+    elseif a:buftype == 'listinfo'
+	call s:get_list_info(a:user, a:list)
     endif
 endfunction
 
