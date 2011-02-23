@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: February 21, 2011
+" Last updated: February 23, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2379,6 +2379,29 @@ function! s:info_getname()
     endif
 endfunction
 
+" Attempt to scrape deck.ly HTML to get the long tweet.
+function! s:get_deckly(url)
+    let [error, output] = s:run_curl(a:url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	call s:errormsg('Error getting deck.ly page: '.error)
+	return ''
+    endif
+    let matchres = matchlist(output, '<div\s\+id="deckly-post"[^>]\+>\(\_.*\)</div>')
+    if matchres == []
+	call s:errormsg('Could not find long post in deck.ly page.')
+	return ''
+    endif
+    let matchres = matchlist(matchres[1], '<p>\(\_.\{-}\)</p>')
+    if matchres == []
+	call s:errormsg('Could not find long post in deckly-post div.')
+	return ''
+    endif
+    let s = matchres[1]
+    let s = substitute(s, '<a\>[^>]\+>', '', 'g')
+    let s = substitute(s, '</a>', '', 'g')
+    return s
+endfunction
+
 " Call LongURL API on a shorturl to expand it.
 function! s:call_longurl(url)
     redraw
@@ -2395,7 +2418,17 @@ function! s:call_longurl(url)
 
 	let longurl = s:xml_get_element(output, 'long_url')
 	if longurl != ""
-	    return substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
+	    let longurl = substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
+
+	    " If it is a deck.ly URL, attempt to get the long tweet.
+	    if a:url =~? 'deck\.ly' && longurl =~? 'tweetdeck\.com/twitter'
+		let longpost = s:get_deckly(longurl)
+		if longpost != ''
+		    return longpost
+		endif
+	    endif
+
+	    return longurl
 	endif
 
 	let errormsg = s:xml_get_element(output, 'error')
