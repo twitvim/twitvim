@@ -3859,7 +3859,7 @@ function! s:format_list_list(output, title)
 	call add(text, 'List: '.name.' (Following: '.following.' Followers: '.followers.')')
 	let desc = s:convert_entity(s:xml_get_element(list, 'description'))
 	if desc != ""
-	    call add(text, desc)
+	    call add(text, 'Desc: '.desc)
 	endif
 	call add(text, '')
     endwhile
