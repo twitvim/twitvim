@@ -2754,7 +2754,7 @@ function! s:get_status_text(item)
     let urls = s:xml_get_element(entities, 'urls')
 
     " Twitter entities output currently has a url element inside each url
-    " element, so we have to handle that my only getting every other url.
+    " element, so we handle that by only getting every other url element.
     let matchcount = 1
     while 1
 	let url = s:xml_get_nth(urls, 'url', matchcount * 2)
