@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.6.2
+" Version: 0.6.3
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: February 23, 2011
+" Last updated: April 21, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.6.2 2011-02-17'
+let s:user_agent = 'TwitVim 0.6.3 2011-04-21'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2723,8 +2723,54 @@ function! s:format_retweeted_status(item)
 	return ''
     endif
     let user = s:xml_get_element(rt, 'screen_name')
-    let text = s:convert_entity(s:xml_get_element(rt, 'text'))
+    let text = s:convert_entity(s:get_status_text(rt))
     return 'RT @'.user.': '.text
+endfunction
+
+" Replace all matching strings in a string. This is a non-regex version of substitute().
+function! s:str_replace_all(str, findstr, replstr)
+    let findlen = strlen(a:findstr)
+    let repllen = strlen(a:replstr)
+    let s = a:str
+
+    let idx = 0
+    while 1
+	let idx = stridx(s, a:findstr, idx)
+	if idx < 0
+	    break
+	endif
+	let s = strpart(s, 0, idx) . a:replstr . strpart(s, idx + findlen)
+	let idx += repllen
+    endwhile
+
+    return s
+endfunction
+
+" Get status text with t.co URL expansion.
+function! s:get_status_text(item)
+    let text = s:xml_get_element(a:item, 'text')
+
+    let entities = s:xml_get_element(a:item, 'entities')
+    let urls = s:xml_get_element(entities, 'urls')
+
+    " Twitter entities output currently has a url element inside each url
+    " element, so we have to handle that my only getting every other url.
+    let matchcount = 1
+    while 1
+	let url = s:xml_get_nth(urls, 'url', matchcount * 2)
+	let expanded_url = s:xml_get_nth(urls, 'expanded_url', matchcount)
+
+	if url == '' || expanded_url == ''
+	    break
+	endif
+
+	" echomsg "Replacing ".url." with ".expanded_url." in ".text
+	let text = s:str_replace_all(text, url, expanded_url)
+
+	let matchcount += 1
+    endwhile
+
+    return text
 endfunction
 
 " Format XML status as a display line.
@@ -2738,7 +2784,7 @@ function! s:format_status_xml(item)
     let user = s:xml_get_element(item, 'screen_name')
     let text = s:format_retweeted_status(a:item)
     if text == ''
-	let text = s:convert_entity(s:xml_get_element(item, 'text'))
+	let text = s:convert_entity(s:get_status_text(item))
     endif
     let pubdate = s:time_filter(s:xml_get_element(item, 'created_at'))
 
@@ -2839,6 +2885,9 @@ function! s:get_timeline(tline_name, username, page)
 
     " Include retweets.
     let url_fname = s:add_to_url(url_fname, 'include_rts=true')
+
+    " Include entities to get URL expansions for t.co.
+    let url_fname = s:add_to_url(url_fname, 'include_entities=true')
 
     " Twitter API allows you to specify a username for user_timeline to
     " retrieve another user's timeline.
@@ -2979,7 +3028,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 	call add(s:curbuffer.dmids, s:xml_get_element(item, 'id'))
 
 	let user = s:xml_get_element(item, a:sent_or_recv == 'sent' ? 'recipient_screen_name' : 'sender_screen_name')
-	let mesg = s:xml_get_element(item, 'text')
+	let mesg = s:get_status_text(item)
 	let date = s:time_filter(s:xml_get_element(item, 'created_at'))
 
 	call add(text, user.": ".s:convert_entity(mesg).' |'.date.'|')
@@ -3005,6 +3054,9 @@ function! s:Direct_Messages(mode, page)
     if a:page > 1
 	let url = s:add_to_url(url, 'page='.a:page)
     endif
+    
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
 
     " Support count parameter.
     let tcount = s:get_count()

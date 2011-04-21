@@ -1847,6 +1847,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.6.3 : 2011-04-21 * Expand t.co URLs in timeline displays.
 	0.6.2 : 2011-02-21 * Added more user relationship info to
 			     |:ProfileTwitter|.
 			   * Added |:EnableRetweetsTwitter| and
