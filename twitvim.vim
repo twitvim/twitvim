@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: April 21, 2011
+" Last updated: April 22, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.6.3 2011-04-21'
+let s:user_agent = 'TwitVim 0.6.3 2011-04-22'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2105,6 +2105,10 @@ function! s:show_inreplyto()
     echo "Querying Twitter for in-reply-to tweet..."
 
     let url = s:get_api_root()."/statuses/show/".inreplyto.".xml"
+
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
+
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
@@ -2959,6 +2963,9 @@ function! s:get_list_timeline(username, listname, page)
 	let url = s:add_to_url(url, 'per_page='.tcount)
     endif
 
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
+
     redraw
     echo "Sending list timeline request to Twitter..."
 
@@ -3589,7 +3596,7 @@ function! s:format_user_info(output, fship_output)
 
     let statusnode = s:xml_get_element(output, 'status')
     if statusnode != ""
-	let status = s:xml_get_element(statusnode, 'text')
+	let status = s:get_status_text(statusnode)
 	let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
 	call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
     endif
@@ -3614,6 +3621,10 @@ function! s:get_user_info(username)
     echo "Querying Twitter for user information..."
 
     let url = s:get_api_root()."/users/show.xml?screen_name=".user
+
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
+
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
@@ -3761,7 +3772,7 @@ function! s:format_user_list(output, title, show_following)
 
 	let statusnode = s:xml_get_element(user, 'status')
 	if statusnode != ""
-	    let status = s:xml_get_element(statusnode, 'text')
+	    let status = s:get_status_text(statusnode)
 	    let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
 	    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
 	endif
@@ -3802,6 +3813,9 @@ function! s:get_friends(cursor, user, followers)
     if a:user != ''
 	let url = s:add_to_url(url, 'screen_name='.a:user)
     endif
+
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
@@ -3851,6 +3865,10 @@ function! s:get_list_members(cursor, user, list, subscribers)
     echo "Querying Twitter for ".item."..."
 
     let url = s:get_api_root().'/'.user.'/'.a:list.query.'.xml?cursor='.a:cursor
+
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
+
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
