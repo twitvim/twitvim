@@ -109,6 +109,16 @@ function! s:get_disable_token_file()
     return exists('g:twitvim_disable_token_file') ? g:twitvim_disable_token_file : 0
 endfunction
 
+" User config to enable the filter.
+function! s:get_filter_enable()
+    return exists('g:twitvim_filter_enable') ? g:twitvim_filter_enable : 0
+endfunction
+
+" User config for filter.
+function! s:get_filter_regex()
+    return exists('g:twitvim_filter_regex') ? g:twitvim_filter_regex : ''
+endfunction
+
 
 " Display an error message in the message area.
 function! s:errormsg(msg)
@@ -2802,6 +2812,21 @@ function! s:get_in_reply_to(status)
     return rt != '' ? s:xml_get_element(rt, 'id') : s:xml_get_element(a:status, 'in_reply_to_status_id')
 endfunction
 
+" If the filter is enabled, test the current item against the filter. Returns
+" true if there is a match and the item should be excluded from the timeline.
+function! s:check_filter(item)
+    if s:get_filter_enable()
+	let filter = s:get_filter_regex()
+	if filter != ''
+	    let text = s:convert_entity(s:get_status_text(a:item))
+	    if match(text, filter) >= 0
+		return 1
+	    endif
+	endif
+    endif
+    return 0
+endfunction
+
 " Show a timeline from XML stream data.
 function! s:show_timeline_xml(timeline, tline_name, username, page)
     let matchcount = 1
@@ -2854,11 +2879,13 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	    break
 	endif
 
-	call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
-	call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
+	if !s:check_filter(item)
+	    call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
+	    call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
 
-	let line = s:format_status_xml(item)
-	call add(text, line)
+	    let line = s:format_status_xml(item)
+	    call add(text, line)
+	endif
 
 	let matchcount += 1
     endwhile
