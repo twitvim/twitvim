@@ -46,6 +46,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Twitter SSL via Tcl interface........: |TwitVim-ssl-tcl|
 	3.6. Hide the header in timeline buffer...: |TwitVim-hide-header|
 	     twitvim_show_header..................: |twitvim_show_header|
+	3.7. Timeline filtering...................: |TwitVim-filter|
+	     twitvim_filter_enable................: |twitvim_filter_enable|
+	     twitvim_filter_regex.................: |twitvim_filter_regex|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
 	4.2. Update Commands......................: |TwitVim-update-commands|
@@ -706,6 +709,41 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|:RefreshInfoTwitter| to refresh the info buffer) to see the
 	effect. Also, twitvim_show_header does not retroactively alter
 	previous timelines in the timeline stack.
+
+
+------------------------------------------------------------------------------
+3.7. Timeline filtering					*TwitVim-filter*
+
+	TwitVim allows you to filter your timeline buffer to hide tweets
+	containing a pattern.
+
+	To enable timeline filtering, set twitvim_filter_enable to 1:
+
+							*twitvim_filter_enable*
+>
+		let twitvim_filter_enable = 1
+<
+	Then set twitvim_filter_regex to the pattern you wish to filter out of
+	the timeline. For example, to hide GetGlue tweets and tweets
+	containing Youtube URLs, use the following:
+
+							*twitvim_filter_regex*
+>
+		let twitvim_filter_regex = '@GetGlue\|/youtu\.be/'
+<
+	The filter is a regular expression. See |pattern| for patterns that
+	are accepted. The |'ignorecase'| option sets the ignore-caseness of
+	the pattern. |'smartcase'| is not used. The matching is always done
+	like 'magic' is set and 'cpoptions' is empty. (Essentially, this is
+	the same as |match()| because that is what it uses.)
+
+	Be as specific as possible when setting the filter. For example, if
+	you filter on "youtube", you are potentially also filtering out
+	conversations about Youtube in addition to Youtube status updates.
+
+	Timeline filtering removes tweets from your timeline, so the timeline
+	display may be shorter than usual. Increase |twitvim_count| to
+	compensate, if necessary.
 
 
 ==============================================================================
@@ -1847,7 +1885,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.3 : 2011-04-21 * Expand t.co URLs in timeline displays.
+	0.6.3 : 2011-04-27 * Expand t.co URLs in timeline displays.
+			   * Added timeline filtering. |TwitVim-filter|
 	0.6.2 : 2011-02-21 * Added more user relationship info to
 			     |:ProfileTwitter|.
 			   * Added |:EnableRetweetsTwitter| and
