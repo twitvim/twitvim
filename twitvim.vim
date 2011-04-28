@@ -2580,7 +2580,7 @@ function! s:twitter_win_syntax(wintype)
 
 	" Use the extra star at the end to recognize the title but hide the
 	" star.
-	syntax match twitterTitle /^.\+\*$/ contains=twitterTitleStar
+	syntax match twitterTitle /^\%(\w\+:\)\@!.\+\*$/ contains=twitterTitleStar
 	syntax match twitterTitleStar /\*$/ contained
 
 	highlight default link twitterUser Identifier
