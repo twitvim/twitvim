@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.6.3
+" Version: 0.6.4
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: May 13, 2011
+" Last updated: June 1, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -3717,7 +3717,7 @@ function! s:get_list_info(username, listname)
     redraw
     echo 'Querying Twitter for information on list '.user.'/'.list.'...'
 
-    let url = s:get_api_root().'/'.user.'/lists/'.list.'.xml'
+    let url = s:get_api_root().'/lists/show.xml?slug='.list.'&owner_screen_name='.user
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
