@@ -2977,7 +2977,7 @@ function! s:get_list_timeline(username, listname, page)
 	endif
     endif
 
-    let url = "/".user."/lists/".a:listname."/statuses.xml"
+    let url = s:get_api_root().'/lists/statuses.xml?slug='.a:listname.'&owner_screen_name='.user
 
     " Support pagination.
     if a:page > 1
@@ -2988,15 +2988,17 @@ function! s:get_list_timeline(username, listname, page)
     let tcount = s:get_count()
     if tcount > 0
 	let url = s:add_to_url(url, 'per_page='.tcount)
+	let url = s:add_to_url(url, 'count='.tcount)
     endif
 
     " Include entities to get URL expansions for t.co.
     let url = s:add_to_url(url, 'include_entities=true')
 
+    " Include retweets.
+    let url = s:add_to_url(url, 'include_rts=true')
+
     redraw
     echo "Sending list timeline request to Twitter..."
-
-    let url = s:get_api_root().url
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
@@ -3016,7 +3018,6 @@ function! s:get_list_timeline(username, listname, page)
     redraw
     call s:save_buffer(0)
 
-    " Uppercase the first letter in the timeline name.
     echo "List timeline updated for ".user."/".a:listname
 endfunction
 
