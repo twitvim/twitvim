@@ -3366,7 +3366,7 @@ function! s:follow_user(user)
     let parms = {}
     let parms["screen_name"] = a:user
 
-    let url = s:get_api_root()."/friendships/create/".a:user.".xml"
+    let url = s:get_api_root().'/friendships/create.xml'
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
