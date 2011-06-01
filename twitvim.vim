@@ -3966,21 +3966,24 @@ endfunction
 " Call Twitter API to get a user's lists, list memberships, or list subscriptions.
 function! s:get_user_lists(cursor, user, what)
     let user = a:user
-
+    let titlename = user
+    if user == ''
+	let titlename = 'you'
+    endif
     if a:what == "owned"
 	let item = "lists"
 	let query = "lists"
-	let title = "Lists owned by ".user
+	let title = "Lists owned by ".titlename
 	let buftype = 'userlists'
     elseif a:what == "memberships"
 	let item = "list memberships"
 	let query = "lists/memberships"
-	let title = "Lists following ".user
+	let title = "Lists following ".titlename
 	let buftype = 'userlistmem'
     else
 	let item = "list subscriptions"
 	let query = "lists/subscriptions"
-	let title = "Lists followed by ".user
+	let title = "Lists followed by ".titlename
 	let buftype = 'userlistsubs'
     endif
 
