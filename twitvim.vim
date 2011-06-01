@@ -3966,13 +3966,6 @@ endfunction
 " Call Twitter API to get a user's lists, list memberships, or list subscriptions.
 function! s:get_user_lists(cursor, user, what)
     let user = a:user
-    if user == ''
-	let user = s:get_twitvim_username()
-	if user == ''
-	    call s:errormsg('Twitter login not set. Please specify a username.')
-	    return
-	endif
-    endif
 
     if a:what == "owned"
 	let item = "lists"
@@ -3994,7 +3987,10 @@ function! s:get_user_lists(cursor, user, what)
     redraw
     echo "Querying Twitter for user's ".item."..."
 
-    let url = s:get_api_root().'/'.user.'/'.query.'.xml?cursor='.a:cursor
+    let url = s:get_api_root().'/'.query.'.xml?cursor='.a:cursor
+    if user != ''
+	let url = s:add_to_url(url, 'screen_name='.user)
+    endif
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
