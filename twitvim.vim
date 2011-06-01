@@ -4120,20 +4120,21 @@ function! s:follow_list(unfollow, arg1, ...)
 	let v1 = "Unfollowing"
 	let v2 = "unfollowing"
 	let v3 = "Stopped following"
+	let verb = 'destroy'
     else
 	let v1 = "Following"
 	let v2 = "following"
 	let v3 = "Now following"
+	let verb = 'create'
     endif
 
     redraw
     echo v1." list ".user."/".list."..."
 
-    let parms = { "list_id" : list }
-    if a:unfollow
-	let parms["_method"] = "DELETE"
-    endif
-    let url = s:get_api_root()."/".user."/".list."/subscribers.xml"
+    let parms = {}
+    let parms['slug'] = list
+    let parms['owner_screen_name'] = user
+    let url = s:get_api_root().'/lists/subscribers/'.verb.'.xml'
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
