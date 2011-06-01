@@ -3515,18 +3515,18 @@ function! s:add_to_list(remove, listname, username)
     redraw
     if a:remove
 	echo "Removing ".a:username." from list ".a:listname."..."
+	let verb = 'destroy'
     else
 	echo "Adding ".a:username." to list ".a:listname."..."
+	let verb = 'create'
     endif
 
     let parms = {}
-    let parms["list_id"] = a:listname
-    let parms["id"] = a:username
-    if a:remove
-	let parms["_method"] = "DELETE"
-    endif
+    let parms['slug'] = a:listname
+    let parms['owner_screen_name'] = user
+    let parms['screen_name'] = a:username
 
-    let url = s:get_api_root()."/".user."/".a:listname."/members.xml"
+    let url = s:get_api_root().'/lists/members/'.verb.'.xml'
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
