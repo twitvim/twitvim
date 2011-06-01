@@ -3892,7 +3892,7 @@ function! s:get_list_members(cursor, user, list, subscribers)
     redraw
     echo "Querying Twitter for ".item."..."
 
-    let url = s:get_api_root().'/'.user.'/'.a:list.query.'.xml?cursor='.a:cursor
+    let url = s:get_api_root().'/lists'.query.'.xml?cursor='.a:cursor.'&slug='.a:list.'&owner_screen_name='.user
 
     " Include entities to get URL expansions for t.co.
     let url = s:add_to_url(url, 'include_entities=true')
