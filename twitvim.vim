@@ -456,10 +456,12 @@ endfunction
 function! s:parse_elements(tok)
     let [ resultx, tok ] = s:parse_value(a:tok)
     let result = [ resultx ]
-    if tok == [ 'char', ',' ]
-	let [ result2, tok ] = s:parse_elements(s:get_token())
-	call extend(result, result2)
-    endif
+
+    while tok == [ 'char', ',' ]
+	let [ resultx, tok ] = s:parse_value(s:get_token())
+	call add(result, resultx)
+    endwhile
+
     return [ result, tok ]
 endfunction
 
@@ -3811,6 +3813,70 @@ function! s:format_user_list(output, title, show_following)
 endfunction
 
 " Call Twitter API to get friends or followers list.
+function! s:get_friends2(cursor, index, user, followers)
+    if a:followers
+	let buftype = 'followers'
+	let query = '/followers/ids.json'
+	if a:user != ''
+	    let what = 'followers list of '.a:user
+	    let title = 'People following '.a:user
+	else
+	    let what = 'followers list'
+	    let title = 'People following you'
+	endif
+    else
+	let buftype = 'friends'
+	let query = '/friends/ids.json'
+	if a:user != ''
+	    let what = 'friends list of '.a:user
+	    let title = 'People '.a:user.' is following'
+	else
+	    let what = 'friends list'
+	    let title = "People you're following"
+	endif
+    endif
+
+    redraw
+    echo "Querying Twitter for ".what."..."
+
+    let url = s:add_to_url(s:get_api_root().query, 'cursor='.a:cursor)
+    if a:user != ''
+	let url = s:add_to_url(url, 'screen_name='.a:user)
+    endif
+
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    let result = s:parse_json(output)
+    if error != ''
+	call s:errormsg("Error getting ".what.": ".(has_key(result, 'error') ? result.error : error))
+	return
+    endif
+
+    let idlist = result.ids
+
+    let idslice = idlist[a:index : a:index + 99]
+    let url = s:get_api_root().'/users/lookup.xml?user_id='.join(idslice, ',')
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    call s:save_buffer(1)
+    let s:infobuffer = {}
+    call s:twitter_wintext(s:format_user_list(output, title, a:followers || a:user != ''), "userinfo")
+    let s:infobuffer.buftype = buftype
+    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.cursor = a:cursor
+    let s:infobuffer.user = a:user
+    let s:infobuffer.list = ''
+    redraw
+    call s:save_buffer(1)
+    echo substitute(what,'^.','\u&','') 'retrieved.'
+endfunction
+
+" Call Twitter API to get friends or followers list.
 function! s:get_friends(cursor, user, followers)
     if a:followers
 	let buftype = 'followers'
@@ -4086,9 +4152,11 @@ if !exists(":PreviousInfoTwitter")
 endif
 
 if !exists(":FollowingTwitter")
+    " command -nargs=? FollowingTwitter :call <SID>get_friends2(-1, 0, <q-args>, 0)
     command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
 endif
 if !exists(":FollowersTwitter")
+    " command -nargs=? FollowersTwitter :call <SID>get_friends2(-1, 0, <q-args>, 1)
     command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
 endif
 if !exists(":MembersOfListTwitter")
