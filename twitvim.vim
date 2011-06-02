@@ -272,266 +272,16 @@ endfunction
 
 " === JSON parser ===
 
-let s:parse_string = {}
-
-function! s:set_parse_string(s)
-    let s:parse_string = { 'str' : a:s, 'ptr' : 0 }
-endfunction
-
-function! s:is_digit(c)
-    return a:c =~ '\d'
-endfunction
-
-function! s:is_hexdigit(c)
-    return a:c =~ '\x'
-endfunction
-
-function! s:is_alpha(c)
-    return a:c =~ '\a'
-endfunction
-
-" Get next character. If peek is true, don't advance string pointer.
-function! s:lookahead_char(peek)
-    let str = s:parse_string.str
-    let len = strlen(str)
-    let ptr = s:parse_string.ptr
-    if ptr >= len
-	return ''
-    endif
-    if str[ptr] == '\'
-	if ptr + 1 < len
-	    if stridx('"\/bfnrt', str[ptr + 1]) >= 0
-		let s = eval('"\'.str[ptr + 1].'"')
-		if !a:peek
-		    let s:parse_string.ptr = ptr + 2
-		endif
-		" Tokenizer needs to distinguish " from \" inside a string.
-		return '\'.s
-	    elseif str[ptr + 1] == 'u'
-		let s = ''
-		for i in range(ptr + 2, ptr + 5)
-		    if i < len && s:is_hexdigit(str[i])
-			let s .= str[i]
-		    endif
-		endfor
-		if s != ''
-		    let s2 = eval('"\u'.s.'"')
-		    if !a:peek
-			let s:parse_string.ptr = ptr + 2 + strlen(s)
-		    endif
-		    return s2
-		endif
-	    endif
-	endif
-    endif
-
-    " If we don't recognize any longer char tokens, just return the current
-    " char.
-    let s = str[ptr]
-    if !a:peek
-	let s:parse_string.ptr = ptr + 1
-    endif
-    return s
-endfunction
-
-function! s:getchar()
-    return s:lookahead_char(0)
-endfunction
-
-function! s:peekchar()
-    return s:lookahead_char(1)
-endfunction
-
-function! s:peekstr(n)
-    return strpart(s:parse_string.str, s:parse_string.ptr, a:n)
-endfunction
-
-function! s:parse_error_msg(what)
-    return printf("Parse error near '%s': %s", s:peekstr(30), a:what)
-endfunction
-
-" Get next token from JSON string.
-" Returns: [ tokentype, value ]
-function! s:get_token()
-    while 1
-	let c = s:getchar()
-
-	if c == ''
-	    return [ 'eof', '' ]
-	
-	elseif c == '"'
-	    let s = ''
-	    while 1
-		let c = s:getchar()
-		if c == '"' || c == ''
-		    return ['string', s]
-		endif
-		" Strip off the escaping backslash.
-		if c[0] == '\'
-		    let c = c[1]
-		endif
-		let s .= c
-	    endwhile
-
-	elseif stridx('{}[],:', c) >= 0
-	    return [ 'char', c ]
-
-	elseif s:is_alpha(c)
-	    let s = c
-	    while s:is_alpha(s:peekchar())
-		let c = s:getchar()
-		let s .= c
-	    endwhile
-	    return [ 'keyword', s ]
-
-	elseif s:is_digit(c) || c == '-'
-	    " number = [-]d[d...][.d[d...]][(e|E)[(-|+)]d[d...]]
-	    let mode = 'int'
-	    let s = c
-	    while 1
-		let c = s:peekchar()
-		if s:is_digit(c)
-		    let c = s:getchar()
-		    let s .= c
-		elseif c == '.' && mode == 'int'
-		    let mode = 'frac'
-		    let c = s:getchar()
-		    let s .= c
-		elseif (c == 'e' || c == 'E') && (mode == 'int' || mode == 'frac')
-		    let mode = 'exp'
-		    let c = s:getchar()
-		    let s .= c
-
-		    let c = s:peekchar()
-		    if c == '-' || c == '+'
-			let c = s:getchar()
-			let s .= c
-		    endif
-		else
-		    " Clean up some malformed floating-point numbers that Vim
-		    " would reject.
-		    let s = substitute(s, '^\.', '0.', '')
-		    let s = substitute(s, '-\.', '-0.', '')
-		    let s = substitute(s, '\.[eE]', '.0E', '')
-		    let s = substitute(s, '[-+eE.]$', '&0', '')
-
-		    " This takes care of the case where there is
-		    " an exponent but no frac part.
-		    if s =~ '[Ee]' && s != '\.'
-			let s = substitute(s, '[Ee]', '.0&', '')
-		    endif
-
-		    return ['number', eval(s)]
-		endif
-	    endwhile
-	endif
-    endwhile
-endfunction
-
-" value = string | number | object | array | true | false | null
-function! s:parse_value(tok)
-    let tok = a:tok
-    if tok[0] == 'string' || tok[0] == 'number'
-	return [ tok[1], s:get_token() ]
-    elseif tok == [ 'char', '{' ]
-	return s:parse_object(tok)
-    elseif tok == [ 'char', '[' ]
-	return s:parse_array(tok)
-    elseif tok[0] == 'keyword'
-	if tok[1] == 'true'
-	    return [ 1, s:get_token() ]
-	elseif tok[1] == 'false'
-	    return [ 0, s:get_token() ]
-	elseif tok[1] == 'null'
-	    return [ {}, s:get_token() ]
-	else
-	    throw s:parse_error_msg("unrecognized keyword '".tok[1]."'")
-	endif
-    elseif tok[0] == 'eof'
-	throw s:parse_error_msg("unexpected EOF")
-    endif
-endfunction
-
-" elements = value | value ',' elements
-function! s:parse_elements(tok)
-    let [ resultx, tok ] = s:parse_value(a:tok)
-    let result = [ resultx ]
-
-    while tok == [ 'char', ',' ]
-	let [ resultx, tok ] = s:parse_value(s:get_token())
-	call add(result, resultx)
-    endwhile
-
-    return [ result, tok ]
-endfunction
-
-" array = '[' ']' | '[' elements ']'
-function! s:parse_array(tok)
-    if a:tok == [ 'char', '[' ]
-	let tok = s:get_token()
-	if tok == [ 'char', ']' ]
-	    return [ [], s:get_token() ]
-	endif
-	let [ result, tok ] = s:parse_elements(tok)
-	if tok != [ 'char', ']' ]
-	    throw s:parse_error_msg("']' expected")
-	endif
-	return [ result, s:get_token() ]
-    else
-	throw s:parse_error_msg("'[' expected")
-    endif
-endfunction
-
-" pair = string ':' value
-function! s:parse_pair(tok)
-    if a:tok[0] == 'string'
-	let key = a:tok[1]
-	let tok = s:get_token()
-	if tok == [ 'char', ':' ]
-	    let [ result, tok ] = s:parse_value(s:get_token())
-	    return [ { key : result }, tok ]
-	else
-	    throw s:parse_error_msg("':' expected")
-	endif
-    else
-	throw s:parse_error_msg("string (key name) expected")
-    endif
-endfunction
-
-" members = pair | pair ',' members
-function! s:parse_members(tok)
-    let [ result, tok ] = s:parse_pair(a:tok)
-    if tok == [ 'char', ',' ]
-	let [ result2, tok ] = s:parse_members(s:get_token())
-	call extend(result, result2)
-    endif
-    return [ result, tok ]
-endfunction
-
-" object = '{' '}' | '{' members '}'
-function! s:parse_object(tok)
-    if a:tok == [ 'char', '{' ]
-	let tok = s:get_token()
-	if tok == [ 'char', '}' ]
-	    return [ {}, s:get_token() ]
-	endif
-	let [ result, tok ] = s:parse_members(tok)
-	if tok != [ 'char', '}' ]
-	    throw s:parse_error_msg("'}' expected")
-	endif
-	return [ result, s:get_token() ]
-    else
-	throw s:parse_error_msg("'{' expected")
-    endif
-endfunction
-
 function! s:parse_json(str)
     try
-	call s:set_parse_string(a:str)
-	let [ result, tok ] = s:parse_object(s:get_token())
+	let true = 1
+	let false = 0
+	let null = ''
+	sandbox let result = eval(a:str)
 	return result
-    catch /^Parse error/
-	echoerr v:exception
+    catch
+	call s:errormsg('JSON parse error: '.v:exception)
+	return {}
     endtry
 endfunction
 
@@ -2789,6 +2539,21 @@ function! s:get_status_text(item)
     return text
 endfunction
 
+" Get status text with t.co URL expansion.
+function! s:get_status_text_json(status)
+    let text = a:status.text
+    if has_key(a:status, 'entities')
+	let entities = a:status.entities
+	let urls = entities.urls
+	for url in urls
+	    if url.expanded_url != ''
+		let text = s:str_replace_all(text, url.url, url.expanded_url)
+	    endif
+	endfor
+    endif
+    return text
+endfunction
+
 " Format XML status as a display line.
 function! s:format_status_xml(item)
     let item = a:item
@@ -3812,8 +3577,56 @@ function! s:format_user_list(output, title, show_following)
     return text
 endfunction
 
+" Format a list of users, e.g. friends/followers list.
+function! s:format_user_list_json(users, title, show_following)
+    let text = []
+
+    let showheader = s:get_show_header()
+    if showheader
+	" The extra stars at the end are for the syntax highlighter to
+	" recognize the title. Then the syntax highlighter hides the stars by
+	" coloring them the same as the background. It is a bad hack.
+	call add(text, a:title.'*')
+	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+    endif
+
+    for user in a:users
+
+	let following_str = ''
+	if a:show_following
+	    let following = user.following
+	    if following
+		let following_str = ' Following'
+	    else
+		let following_str = user.follow_request_sent ? ' Follow request sent' : ' Not following'
+	    endif
+	endif
+
+	let name = s:convert_entity(user.name)
+	let screen = user.screen_name
+	let location = s:convert_entity(user.location)
+	let slocation = location == '' ? '' : '|'.location
+	call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
+
+	let desc = user.description
+	if desc != ''
+	    call add(text, 'Bio: '.s:convert_entity(desc))
+	endif
+
+	if has_key(user, 'status')
+	    let statusnode = user.status
+	    let status = s:get_status_text_json(statusnode)
+	    let pubdate = s:time_filter(statusnode.created_at)
+	    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+	endif
+
+	call add(text, '')
+    endfor
+    return text
+endfunction
+
 " Call Twitter API to get friends or followers list.
-function! s:get_friends2(cursor, index, user, followers)
+function! s:get_friends_json(cursor, index, user, followers)
     if a:followers
 	let buftype = 'followers'
 	let query = '/followers/ids.json'
@@ -3839,7 +3652,7 @@ function! s:get_friends2(cursor, index, user, followers)
     redraw
     echo "Querying Twitter for ".what."..."
 
-    let url = s:add_to_url(s:get_api_root().query, 'cursor='.a:cursor)
+    let url = s:get_api_root().query.'?cursor='.a:cursor
     if a:user != ''
 	let url = s:add_to_url(url, 'screen_name='.a:user)
     endif
@@ -3851,23 +3664,41 @@ function! s:get_friends2(cursor, index, user, followers)
 	return
     endif
 
-    let idlist = result.ids
-
-    let idslice = idlist[a:index : a:index + 99]
-    let url = s:get_api_root().'/users/lookup.xml?user_id='.join(idslice, ',')
-    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
+    if !has_key(result, 'ids')
+	call s:errormsg('Bad result from '.query)
 	return
     endif
 
+    let idlist = result.ids
+
+    let idslice = idlist[a:index : a:index + 99]
+    let url = s:get_api_root().'/users/lookup.json?include_entities=true&user_id='.join(idslice, ',')
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    let lookup_result = s:parse_json(output)
+    if error != ''
+	call s:errormsg("Error getting ".what.": ".(has_key(lookup_result, 'error') ? lookup_result.error : error))
+	return
+    endif
+
+    let userhash = {}
+    for user in lookup_result
+	let userhash[user.id] = user
+    endfor
+
+    " Sort users in the same order as the list of IDs.
+    let users = []
+    for id in idslice
+	if has_key(userhash, id)
+	    call add(users, userhash[id])
+	endif
+    endfor
+
     call s:save_buffer(1)
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, title, a:followers || a:user != ''), "userinfo")
+    call s:twitter_wintext(s:format_user_list_json(users, title, a:followers || a:user != ''), "userinfo")
     let s:infobuffer.buftype = buftype
-    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
-    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let s:infobuffer.next_cursor = result.next_cursor
+    let s:infobuffer.prev_cursor = result.previous_cursor
     let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = a:user
     let s:infobuffer.list = ''
@@ -4152,11 +3983,11 @@ if !exists(":PreviousInfoTwitter")
 endif
 
 if !exists(":FollowingTwitter")
-    " command -nargs=? FollowingTwitter :call <SID>get_friends2(-1, 0, <q-args>, 0)
+"     command -nargs=? FollowingTwitter :call <SID>get_friends_json(-1, 0, <q-args>, 0)
     command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
 endif
 if !exists(":FollowersTwitter")
-    " command -nargs=? FollowersTwitter :call <SID>get_friends2(-1, 0, <q-args>, 1)
+"     command -nargs=? FollowersTwitter :call <SID>get_friends_json(-1, 0, <q-args>, 1)
     command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
 endif
 if !exists(":MembersOfListTwitter")
@@ -4489,6 +4320,9 @@ function! s:call_googl(url)
     echo "Sending request to goo.gl..."
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
+
+    " Remove nul characters.
+    let output = substitute(output, '[\x0]', '', 'g')
 
     let result = s:parse_json(output)
 
