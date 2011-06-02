@@ -2516,6 +2516,9 @@ endfunction
 function! s:get_status_text(item)
     let text = s:xml_get_element(a:item, 'text')
 
+    " Remove nul characters.
+    let text = substitute(text, '[\x0]', ' ', 'g')
+
     let entities = s:xml_get_element(a:item, 'entities')
     let urls = s:xml_get_element(entities, 'urls')
 
@@ -2542,6 +2545,10 @@ endfunction
 " Get status text with t.co URL expansion.
 function! s:get_status_text_json(status)
     let text = a:status.text
+
+    " Remove nul characters.
+    let text = substitute(text, '[\x0]', ' ', 'g')
+
     if has_key(a:status, 'entities')
 	let entities = a:status.entities
 	let urls = entities.urls
@@ -4322,7 +4329,7 @@ function! s:call_googl(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
 
     " Remove nul characters.
-    let output = substitute(output, '[\x0]', '', 'g')
+    let output = substitute(output, '[\x0]', ' ', 'g')
 
     let result = s:parse_json(output)
 
