@@ -248,7 +248,7 @@ function! s:get_twitvim_username()
     if error != ''
 	let errormsg = s:xml_get_element(output, 'error')
 	call s:errormsg("Error verifying login credentials: ".(errormsg != '' ? errormsg : error))
-	return
+	return ''
     endif
 
     redraw
@@ -420,6 +420,95 @@ function! s:time_filter(str)
 endfunction
 
 " === End of time parser ===
+
+" === Token Management code ===
+
+" Each token record holds the following fields:
+"
+" token: access token
+" secret: access token secret
+" name: screen name
+" A lowercased copy of the screen name is the hash key.
+
+let s:tokens = {}
+let s:token_header = 'TwitVim 0.6'
+
+function! s:find_token(name)
+    return get(s:tokens, tolower(a:name), [])
+endfunction
+
+function! s:save_token(tokenrec)
+    let tokenrec = a:tokenrec
+    let s:tokens[tolower(tokenrec.name)] = tokenrec
+endfunction
+
+function! s:switch_token(name)
+    let tokenrec = s:find_token(a:name)
+    if tokenrec == []
+	call s:errormsg("Can't switch to user ".a:name.".")
+    else
+	let s:access_token = tokenrec.token
+	let s:access_token_secret = tokenrec.secret
+	let s:cached_username = tokenrec.name
+	redraw
+	echo "Logged in as ".s:cached_username."."
+    endif
+endfunction
+
+function! s:write_tokens(current_user)
+    if !s:get_disable_token_file()
+	let lines = []
+	call add(lines, s:token_header)
+	call add(lines, a:current_user)
+	for tokenrec in values(s:tokens)
+	    call add(lines, tokenrec.name)
+	    call add(lines, tokenrec.token)
+	    call add(lines, tokenrec.secret)
+	endfor
+	if writefile(lines, s:get_token_file()) < 0
+	    call s:errormsg('Error writing token file: '.v:errmsg)
+	endif
+    endif
+endfunction
+
+function! s:read_tokens()
+    let tokenfile = s:get_token_file()
+    if !s:get_disable_token_file() && filereadable(tokenfile)
+	let [hdr, current_user; tokens] = readfile(tokenfile, 't', 500)
+	if tokens == []
+	    " Legacy token file only has token and secret.
+	    let s:access_token = hdr
+	    let s:access_token_secret = current_user
+	    let s:cached_username = ''
+
+	    let user = s:get_twitvim_username()
+	    if user == ''
+		call s:errormsg('Invalid token in token file. Please relogin with :SetLoginTwitter.')
+		return
+	    endif
+
+	    let tokenrec = {}
+	    let tokenrec.token = s:access_token
+	    let tokenrec.secret = s:access_token_secret
+	    let tokenrec.name = user
+
+	    call s:save_token(tokenrec)
+	    call s:write_tokens(user)
+	else
+	    for i in range(0, len(tokens) - 1, 3)
+		let tokenrec = {}
+		let tokenrec.name = tokens[i]
+		let tokenrec.token = tokens[i + 1]
+		let tokenrec.secret = tokens[i + 2]
+		call s:save_token(tokenrec)
+	    endfor
+	    call s:switch_token(current_user)
+	endif
+    endif
+endfunction
+
+
+" === End of Token Management code ===
 
 " === OAuth code ===
 
@@ -789,7 +878,12 @@ function! s:do_oauth()
 	let token_secret = matchres[1]
     endif
 
-    return [ 0, request_token, token_secret ]
+    let matchres = matchlist(output, 'screen_name=\([^&]\+\)&')
+    if matchres != []
+	let screen_name = matchres[1]
+    endif
+
+    return [ 0, request_token, token_secret, screen_name ]
 endfunction
 
 " Sign a request with OAuth and send it.
@@ -807,7 +901,7 @@ function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
 	    if tokens == []
 
 		" If unsuccessful at reading token file, do the OAuth handshake.
-		let [ retval, s:access_token, s:access_token_secret ] = s:do_oauth()
+		let [ retval, s:access_token, s:access_token_secret, s:cached_username ] = s:do_oauth()
 		if retval < 0
 		    return [ "Error from do_oauth(): ".retval, '' ]
 		endif
