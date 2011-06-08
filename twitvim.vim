@@ -442,6 +442,8 @@ function! s:save_token(tokenrec)
     let s:tokens[tolower(tokenrec.name)] = tokenrec
 endfunction
 
+" Switch to another access token. Note that the token file should be written
+" out again after this to reflect the new current user.
 function! s:switch_token(name)
     let tokenrec = s:find_token(a:name)
     if tokenrec == []
@@ -455,6 +457,20 @@ function! s:switch_token(name)
     endif
 endfunction
 
+" Returns a list of screen names. This is for command completion when switching
+" logins.
+function! s:name_list_tokens()
+    let names = []
+    for tokenrec in values(s:tokens)
+	" Need to use the names in the token records rather than keys(s:tokens)
+	" in order to present screen names in original case instead of all
+	" lowercase.
+	call add(names, tokenrec.name)
+    endfor
+    return names
+endfunction
+
+" Write the token file.
 function! s:write_tokens(current_user)
     if !s:get_disable_token_file()
 	let lines = []
@@ -471,6 +487,7 @@ function! s:write_tokens(current_user)
     endif
 endfunction
 
+" Read the token file.
 function! s:read_tokens()
     let tokenfile = s:get_token_file()
     if !s:get_disable_token_file() && filereadable(tokenfile)
@@ -495,6 +512,7 @@ function! s:read_tokens()
 	    call s:save_token(tokenrec)
 	    call s:write_tokens(user)
 	else
+	    " New token file contains tokens, 3 lines per record.
 	    for i in range(0, len(tokens) - 1, 3)
 		let tokenrec = {}
 		let tokenrec.name = tokens[i]
@@ -807,7 +825,7 @@ function! s:do_oauth()
 
     if error != ''
 	call s:errormsg("Error from oauth/request_token: ".error)
-	return [-1, '', '']
+	return [-1, '', '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
@@ -842,7 +860,7 @@ function! s:do_oauth()
 	echo auth_url
     else
 	if s:launch_browser(auth_url) < 0
-	    return [-2, '', '']
+	    return [-2, '', '', '']
 	endif
     endif
 
@@ -852,7 +870,7 @@ function! s:do_oauth()
 
     if pin == ""
 	call s:warnmsg("No OAuth PIN entered")
-	return [-3, '', '']
+	return [-3, '', '', '']
     endif
 
     " Call oauth/access_token to swap request token for access token.
@@ -865,7 +883,7 @@ function! s:do_oauth()
 
     if error != ''
 	call s:errormsg("Error from oauth/access_token: ".error)
-	return [-4, '', '']
+	return [-4, '', '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
@@ -878,7 +896,7 @@ function! s:do_oauth()
 	let token_secret = matchres[1]
     endif
 
-    let matchres = matchlist(output, 'screen_name=\([^&]\+\)&')
+    let matchres = matchlist(output, 'screen_name=\([^&]\+\)')
     if matchres != []
 	let screen_name = matchres[1]
     endif
