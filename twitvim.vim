@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 1, 2011
+" Last updated: June 9, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -489,6 +489,8 @@ endfunction
 " Write the token file.
 function! s:write_tokens(current_user)
     if !s:get_disable_token_file()
+	let tokenfile = s:get_token_file()
+
 	let lines = []
 	call add(lines, s:token_header)
 	call add(lines, a:current_user)
@@ -497,8 +499,17 @@ function! s:write_tokens(current_user)
 	    call add(lines, tokenrec.token)
 	    call add(lines, tokenrec.secret)
 	endfor
-	if writefile(lines, s:get_token_file()) < 0
+
+	if writefile(lines, tokenfile) < 0
 	    call s:errormsg('Error writing token file: '.v:errmsg)
+	endif
+
+	" Check and change file permissions for security.
+	if has('unix')
+	    let perms = getfperm(tokenfile)
+	    if perms != '' && perms[-6:] != '------'
+		silent! execute "!chmod go-rwx '".tokenfile."'"
+	    endif
 	endif
     endif
 endfunction
