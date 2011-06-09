@@ -156,10 +156,11 @@ endfunction
 " Dummy login string to force OAuth signing in run_curl_oauth().
 let s:ologin = "oauth:oauth"
 
-" Reset login info.
+" Throw away saved login tokens and reset login info.
 function! s:reset_twitvim_login()
     let s:access_token = ""
     let s:access_token_secret = ""
+    let s:tokens = {}
     call delete(s:get_token_file())
 
     let s:cached_username = ""
@@ -204,11 +205,39 @@ function! s:check_twitvim_login()
     return 1
 endfunction
 
-" Throw away OAuth access tokens and log in again. This is meant to allow the
-" user to switch to a different Twitter account.
+" Log in to a Twitter account.
 function! s:prompt_twitvim_login()
-    call s:reset_twitvim_login()
-    call s:check_twitvim_login()
+    call s:do_login()
+endfunction
+
+" Switch to a different TwitVim user.
+function! s:switch_twitvim_login(user)
+    let user = a:user
+    if user == ''
+	let namelist = s:list_tokens()
+	if namelist == []
+	    call s:errormsg('No logins to switch to. Use :SetLoginTwitter to log in.')
+	    return
+	endif
+
+	let menu = []
+	call add(menu, 'Choose a login to switch to:')
+	let namecount = 0
+	for name in namelist
+	    let namecount += 1
+	    call add(menu, namecount.'. '.name)
+	endfor
+
+	let input = inputlist(menu)
+	if input < 1 || input > len(namelist)
+	    " Invalid input cancels the command.
+	    return
+	endif
+
+	let user = namelist[input - 1]
+    endif
+    call s:switch_token(user)
+    call s:write_tokens(s:cached_username)
 endfunction
 
 let s:cached_login = ''
@@ -450,7 +479,7 @@ let s:tokens = {}
 let s:token_header = 'TwitVim 0.6'
 
 function! s:find_token(name)
-    return get(s:tokens, tolower(a:name), [])
+    return get(s:tokens, tolower(a:name), {})
 endfunction
 
 function! s:save_token(tokenrec)
@@ -462,7 +491,7 @@ endfunction
 " out again after this to reflect the new current user.
 function! s:switch_token(name)
     let tokenrec = s:find_token(a:name)
-    if tokenrec == []
+    if tokenrec == {}
 	call s:errormsg("Can't switch to user ".a:name.".")
     else
 	let s:access_token = tokenrec.token
@@ -473,9 +502,9 @@ function! s:switch_token(name)
     endif
 endfunction
 
-" Returns a list of screen names. This is for command completion when switching
-" logins.
-function! s:name_list_tokens()
+" Returns a list of screen names. This is for prompting the user to pick a login
+" to which to switch.
+function! s:list_tokens()
     let names = []
     for tokenrec in values(s:tokens)
 	" Need to use the names in the token records rather than keys(s:tokens)
@@ -485,6 +514,13 @@ function! s:name_list_tokens()
     endfor
     return names
 endfunction
+    
+" Returns a newline-delimited list of screen names. This is for command
+" completion when switching logins.
+function! s:name_list_tokens(ArgLead, CmdLine, CursorPos)
+    return join(s:list_tokens(), "\n")
+endfunction
+
 
 " Write the token file.
 function! s:write_tokens(current_user)
@@ -931,35 +967,38 @@ function! s:do_oauth()
     return [ 0, request_token, token_secret, screen_name ]
 endfunction
 
+" Perform an OAuth login.
+function! s:do_login()
+    let [ retval, s:access_token, s:access_token_secret, s:cached_username ] = s:do_oauth()
+    if retval < 0
+	return [ -1, "Error from do_oauth(): ".retval ]
+    endif
+
+    let tokenrec = {}
+    let tokenrec.token = s:access_token
+    let tokenrec.secret = s:access_token_secret
+    let tokenrec.name = s:cached_username
+    call s:save_token(tokenrec)
+    call s:write_tokens(s:cached_username)
+
+    redraw
+    echo "Logged in as ".s:cached_username."."
+
+    return [ 0, '' ]
+endfunction
+
 " Sign a request with OAuth and send it.
 function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
     if a:login != '' && a:url =~ 'twitter\.com'
+
+	" Get access tokens from token file or do OAuth login.
 	if !exists('s:access_token') || s:access_token == ''
-
-	    let tokens = []
-
-	    if !s:get_disable_token_file() && filereadable(s:get_token_file())
-		" Try to read access tokens from token file.
-		let tokens = readfile(s:get_token_file(), "t", 3)
-	    endif
-
-	    if tokens == []
-
-		" If unsuccessful at reading token file, do the OAuth handshake.
-		let [ retval, s:access_token, s:access_token_secret, s:cached_username ] = s:do_oauth()
-		if retval < 0
-		    return [ "Error from do_oauth(): ".retval, '' ]
+	    call s:read_tokens()
+	    if !exists('s:access_token') || s:access_token == ''
+		let [ status, error ] = s:do_login()
+		if status < 0
+		    return [ error, '' ]
 		endif
-
-		if !s:get_disable_token_file()
-		    " Save access tokens to the token file.
-		    let v:errmsg = ""
-		    if writefile([ s:access_token, s:access_token_secret ], s:get_token_file()) < 0
-			call s:errormsg('Error writing token file: '.v:errmsg)
-		    endif
-		endif
-	    else
-		let [s:access_token, s:access_token_secret] = tokens
 	    endif
 	endif
 
@@ -3136,6 +3175,9 @@ if !exists(":SetLoginTwitter")
 endif
 if !exists(":ResetLoginTwitter")
     command ResetLoginTwitter :call <SID>reset_twitvim_login()
+endif
+if !exists(':SwitchLoginTwitter')
+    command -nargs=? -complete=custom,<SID>name_list_tokens SwitchLoginTwitter :call <SID>switch_twitvim_login(<q-args>)
 endif
 
 nnoremenu Plugin.TwitVim.-Sep2- :

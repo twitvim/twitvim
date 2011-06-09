@@ -90,6 +90,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :PreviousTwitter.....................: |:PreviousTwitter|
 	     :PreviousInfoTwitter.................: |:PreviousInfoTwitter|
 	     :SetLoginTwitter.....................: |:SetLoginTwitter|
+	     :SwitchLoginTwitter..................: |:SwitchLoginTwitter|
 	     :ResetLoginTwitter...................: |:ResetLoginTwitter|
 	     :FollowTwitter.......................: |:FollowTwitter|
 	     :UnfollowTwitter.....................: |:UnfollowTwitter|
@@ -1072,11 +1073,31 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	:SetLoginTwitter				*:SetLoginTwitter*
 
-	This command discards the OAuth access token and initiates an OAuth
-	handshake. Use this command if you need to log out and log in as
-	another Twitter user. When the Twitter authentication web page comes
-	up, use the "Sign Out" link to log in as a different Twitter user and
-	grant TwitVim access to that user.
+	This command initiates an OAuth login handshake. 
+
+	Use this command if you need to log in as another Twitter user. When
+	the Twitter authentication web page comes up, use the "Sign Out" link
+	to log in as a different Twitter user and grant TwitVim access to that
+	user.
+
+	When you use SetLoginTwitter, TwitVim does not discard the previous
+	access token. So you can switch back to the previous user using
+	|:SwitchLoginTwitter|.
+
+	This command has no effect in identi.ca and other Twitter-compatible
+	services that use Basic authentication.
+
+
+	:SwitchLoginTwitter				*:SwitchLoginTwitter*
+	:SwitchLoginTwitter {username}
+
+	Switch to another user from the list of saved access tokens. If
+	{username} is not specified, SwitchLoginTwitter will display a list of
+	user names and prompt you to select one of those.
+
+	SwitchLoginTwitter knows only about user accounts to which you have
+	logged in previously. To switch to a new user account, use
+	|:SetLoginTwitter| instead.
 
 	This command has no effect in identi.ca and other Twitter-compatible
 	services that use Basic authentication.
@@ -1084,8 +1105,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	:ResetLoginTwitter				*:ResetLoginTwitter*
 
-	This command discards the OAuth access token. The next TwitVim command
-	that needs Twitter authentication will initiate an OAuth handshake.
+	This command discards the current OAuth access token and all saved
+	tokens. The next TwitVim command that needs Twitter authentication
+	will initiate an OAuth handshake.
+
+	After using ResetLoginTwitter, you won't be able to switch to any
+	users using |:SwitchLoginTwitter| because ResetLoginTwitter discards
+	all saved access tokens.
 
 	This command has no effect in identi.ca and other Twitter-compatible
 	services that use Basic authentication.
@@ -1885,6 +1911,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.6.4 : 2011-06-09 * Replaced many deprecated Twitter API calls with
+			     updated versions.
+			   * Improved XML parsing speed for high
+			     |twitvim_count|.
+			   * Added |:SwitchLoginTwitter| and other code to
+			     support multiple saved OAuth logins.
 	0.6.3 : 2011-05-13 * Expand t.co URLs in timeline displays.
 			   * Added timeline filtering. |TwitVim-filter|
 	0.6.2 : 2011-02-21 * Added more user relationship info to
