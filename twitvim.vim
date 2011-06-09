@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.6.3 2011-04-22'
+let s:user_agent = 'TwitVim 0.6.4 2011-06-09'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -228,7 +228,9 @@ function! s:switch_twitvim_login(user)
 	    call add(menu, namecount.'. '.name)
 	endfor
 
+	call inputsave()
 	let input = inputlist(menu)
+	call inputrestore()
 	if input < 1 || input > len(namelist)
 	    " Invalid input cancels the command.
 	    return
