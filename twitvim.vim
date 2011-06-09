@@ -293,6 +293,22 @@ function! s:xml_get_nth(xmlstr, elem, n)
     return matchres == [] ? "" : matchres[1]
 endfunction
 
+" Get all elements in a series of elements.
+function! s:xml_get_all(xmlstr, elem)
+    let pat = '<'.a:elem.'\%( [^>]*\)\?>\(.\{-}\)</'.a:elem.'>'
+    let matches = []
+    let pos = 0
+
+    while 1
+	let matchres = matchlist(a:xmlstr, pat, pos)
+	if matchres == []
+	    return matches
+	endif
+	call add(matches, matchres[1])
+	let pos = matchend(a:xmlstr, pat, pos)
+    endwhile
+endfunction
+
 " Get the content of the specified element.
 function! s:xml_get_element(xmlstr, elem)
     return s:xml_get_nth(a:xmlstr, a:elem, 1)
@@ -2715,7 +2731,6 @@ endfunction
 
 " Show a timeline from XML stream data.
 function! s:show_timeline_xml(timeline, tline_name, username, page)
-    let matchcount = 1
     let text = []
 
     let s:curbuffer.dmids = []
@@ -2759,12 +2774,7 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	let s:curbuffer.inreplyto = [0]
     endif
 
-    while 1
-	let item = s:xml_get_nth(a:timeline, 'status', matchcount)
-	if item == ""
-	    break
-	endif
-
+    for item in s:xml_get_all(a:timeline, 'status')
 	if !s:check_filter(item)
 	    call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
 	    call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
@@ -2772,9 +2782,8 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 	    let line = s:format_status_xml(item)
 	    call add(text, line)
 	endif
+    endfor
 
-	let matchcount += 1
-    endwhile
     call s:twitter_wintext(text, "timeline")
     let s:curbuffer.buffer = text
 endfunction
@@ -2910,7 +2919,6 @@ endfunction
 " Show direct message sent or received by user. First argument should be 'sent'
 " or 'received' depending on which timeline we are displaying.
 function! s:show_dm_xml(sent_or_recv, timeline, page)
-    let matchcount = 1
     let text = []
 
     "No status IDs in direct messages.
@@ -2940,12 +2948,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 	let s:curbuffer.dmids = [0]
     endif
 
-    while 1
-	let item = s:xml_get_nth(a:timeline, 'direct_message', matchcount)
-	if item == ""
-	    break
-	endif
-
+    for item in s:xml_get_all(a:timeline, 'direct_message')
 	call add(s:curbuffer.dmids, s:xml_get_element(item, 'id'))
 
 	let user = s:xml_get_element(item, a:sent_or_recv == 'sent' ? 'recipient_screen_name' : 'sender_screen_name')
@@ -2953,9 +2956,8 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 	let date = s:time_filter(s:xml_get_element(item, 'created_at'))
 
 	call add(text, user.": ".s:convert_entity(mesg).' |'.date.'|')
+    endfor
 
-	let matchcount += 1
-    endwhile
     call s:twitter_wintext(text, "timeline")
     let s:curbuffer.buffer = text
 endfunction
@@ -3643,7 +3645,6 @@ endif
 
 " Format a list of users, e.g. friends/followers list.
 function! s:format_user_list(output, title, show_following)
-    let matchcount = 1
     let text = []
 
     let showheader = s:get_show_header()
@@ -3655,13 +3656,7 @@ function! s:format_user_list(output, title, show_following)
 	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
     endif
 
-    while 1
-	let user = s:xml_get_nth(a:output, 'user', matchcount)
-	if user == ""
-	    break
-	endif
-	let matchcount += 1
-
+    for user in s:xml_get_all(a:output, 'user')
 	let following_str = ''
 	if a:show_following
 	    let following = s:xml_get_element(user, 'following')
@@ -3692,7 +3687,7 @@ function! s:format_user_list(output, title, show_following)
 	endif
 
 	call add(text, '')
-    endwhile
+    endfor
     return text
 endfunction
 
@@ -3948,7 +3943,6 @@ endfunction
 
 " Format a list of lists, e.g. user's list memberships or list subscriptions.
 function! s:format_list_list(output, title)
-    let matchcount = 1
     let text = []
 
     let showheader = s:get_show_header()
@@ -3960,13 +3954,7 @@ function! s:format_list_list(output, title)
 	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
     endif
 
-    while 1
-	let list = s:xml_get_nth(a:output, 'list', matchcount)
-	if list == ""
-	    break
-	endif
-	let matchcount += 1
-
+    for list in s:xml_get_all(a:output, 'list')
 	let name = s:xml_get_element(list, 'full_name')
 	let following = s:xml_get_element(list, 'member_count')
 	let followers = s:xml_get_element(list, 'subscriber_count')
@@ -3976,7 +3964,7 @@ function! s:format_list_list(output, title)
 	    call add(text, 'Desc: '.desc)
 	endif
 	call add(text, '')
-    endwhile
+    endfor
     return text
 endfunction
 
@@ -4678,7 +4666,6 @@ endif
 " Parse and format search results from Twitter Search API.
 function! s:show_summize(searchres, page)
     let text = []
-    let matchcount = 1
 
     let s:curbuffer.dmids = []
 
@@ -4708,12 +4695,7 @@ function! s:show_summize(searchres, page)
 	let s:curbuffer.inreplyto = [0]
     endif
 
-    while 1
-	let item = s:xml_get_nth(a:searchres, 'entry', matchcount)
-	if item == ""
-	    break
-	endif
-
+    for item in s:xml_get_all(a:searchres, 'entry')
 	let title = s:xml_get_element(item, 'title')
 	let pubdate = s:time_filter(s:xml_get_element(item, 'updated'))
 	let sender = substitute(s:xml_get_element(item, 'uri'), 'http://twitter.com/', '', '')
@@ -4723,9 +4705,7 @@ function! s:show_summize(searchres, page)
 	call add(s:curbuffer.statuses, status)
 
 	call add(text, sender.": ".s:convert_entity(title).' |'.pubdate.'|')
-
-	let matchcount += 1
-    endwhile
+    endfor
     call s:twitter_wintext(text, "timeline")
     let s:curbuffer.buffer = text
 endfunction
