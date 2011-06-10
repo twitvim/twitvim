@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: June 9, 2011
+" Last updated: June 10, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.6.4 2011-06-09'
+let s:user_agent = 'TwitVim 0.6.4 2011-06-10'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -210,7 +210,7 @@ function! s:prompt_twitvim_login()
     call s:do_login()
 endfunction
 
-" Switch to a different TwitVim user.
+" Switch to a different Twitter user.
 function! s:switch_twitvim_login(user)
     let user = a:user
     if user == ''

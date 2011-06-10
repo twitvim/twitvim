@@ -364,9 +364,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	Since TwitVim does not yet have an OAuth access token, it will
 	initiate the Twitter OAuth handshake. Then it'll launch your web
-	browser to a Twitter web page that says "An application would like to
-	connect to your account". On this page, sign in, if necessary, and
-	then click on "Allow" to allow TwitVim access to your Twitter account.
+	browser to a Twitter web page that says "Authorize TwitVim to use your
+	account?". On this page, sign in to Twitter, if necessary, and then
+	click on "Authorize app" to allow TwitVim access to your Twitter
+	account.
 
 	Twitter will then report that you have granted access to TwitVim and
 	display a 7-digit PIN. Copy the PIN and paste it to the TwitVim input
@@ -1911,7 +1912,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.4 : 2011-06-09 * Replaced many deprecated Twitter API calls with
+	0.6.4 : 2011-06-10 * Replaced many deprecated Twitter API calls with
 			     updated versions.
 			   * Improved XML parsing speed for high
 			     |twitvim_count|.
