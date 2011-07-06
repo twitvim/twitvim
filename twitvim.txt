@@ -1912,7 +1912,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.6.4 : 2011-06-10 * Replaced many deprecated Twitter API calls with
+	0.7.0 : 2011-07-06 * Replaced many deprecated Twitter API calls with
 			     updated versions.
 			   * Improved XML parsing speed for high
 			     |twitvim_count|.
