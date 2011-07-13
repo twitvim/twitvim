@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: July 6, 2011
+" Last updated: July 12, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2480,6 +2480,7 @@ function! s:convert_entity(str)
     let s = substitute(s, '&quot;', '"', 'g')
     " let s = substitute(s, '&#\(\d\+\);','\=nr2char(submatch(1))', 'g')
     let s = substitute(s, '&#\(\d\+\);','\=s:nr2enc_char(submatch(1))', 'g')
+    let s = substitute(s, '&#x\(\x\+\);','\=s:nr2enc_char("0x".submatch(1))', 'g')
     return s
 endfunction
 
