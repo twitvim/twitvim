@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: July 12, 2011
+" Last updated: July 14, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.0 2011-07-06'
+let s:user_agent = 'TwitVim 0.7.0 2011-07-14'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -1080,7 +1080,12 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     for [k, v] in items(a:parms)
 	if k == '__json'
 	    let got_json = 1
-	    let curlcmd .= '-d "'.substitute(v, '"', '\\"', 'g').'" '
+	    let vsub = substitute(v, '"', '\\"', 'g')
+	    if  has('win32') || has('win64')
+		" Under Windows only, we need to quote some special characters.
+		let vsub = substitute(vsub, '[\\&|><^]', '"&"', 'g')
+	    endif
+	    let curlcmd .= '-d "'.vsub.'" '
 	else
 	    let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
 	endif
