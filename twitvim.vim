@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.7.0
+" Version: 0.7.1
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: July 14, 2011
+" Last updated: July 29, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.0 2011-07-14'
+let s:user_agent = 'TwitVim 0.7.1 2011-07-29'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -3288,7 +3288,7 @@ function! s:set_location(loc)
     redraw
     echo "Setting location on Twitter profile..."
 
-    let url = s:get_api_root()."/account/update_location.xml"
+    let url = s:get_api_root()."/account/update_profile.xml"
     let parms = { 'location' : a:loc }
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
