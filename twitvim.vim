@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: July 29, 2011
+" Last updated: August 5, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.1 2011-07-29'
+let s:user_agent = 'TwitVim 0.7.1 2011-08-05'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2231,6 +2231,11 @@ function! s:launch_browser(url)
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
+
+    " Escape the '&' character under Unix.
+    if has('unix')
+	let url = substitute(url, '&', '\\&', 'g')
+    endif
 
     redraw
     echo "Launching web browser..."
