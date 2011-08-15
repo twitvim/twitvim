@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 5, 2011
+" Last updated: August 15, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.1 2011-08-05'
+let s:user_agent = 'TwitVim 0.7.1 2011-08-15'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2227,12 +2227,18 @@ function! s:launch_browser(url)
     endif
 
     let startcmd = has("win32") || has("win64") ? "!start " : "! "
-    let endcmd = has("unix") ? "&" : ""
+
+    " Discard unnecessary output from UNIX browsers. So far, this is known to
+    " happen only in the Linux version of Google Chrome when it opens a tab in
+    " an existing browser window.
+    let endcmd = has('unix') ? '> /dev/null &' : ''
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
 
-    " Escape the '&' character under Unix.
+    " Escape the '&' character under Unix. This character is valid in URLs but
+    " causes the shell to background the process and cut off the URL at that
+    " point.
     if has('unix')
 	let url = substitute(url, '&', '\\&', 'g')
     endif
