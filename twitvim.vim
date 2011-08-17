@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 15, 2011
+" Last updated: August 17, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -1612,6 +1612,10 @@ let s:curbuffer = {}
 " buffer: The buffer text.
 " view: viewport saved with winsaveview()
 " showheader: 1 if header is shown in this buffer, 0 if header is hidden.
+" 
+" flist: List of friends/followers IDs.
+" findex: Starting index within flist of the friends/followers info displayed
+" in this buffer.
 
 let s:infobuffer = {}
 
@@ -2739,25 +2743,6 @@ function! s:get_status_text(item)
     return text
 endfunction
 
-" Get status text with t.co URL expansion.
-function! s:get_status_text_json(status)
-    let text = a:status.text
-
-    " Remove nul characters.
-    let text = substitute(text, '[\x0]', ' ', 'g')
-
-    if has_key(a:status, 'entities')
-	let entities = a:status.entities
-	let urls = entities.urls
-	for url in urls
-	    if url.expanded_url != ''
-		let text = s:str_replace_all(text, url.url, url.expanded_url)
-	    endif
-	endfor
-    endif
-    return text
-endfunction
-
 " Format XML status as a display line.
 function! s:format_status_xml(item)
     let item = a:item
@@ -3763,80 +3748,17 @@ function! s:format_user_list(output, title, show_following)
     return text
 endfunction
 
-" Format a list of users, e.g. friends/followers list.
-function! s:format_user_list_json(users, title, show_following)
-    let text = []
-
-    let showheader = s:get_show_header()
-    if showheader
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, a:title.'*')
-	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+" Call Twitter API to get list of friends/followers IDs.
+function! s:get_friends_ids_2(cursor, user, followers)
+    let what = a:followers ? 'followers IDs' : 'friends IDs'
+    if a:user != ''
+	let what .= ' of '.a:user
     endif
 
-    for user in a:users
-
-	let following_str = ''
-	if a:show_following
-	    let following = user.following
-	    if following
-		let following_str = ' Following'
-	    else
-		let following_str = user.follow_request_sent ? ' Follow request sent' : ' Not following'
-	    endif
-	endif
-
-	let name = s:convert_entity(user.name)
-	let screen = user.screen_name
-	let location = s:convert_entity(user.location)
-	let slocation = location == '' ? '' : '|'.location
-	call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
-
-	let desc = user.description
-	if desc != ''
-	    call add(text, 'Bio: '.s:convert_entity(desc))
-	endif
-
-	if has_key(user, 'status')
-	    let statusnode = user.status
-	    let status = s:get_status_text_json(statusnode)
-	    let pubdate = s:time_filter(statusnode.created_at)
-	    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
-	endif
-
-	call add(text, '')
-    endfor
-    return text
-endfunction
-
-" Call Twitter API to get friends or followers list.
-function! s:get_friends_json(cursor, index, user, followers)
-    if a:followers
-	let buftype = 'followers'
-	let query = '/followers/ids.json'
-	if a:user != ''
-	    let what = 'followers list of '.a:user
-	    let title = 'People following '.a:user
-	else
-	    let what = 'followers list'
-	    let title = 'People following you'
-	endif
-    else
-	let buftype = 'friends'
-	let query = '/friends/ids.json'
-	if a:user != ''
-	    let what = 'friends list of '.a:user
-	    let title = 'People '.a:user.' is following'
-	else
-	    let what = 'friends list'
-	    let title = "People you're following"
-	endif
-    endif
+    let query = '/' . (a:followers ? 'followers' : 'friends') . '/ids.xml'
 
     redraw
-    echo "Querying Twitter for ".what."..."
+    echo 'Querying Twitter for '.what.'...'
 
     let url = s:get_api_root().query.'?cursor='.a:cursor
     if a:user != ''
@@ -3844,53 +3766,91 @@ function! s:get_friends_json(cursor, index, user, followers)
     endif
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
-    let result = s:parse_json(output)
     if error != ''
-	call s:errormsg("Error getting ".what.": ".(has_key(result, 'error') ? result.error : error))
-	return
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg('Error getting '.what.': '.(errormsg != '' ? errormsg : error))
+	return {}
     endif
+    let result = {}
+    let result.next_cursor = s:xml_get_element(output, 'next_cursor')
+    let result.prev_cursor = s:xml_get_element(output, 'previous_cursor')
+    let result.ids = s:xml_get_all(output, 'id')
+    return result
+endfunction
 
-    if !has_key(result, 'ids')
-	call s:errormsg('Bad result from '.query)
-	return
-    endif
+" Call Twitter API to look up friends info from list of IDs.
+function! s:get_friends_info_2(ids, index)
+    redraw
+    echo 'Querying Twitter for friends/followers info...'
 
-    let idlist = result.ids
+    let idslice = a:ids[a:index : a:index + 99]
+    let url = s:get_api_root().'/users/lookup.xml?include_entities=true&user_id='.join(idslice, ',')
 
-    let idslice = idlist[a:index : a:index + 99]
-    let url = s:get_api_root().'/users/lookup.json?include_entities=true&user_id='.join(idslice, ',')
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
-    let lookup_result = s:parse_json(output)
     if error != ''
-	call s:errormsg("Error getting ".what.": ".(has_key(lookup_result, 'error') ? lookup_result.error : error))
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg('Error getting friends/followers info: '.(errormsg != '' ? errormsg : error))
+	return ''
+    endif
+
+    return output
+endfunction
+
+" Call Twitter API to get friends or followers list.
+function! s:get_friends_2(cursor, ids, next_cursor, prev_cursor, index, user, followers)
+    if a:ids == []
+	let result = s:get_friends_ids_2(a:cursor, a:user, a:followers)
+	if result == {}
+	    return
+	endif
+	let ids = result.ids
+	let next_cursor = result.next_cursor
+	let prev_cursor = result.prev_cursor
+	if a:index < 0
+	    " If user is paging backwards, we want the last 100 IDs in the
+	    " list.
+	    let index = len(ids) - 100
+	    if index < 0
+		let index = 0
+	    endif
+	else
+	    let index = 0
+	endif
+    else
+	let ids = a:ids
+	let next_cursor = a:next_cursor
+	let prev_cursor = a:prev_cursor
+	let index = a:index
+    endif
+
+    let output = s:get_friends_info_2(ids, index)
+    if output == ''
 	return
     endif
 
-    let userhash = {}
-    for user in lookup_result
-	let userhash[user.id] = user
-    endfor
+    let title = a:followers ? 'Followers list' : 'Friends list'
+    if a:user != ''
+	let title .= ' of '.a:user
+    endif
 
-    " Sort users in the same order as the list of IDs.
-    let users = []
-    for id in idslice
-	if has_key(userhash, id)
-	    call add(users, userhash[id])
-	endif
-    endfor
+    let buftype = a:followers ? 'followers' : 'friends'
 
     call s:save_buffer(1)
     let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list_json(users, title, a:followers || a:user != ''), "userinfo")
+    call s:twitter_wintext(s:format_user_list(output, title, a:followers || a:user != ''), "userinfo")
     let s:infobuffer.buftype = buftype
-    let s:infobuffer.next_cursor = result.next_cursor
-    let s:infobuffer.prev_cursor = result.previous_cursor
+    let s:infobuffer.next_cursor = next_cursor
+    let s:infobuffer.prev_cursor = prev_cursor
     let s:infobuffer.cursor = a:cursor
     let s:infobuffer.user = a:user
     let s:infobuffer.list = ''
+
+    let s:infobuffer.flist = ids
+    let s:infobuffer.findex = index
+
     redraw
     call s:save_buffer(1)
-    echo substitute(what,'^.','\u&','') 'retrieved.'
+    echo title.' retrieved.'
 endfunction
 
 " Call Twitter API to get friends or followers list.
@@ -4092,6 +4052,57 @@ function! s:get_user_lists(cursor, user, what)
     echo "User's ".item." retrieved."
 endfunction
 
+" Function to load previous or next friends/followers info page.
+" For use by next/prev pagination commands.
+function! s:load_prevnext_friends_info_2(buftype, infobuffer, previous)
+    if a:previous
+	if a:infobuffer.findex == 0
+	    if a:infobuffer.prev_cursor == 0
+		call s:warnmsg('No previous page in info buffer.')
+		return
+	    endif
+	    let cursor = a:infobuffer.prev_cursor
+	    let ids = []
+	    let next_cursor = 0
+	    let prev_cursor = 0
+
+	    " This tells s:get_friends_2() that we are paging backwards so
+	    " it'll display the last 100 items in the new ID list.
+	    let index = -1 
+	else
+	    let cursor = a:infobuffer.cursor
+	    let ids = a:infobuffer.flist
+	    let next_cursor = a:infobuffer.next_cursor
+	    let prev_cursor = a:infobuffer.prev_cursor
+	    let index = a:infobuffer.findex - 100
+	    if index < 0
+		let index = 0
+	    endif
+	endif
+    else
+	let nextindex = a:infobuffer.findex + 100
+	if nextindex >= len(a:infobuffer.flist)
+	    if a:infobuffer.next_cursor == 0
+		call s:warnmsg('No next page in info buffer.')
+		return
+	    endif
+	    let cursor = a:infobuffer.next_cursor
+	    let ids = []
+	    let next_cursor = 0
+	    let prev_cursor = 0
+	    let index = 0
+	else
+	    let cursor = a:infobuffer.cursor
+	    let ids = a:infobuffer.flist
+	    let next_cursor = a:infobuffer.next_cursor
+	    let prev_cursor = a:infobuffer.prev_cursor
+	    let index = nextindex
+	endif
+    endif
+
+    call s:get_friends_2(cursor, ids, next_cursor, prev_cursor, index, a:infobuffer.user, a:buftype == 'followers')
+endfunction
+
 " Function to load an info buffer from the given parameters.
 " For use by next/prev pagination commands.
 function! s:load_info(buftype, cursor, user, list)
@@ -4119,6 +4130,10 @@ endfunction
 " Go to next page in info buffer.
 function! s:NextPageInfo()
     if s:infobuffer != {}
+" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+" 	    call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
+" 	    return
+" 	endif
 	if s:infobuffer.next_cursor == 0
 	    call s:warnmsg("No next page in info buffer.")
 	else
@@ -4132,6 +4147,10 @@ endfunction
 " Go to previous page in info buffer.
 function! s:PrevPageInfo()
     if s:infobuffer != {}
+" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+" 	    call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
+" 	    return
+" 	endif
 	if s:infobuffer.prev_cursor == 0
 	    call s:warnmsg("No previous page in info buffer.")
 	else
@@ -4145,6 +4164,10 @@ endfunction
 " Refresh info buffer.
 function! s:RefreshInfo()
     if s:infobuffer != {}
+" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+" 	    call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
+" 	    return
+" 	endif
 	call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
     else
 	call s:warnmsg("No info buffer.")
@@ -4162,12 +4185,12 @@ if !exists(":PreviousInfoTwitter")
 endif
 
 if !exists(":FollowingTwitter")
-"     command -nargs=? FollowingTwitter :call <SID>get_friends_json(-1, 0, <q-args>, 0)
     command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
+"     command -nargs=? FollowingTwitter :call <SID>get_friends_2(-1, [], 0, 0, 0, <q-args>, 0)
 endif
 if !exists(":FollowersTwitter")
-"     command -nargs=? FollowersTwitter :call <SID>get_friends_json(-1, 0, <q-args>, 1)
     command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
+"     command -nargs=? FollowersTwitter :call <SID>get_friends_2(-1, [], 0, 0, 0, <q-args>, 1)
 endif
 if !exists(":MembersOfListTwitter")
     command -nargs=+ MembersOfListTwitter :call <SID>DoListMembers(0, <f-args>)
