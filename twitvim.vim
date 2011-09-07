@@ -121,7 +121,7 @@ endfunction
 
 " User config for Trends WOEID.
 " Default to 1 for worldwide.
-function! s:get_woeid()
+function! s:get_twitvim_woeid()
     return exists('g:twitvim_woeid') ? g:twitvim_woeid : 1
 endfunction
 
@@ -1593,7 +1593,7 @@ endif
 " Each buffer record holds the following fields:
 "
 " buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, 
-"   replies, list, retweeted_by_me, retweeted_to_me, favorites
+"   replies, list, retweeted_by_me, retweeted_to_me, favorites, trends
 " user: For user buffers if other than current user
 " list: List slug if displaying a Twitter list.
 " page: Keep track of pagination.
@@ -3266,6 +3266,55 @@ if !exists(":SetTrendLocationTwitter")
     command SetTrendLocationTwitter :call <SID>pick_woeid()
 endif
 
+function! s:show_trends_xml(timeline)
+    let text = []
+
+    let title = 'Trending topics'
+
+    let s:curbuffer.showheader = s:get_show_header()
+    if s:curbuffer.showheader
+	call add(text, title.'*')
+	call add(text, repeat('=', s:mbstrlen(title)).'*')
+    endif
+
+    for item in s:xml_get_all(a:timeline, 'trend')
+	call add(text, s:convert_entity(item))
+    endfor
+
+    call s:twitter_wintext(text, "timeline")
+    let s:curbuffer.buffer = text
+endfunction
+
+" Get trending topics.
+function! s:Local_Trends()
+    redraw
+    echo "Getting trending topics from Twitter..."
+
+    let url = s:get_api_root().'/trends/'.s:get_twitvim_woeid().'.xml'
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error retrieving trending topics: ".(errormsg != '' ? errormsg : error))
+	return {}
+    endif
+
+    call s:save_buffer(0)
+    let s:curbuffer = {}
+    call s:show_trends_xml(output)
+    let s:curbuffer.buftype = 'trends'
+    let s:curbuffer.user = ''
+    let s:curbuffer.list = ''
+    let s:curbuffer.page = ''
+    redraw
+    call s:save_buffer(0)
+
+    echo 'Trending topics retrieved.'
+endfunction
+
+if !exists(":TrendTwitter")
+    command TrendTwitter :call <SID>Local_Trends()
+endif
+
 " === End of Trends Code ===
 
 " Function to load a timeline from the given parameters. For use by refresh and
@@ -3279,6 +3328,8 @@ function! s:load_timeline(buftype, user, list, page)
 	call s:Direct_Messages(a:buftype, a:page)
     elseif a:buftype == "search"
 	call s:get_summize(a:user, a:page)
+    elseif a:buftype == 'trends'
+	call s:Local_Trends()
     endif
 endfunction
 
