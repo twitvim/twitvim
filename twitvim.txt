@@ -184,6 +184,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :RateLimitTwitter....................: |:RateLimitTwitter|
 	     :ProfileTwitter......................: |:ProfileTwitter|
 	     :LocationTwitter.....................: |:LocationTwitter|
+	     :TrendTwitter........................: |:TrendTwitter|
+	     :SetTrendLocationTwitter.............: |:SetTrendLocationTwitter|
+	     twitvim_woeid........................: |twitvim_woeid|
 	5. Timeline Highlighting..................: |TwitVim-highlight|
 	   twitterUser............................: |hl-twitterUser|
 	   twitterTime............................: |hl-twitterTime|
@@ -1274,16 +1277,21 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	visually select text before invoking this mapping, it launches the web
 	browser with the selected text as is.
 
-	As a special case, if the cursor is on a word of the form @user or
-	user:, TwitVim will display that user's timeline in the timeline
-	buffer. This will not launch the web browser.
+	Special cases:
 
-	Also, this mapping recognizes the Name: line in the info buffer and
-	displays that user's timeline.
+	- If the cursor is on a word of the form @user or in the user: portion
+	  at the beginning of a line, TwitVim displays that user's
+	  timeline.
 
-	In addition, if the cursor is on a word of the form #hashtag, TwitVim
-	will do a Twitter Search for that #hashtag. This too will not launch
-	the web browser.
+	- If the cursor is on a Name: line in the info buffer, TwitVim
+	  displays that user's timeline.
+
+	- If the cursor is on a word of the form #hashtag, TwitVim does a
+	  Twitter Search for that #hashtag.
+
+	- In a trending topics buffer, TwitVim does a Twitter Search for the
+	  phrase on the cursor line.
+
 
 							*twitvim_browser_cmd*
 	Before using this command, you need to tell TwitVim how to launch your
@@ -1814,6 +1822,39 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	:LocationTwitter 40.811583, -73.954486
 <
 
+	:TrendTwitter					*:TrendTwitter*
+
+	This command retrieves a list of Twitter trending topics and displays
+	them in the timeline buffer.
+
+	In trending topics, |TwitVim-Leader-g| does a Twitter search for the
+	phrase on the cursor line.
+
+	By default, this command shows worldwide trends. To show regional
+	trends, use |:SetTrendLocationTwitter| or set |twitvim_woeid|.
+
+
+	:SetTrendLocationTwitter		 *:SetTrendLocationTwitter*
+
+	This command displays a menu of trend locations by country and by
+	town. It sets the region for |:TrendTwitter|.
+	
+
+							*twitvim_woeid*
+	If you wish to set the default location for |:TrendTwitter| to
+	something other than worldwide, set twitvim_woeid in your vimrc.
+	
+	For example:
+>
+		let twitvim_woeid = 2357024
+<
+	sets the location to Atlanta.
+	
+	You can find out what number to use for a location by checking the
+	message displayed after |:SetTrendLocationTwitter| or by checking
+	twitvim_woeid after |:SetTrendLocationTwitter|.
+
+
 ==============================================================================
 5. Timeline Highlighting				*TwitVim-highlight*
 
@@ -1912,6 +1953,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.7.1 : 2011-09-07 * Added trending topics. |:TrendTwitter| and
+			     |:SetTrendLocationTwitter|
+			   * Some fixes for browser-launching issues.
+			   * Fix for quoting issue when doing goo.gl URL
+			     shortening with cURL network interface under
+			     Windows.
+			   * Support for HTML hex entities.
 	0.7.0 : 2011-07-06 * Replaced many deprecated Twitter API calls with
 			     updated versions.
 			   * Improved XML parsing speed for high

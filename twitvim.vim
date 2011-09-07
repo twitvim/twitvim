@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 17, 2011
+" Last updated: September 7, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.1 2011-08-15'
+let s:user_agent = 'TwitVim 0.7.1 2011-09-07'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2309,6 +2309,14 @@ function! s:launch_url_cword(infobuf)
 	    return
 	endif
     else
+	" In a trending topics list, the whole line is a search term.
+	if s:curbuffer.buftype == 'trends'
+	    if !s:curbuffer.showheader || line('.') > 2
+		call s:get_summize(getline('.'), 1)
+	    endif
+	    return
+	endif
+
 	if col('.') == 1 && s == '+'
 	    " If the cursor is on the '+' in a reply expansion, use the second
 	    " word instead.
