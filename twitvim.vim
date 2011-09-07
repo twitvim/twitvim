@@ -119,6 +119,12 @@ function! s:get_filter_regex()
     return exists('g:twitvim_filter_regex') ? g:twitvim_filter_regex : ''
 endfunction
 
+" User config for Trends WOEID.
+" Default to 1 for worldwide.
+function! s:get_woeid()
+    return exists('g:twitvim_woeid') ? g:twitvim_woeid : 1
+endfunction
+
 
 " Display an error message in the message area.
 function! s:errormsg(msg)
@@ -3060,6 +3066,106 @@ function! s:Direct_Messages(mode, page)
     call s:save_buffer(0)
     echo "Direct messages ".s_or_r." timeline updated."
 endfunction
+
+" === Trends Code ===
+
+let s:woeid_list = {}
+
+" Get master list of WOEIDs from Twitter API.
+function! s:get_woeids()
+    if s:woeid_list != {}
+	return s:woeid_list
+    endif
+
+    redraw
+    echo "Retrieving list of WOEIDs..."
+
+    let url = s:get_api_root().'/trends/available.xml'
+    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error retrieving list of WOEIDs: ".(errormsg != '' ? errormsg : error))
+	return {}
+    endif
+
+    for location in s:xml_get_all(output, 'location')
+	let name = s:xml_get_element(location, 'name')
+	let woeid = s:xml_get_element(location, 'woeid')
+	let placetype = s:xml_get_element(location, 'placeTypeName')
+	let country = s:xml_get_element(location, 'country')
+
+	if placetype == 'Supername'
+	    let s:woeid_list[name] = { 'woeid' : woeid, 'towns' : {} }
+	elseif placetype == 'Country' 
+	    if !has_key(s:woeid_list, country)
+		let s:woeid_list[country] = { 'towns' : {} }
+	    endif
+	    let s:woeid_list[country]['woeid'] = woeid
+	elseif placetype == 'Town'
+	    if !has_key(s:woeid_list, country)
+		let s:woeid_list[country] = { 'towns' : {} }
+	    endif
+	    let s:woeid_list[country]['towns'][name] = { 'woeid' : woeid }
+	else
+	    call s:errormsg('Unknown location type "'.placetype.'".')
+	    return {}
+	endif
+    endfor
+
+    redraw
+    echo "Retrieved list of WOEIDs."
+
+    return s:woeid_list
+endfunction
+
+function! s:get_woeid_pagelen()
+    let maxlen = &lines - 3
+    if maxlen < 5
+	call s:errormsg('Window is not tall enough for menu.')
+	return -1
+    endif
+    return maxlen < 20 ? maxlen : 20
+endfunction
+
+function! s:comp_countries(a, b)
+    if a:a == 'Worldwide'
+	return -1
+    elseif a:b == 'Worldwide'
+	return 1
+    elseif a:a == 'United States'
+	return -1
+    elseif a:b == 'United States'
+	return 1
+    elseif a:a == a:b
+	return 0
+    elseif a:a < a:b
+	return -1
+    else
+	return 1
+    endif
+endfunction
+
+function! s:get_country_list()
+    return sort(keys(s:woeid_list), 'comp_countries')
+endfunction
+
+function! s:get_town_list(country)
+    return [ a:country ] + sort(keys(s:woeid_list[country]['towns']))
+endfunction
+
+function! s:get_woeid(country, town)
+    if town == '' or town == country
+	return s:woeid_list[country]['woeid']
+    else
+	return s:woeid_list[country][town]['woeid']
+    endif
+endfunction
+
+" Allow the user to pick a WOEID for Trends from a list of WOEIDs.
+function! s:pick_woeid()
+endfunction
+
+" === End of Trends Code ===
 
 " Function to load a timeline from the given parameters. For use by refresh and
 " next/prev pagination commands.
