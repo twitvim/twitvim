@@ -3146,24 +3146,125 @@ function! s:comp_countries(a, b)
 endfunction
 
 function! s:get_country_list()
-    return sort(keys(s:woeid_list), 'comp_countries')
+    return sort(keys(s:woeid_list), 's:comp_countries')
 endfunction
 
 function! s:get_town_list(country)
-    return [ a:country ] + sort(keys(s:woeid_list[country]['towns']))
+    return [ a:country ] + sort(keys(s:woeid_list[a:country]['towns']))
 endfunction
 
 function! s:get_woeid(country, town)
-    if town == '' or town == country
-	return s:woeid_list[country]['woeid']
+    if a:town == '' || a:town == a:country
+	return s:woeid_list[a:country]['woeid']
     else
-	return s:woeid_list[country][town]['woeid']
+	return s:woeid_list[a:country]['towns'][a:town]['woeid']
     endif
+endfunction
+
+function! s:make_loc_menu(what, namelist, pagelen, indx)
+    let sublist = a:namelist[a:indx : a:indx + a:pagelen - 1]
+    let menu = [ 'Pick a '.a:what.':' ]
+    let item_count = 0
+    for name in sublist
+	let item_count += 1
+	call add(menu, printf('%2d', item_count).'. '.name)
+    endfor
+    if a:indx + a:pagelen < len(a:namelist)
+	let item_count += 1
+	call add(menu, printf('%2d', item_count).'. next page')
+    endif
+    if a:indx > 0
+	let item_count += 1
+	call add(menu, printf('%2d', item_count).'. previous page')
+    endif
+    return menu
+endfunction
+
+function! s:pick_woeid_town(country)
+    let indx = 0
+    let towns = s:get_town_list(a:country)
+    let pagelen = s:get_woeid_pagelen()
+
+    while 1
+	let menu = s:make_loc_menu('location', towns, pagelen, indx)
+
+	call inputsave()
+	let input = inputlist(menu)
+	call inputrestore()
+
+	if input < 1 || input >= len(menu)
+	    " Invalid input cancels the command.
+	    return 0
+	endif
+
+	let select = menu[input][4:]
+
+	if select == 'next page'
+	    let indx += pagelen
+	elseif select == 'previous page'
+	    let indx -= pagelen
+	    if indx < 0
+		indx = 0
+	    endif
+	else
+	    let g:twitvim_woeid = s:get_woeid(a:country, select)
+
+	    redraw
+	    echo 'Set trends region to '.select.' ('.g:twitvim_woeid.').'
+
+	    return g:twitvim_woeid
+	end
+    endwhile
 endfunction
 
 " Allow the user to pick a WOEID for Trends from a list of WOEIDs.
 function! s:pick_woeid()
+    let indx = 0
+    if s:get_woeids() == {}
+	return -1
+    endif
+    let countries = s:get_country_list()
+    let pagelen = s:get_woeid_pagelen()
+
+    while 1
+	let menu = s:make_loc_menu('country', countries, pagelen, indx)
+
+	call inputsave()
+	let input = inputlist(menu)
+	call inputrestore()
+
+	if input < 1 || input >= len(menu)
+	    " Invalid input cancels the command.
+	    return 0
+	endif
+
+	let select = menu[input][4:]
+
+	if select == 'next page'
+	    let indx += pagelen
+	elseif select == 'previous page'
+	    let indx -= pagelen
+	    if indx < 0
+		indx = 0
+	    endif
+	else
+	    if s:woeid_list[select]['towns'] == {}
+		let g:twitvim_woeid = s:get_woeid(select, '')
+
+		redraw
+		echo 'Set trends region to '.select.' ('.g:twitvim_woeid.').'
+
+		return g:twitvim_woeid
+	    else
+		return s:pick_woeid_town(select)
+	    end
+	endif
+    endwhile
 endfunction
+
+if !exists(":SetTrendLocationTwitter")
+    command SetTrendLocationTwitter :call <SID>pick_woeid()
+endif
 
 " === End of Trends Code ===
 
