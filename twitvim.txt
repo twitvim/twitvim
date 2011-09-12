@@ -1960,6 +1960,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     shortening with cURL network interface under
 			     Windows.
 			   * Support for HTML hex entities.
+			   * Show 'follow request sent' in user profile
+			     display if that is the case.
 	0.7.0 : 2011-07-06 * Replaced many deprecated Twitter API calls with
 			     updated versions.
 			   * Improved XML parsing speed for high

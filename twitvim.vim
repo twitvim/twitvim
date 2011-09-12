@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 7, 2011
+" Last updated: September 12, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.1 2011-09-07'
+let s:user_agent = 'TwitVim 0.7.1 2011-09-12'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -3815,7 +3815,10 @@ function! s:format_user_info(output, fship_output)
     call add(text, '')
 
     call add(text, 'Protected: '.s:yesorno(s:xml_get_element(output, 'protected')))
-    call add(text, 'Following: '.s:yesorno(s:xml_get_element(output, 'following')))
+
+    let follow_req = s:xml_get_element(output, 'follow_request_sent')
+    let following_str = follow_req == 'true' ? 'Follow request sent' : s:yesorno(s:xml_get_element(output, 'following'))
+    call add(text, 'Following: '.following_str)
 
     let fship_source = s:xml_get_element(fship_output, 'source')
     call add(text, 'Followed_by: '.s:yesorno(s:xml_get_element(fship_source, 'followed_by')))
