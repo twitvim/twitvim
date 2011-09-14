@@ -2258,7 +2258,7 @@ function! s:launch_browser(url)
     let v:errmsg = ""
     silent! execute startcmd g:twitvim_browser_cmd url endcmd
     if v:errmsg == ""
-	redraw
+	redraw!
 	echo "Web browser launched."
     else
 	call s:errormsg('Error launching browser: '.v:errmsg)
