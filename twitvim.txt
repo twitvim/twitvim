@@ -1953,7 +1953,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.1 : 2011-09-07 * Added trending topics. |:TrendTwitter| and
+	0.7.1 : 2011-09-21 * Added trending topics. |:TrendTwitter| and
 			     |:SetTrendLocationTwitter|
 			   * Some fixes for browser-launching issues.
 			   * Fix for quoting issue when doing goo.gl URL
