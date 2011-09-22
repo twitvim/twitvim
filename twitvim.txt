@@ -26,6 +26,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3.1. TwitVim and OAuth....................: |TwitVim-OAuth|
 	     twitvim_token_file...................: |twitvim_token_file|
 	     twitvim_disable_token_file...........: |twitvim_disable_token_file|
+	3.1.1. OAuth Consumer Key.................: |TwitVim-OAuth-Consumer|
+	       twitvim_consumer_key...............: |twitvim_consumer_key|
+	       twitvim_consumer_secret............: |twitvim_consumer_secret|
 	3.2. identi.ca............................: |TwitVim-identica|
 	     twitvim_login........................: |twitvim_login|
 	     twitvim_api_root.....................: |twitvim_api_root|
@@ -422,6 +425,37 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	especially an open wireless network, it is recommended that you set up
 	TwitVim for SSL before using :SetLoginTwitter. Failure to do so may
 	expose your OAuth access token to packet sniffers.
+
+
+------------------------------------------------------------------------------
+3.1.1. OAuth Consumer Key			*TwitVim-OAuth-Consumer*
+
+						*twitvim_consumer_key*
+						*twitvim_consumer_secret*
+	TwitVim comes with a default consumer key and secret pair. If you wish
+	to use your own, add the following to your vimrc:
+>
+		let twitvim_consumer_key = "key"
+		let twitvim_consumer_secret = "secret"
+<
+	where "key" and "secret" are consumer key and secret strings from the
+	"My applications" section of the Twitter developers website after you
+	have registered a Twitter application.
+
+	The process of registering a Twitter application has changed from time
+	to time. Currently, the steps are as follows:
+
+	1. Go to https://dev.twitter.com/apps/new and fill in the details. Use
+	anything you like for name, description, and website. Read and agree
+	to the developer rules. No callback URL is needed.
+
+	2. The Consumer key and secret are on the next screen under "OAuth
+	settings". Add these strings to your vimrc.
+
+	3. Go to the Settings tab. Select "Read, Write and Access direct
+	messages" under Application Type / Access. Then click on "Update this
+	Twitter application's settings". These permissions are required by
+	TwitVim.
 
 
 ------------------------------------------------------------------------------
@@ -1953,6 +1987,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.7.2 : 2011-09-22 * Allow users to use their own consumer key and
+			     secret. |twitvim_consumer_key|
+			     |twitvim_consumer_secret|
 	0.7.1 : 2011-09-21 * Added trending topics. |:TrendTwitter| and
 			     |:SetTrendLocationTwitter|
 			   * Some fixes for browser-launching issues.

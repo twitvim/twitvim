@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.7.1
+" Version: 0.7.2
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 21, 2011
+" Last updated: September 22, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.1 2011-09-21'
+let s:user_agent = 'TwitVim 0.7.2 2011-09-22'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -123,6 +123,16 @@ endfunction
 " Default to 1 for worldwide.
 function! s:get_twitvim_woeid()
     return exists('g:twitvim_woeid') ? g:twitvim_woeid : 1
+endfunction
+
+" Allow user to override consumer key.
+function! s:get_consumer_key()
+    return exists('g:twitvim_consumer_key') ? g:twitvim_consumer_key : s:gc_consumer_key
+endfunction
+
+" Allow user to override consumer secret.
+function! s:get_consumer_secret()
+    return exists('g:twitvim_consumer_secret') ? g:twitvim_consumer_secret : s:gc_consumer_secret
 endfunction
 
 
@@ -825,7 +835,7 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     let parms = copy(a:parms)
 
     " Add some constants to hash
-    let parms["oauth_consumer_key"] = s:gc_consumer_key
+    let parms["oauth_consumer_key"] = s:get_consumer_key()
     let parms["oauth_signature_method"] = "HMAC-SHA1"
     let parms["oauth_version"] = "1.0"
 
@@ -852,7 +862,7 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     " pieces, with each piece URL encoded.
     " [METHOD_UPPER_CASE]&[url]&content
     let signature_base_str = a:method . "&" . s:url_encode(baseurl) . "&" . s:url_encode(content)
-    let hmac_sha1_key = s:url_encode(s:gc_consumer_secret) . "&" . s:url_encode(a:token_secret)
+    let hmac_sha1_key = s:url_encode(s:get_consumer_secret()) . "&" . s:url_encode(a:token_secret)
     let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
 
     " Add padding character to make a multiple of 4 per the
