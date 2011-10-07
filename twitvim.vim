@@ -2764,6 +2764,23 @@ function! s:get_status_text(item)
 	let matchcount += 1
     endwhile
 
+    " Expand media URLs too.
+    let media = s:xml_get_element(entities, 'media')
+    let matchcount = 1
+    while 1
+	let url = s:xml_get_nth(media, 'url', matchcount)
+	let expanded_url = s:xml_get_nth(media, 'expanded_url', matchcount)
+
+	if url == '' || expanded_url == ''
+	    break
+	endif
+
+	" echomsg "Replacing ".url." with ".expanded_url." in ".text
+	let text = s:str_replace_all(text, url, expanded_url)
+
+	let matchcount += 1
+    endwhile
+
     return text
 endfunction
 
