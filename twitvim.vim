@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: September 22, 2011
+" Last updated: October 7, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2744,7 +2744,7 @@ function! s:get_status_text(item)
     " Remove nul characters.
     let text = substitute(text, '[\x0]', ' ', 'g')
 
-    let entities = s:xml_get_element(a:item, 'entities')
+    let entities = s:xml_get_element(s:xml_remove_elements(a:item, 'user'), 'entities')
     let urls = s:xml_get_element(entities, 'urls')
 
     " Twitter entities output currently has a url element inside each url
