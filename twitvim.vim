@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 7, 2011
+" Last updated: October 26, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.2 2011-09-22'
+let s:user_agent = 'TwitVim 0.7.2 2011-10-26'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -2034,6 +2034,17 @@ function! s:Retweet_2()
 	" Fall back to old-style retweeting if we can't get this tweet's status
 	" ID.
 	call s:Retweet()
+	return
+    endif
+
+    " Confirm with user before retweeting. Only for new-style retweets because
+    " old-style retweets have their own prompt.
+    call inputsave()
+    let answer = input('Retweet "'.s:strtrunc(getline('.'), 40).'"? (y/n) ')
+    call inputrestore()
+    if answer != 'y' && answer != 'Y'
+	redraw
+	echo "Not retweeted."
 	return
     endif
 
