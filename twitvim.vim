@@ -3126,19 +3126,25 @@ function! s:get_woeids()
     redraw
     echo "Retrieving list of WOEIDs..."
 
-    let url = s:get_api_root().'/trends/available.xml'
+    let url = s:get_api_root().'/trends/available.json'
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    let result = s:parse_json(output)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
+	let errormsg = get(result, 'error', '')
 	call s:errormsg("Error retrieving list of WOEIDs: ".(errormsg != '' ? errormsg : error))
 	return {}
     endif
 
-    for location in s:xml_get_all(output, 'location')
-	let name = s:xml_get_element(location, 'name')
-	let woeid = s:xml_get_element(location, 'woeid')
-	let placetype = s:xml_get_element(location, 'placeTypeName')
-	let country = s:xml_get_element(location, 'country')
+    if type(result) != type([])
+	call s:errormsg("Invalid JSON result from ".url)
+	return {}
+    endif
+
+    for location in result
+	let name = get(location, 'name', '')
+	let woeid = get(location, 'woeid', '')
+	let placetype = get(get(location, 'placeType', {}), 'name', '')
+	let country = get(location, 'country', '')
 
 	if placetype == 'Supername'
 	    let s:woeid_list[name] = { 'woeid' : woeid, 'towns' : {} }
@@ -3312,7 +3318,7 @@ if !exists(":SetTrendLocationTwitter")
     command SetTrendLocationTwitter :call <SID>pick_woeid()
 endif
 
-function! s:show_trends_xml(timeline)
+function! s:show_trends_json(timeline)
     let text = []
 
     let title = 'Trending topics'
@@ -3323,8 +3329,8 @@ function! s:show_trends_xml(timeline)
 	call add(text, repeat('=', s:mbstrlen(title)).'*')
     endif
 
-    for item in s:xml_get_all(a:timeline, 'trend')
-	call add(text, s:convert_entity(item))
+    for item in get(get(a:timeline, 0, {}), 'trends', {})
+	call add(text, s:convert_entity(get(item, 'name', '')))
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -3336,17 +3342,23 @@ function! s:Local_Trends()
     redraw
     echo "Getting trending topics from Twitter..."
 
-    let url = s:get_api_root().'/trends/'.s:get_twitvim_woeid().'.xml'
+    let url = s:get_api_root().'/trends/'.s:get_twitvim_woeid().'.json'
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    let result = s:parse_json(output)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
+	let errormsg = get(result, 'error', '')
 	call s:errormsg("Error retrieving trending topics: ".(errormsg != '' ? errormsg : error))
+	return {}
+    endif
+
+    if type(result) != type([])
+	call s:errormsg("Invalid JSON result from ".url)
 	return {}
     endif
 
     call s:save_buffer(0)
     let s:curbuffer = {}
-    call s:show_trends_xml(output)
+    call s:show_trends_json(result)
     let s:curbuffer.buftype = 'trends'
     let s:curbuffer.user = ''
     let s:curbuffer.list = ''
