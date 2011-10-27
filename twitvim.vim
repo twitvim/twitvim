@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: October 26, 2011
+" Last updated: October 27, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.2 2011-10-26'
+let s:user_agent = 'TwitVim 0.7.2 2011-10-27'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -3246,6 +3246,8 @@ function! s:pick_woeid_town(country)
 
 	if input < 1 || input >= len(menu)
 	    " Invalid input cancels the command.
+	    redraw
+	    echo 'Trends region unchanged.'
 	    return 0
 	endif
 
@@ -3262,7 +3264,7 @@ function! s:pick_woeid_town(country)
 	    let g:twitvim_woeid = s:get_woeid(a:country, select)
 
 	    redraw
-	    echo 'Set trends region to '.select.' ('.g:twitvim_woeid.').'
+	    echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
 
 	    return g:twitvim_woeid
 	end
@@ -3287,6 +3289,8 @@ function! s:pick_woeid()
 
 	if input < 1 || input >= len(menu)
 	    " Invalid input cancels the command.
+	    redraw
+	    echo 'Trends region unchanged.'
 	    return 0
 	endif
 
@@ -3304,7 +3308,7 @@ function! s:pick_woeid()
 		let g:twitvim_woeid = s:get_woeid(select, '')
 
 		redraw
-		echo 'Set trends region to '.select.' ('.g:twitvim_woeid.').'
+		echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
 
 		return g:twitvim_woeid
 	    else
