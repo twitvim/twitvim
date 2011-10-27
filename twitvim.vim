@@ -3308,6 +3308,7 @@ function! s:pick_woeid()
 
 		return g:twitvim_woeid
 	    else
+		echo ' '
 		return s:pick_woeid_town(select)
 	    end
 	endif
