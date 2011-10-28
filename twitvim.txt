@@ -1987,7 +1987,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.2 : 2011-10-27 * Allow users to use their own consumer key and
+	0.7.2 : 2011-10-28 * Allow users to use their own consumer key and
 			     secret. |twitvim_consumer_key|
 			     |twitvim_consumer_secret|
 			   * Added t.co URL expansion for media URLs too.
@@ -1995,6 +1995,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     retweet.
 			   * Request trends in JSON format. XML format no
 			     longer works.
+			   * Read token file before |:SwitchLoginTwitter|
+			     (@mattn_jp)
 	0.7.1 : 2011-09-21 * Added trending topics. |:TrendTwitter| and
 			     |:SetTrendLocationTwitter|
 			   * Some fixes for browser-launching issues.
