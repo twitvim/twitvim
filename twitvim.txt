@@ -1987,7 +1987,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.2 : 2011-10-28 * Allow users to use their own consumer key and
+	0.7.2 : 2011-11-16 * Allow users to use their own consumer key and
 			     secret. |twitvim_consumer_key|
 			     |twitvim_consumer_secret|
 			   * Added t.co URL expansion for media URLs too.
