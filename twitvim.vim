@@ -5152,13 +5152,14 @@ function! s:show_summize(searchres, page)
     for item in get(a:searchres, 'results', [])
 	let user = get(item, 'from_user', '')
 
-	let tweet = s:convert_entity(s:get_status_text_json(item))
+	let line = s:convert_entity(s:get_status_text_json(item))
 	let pubdate = s:time_filter(get(item, 'created_at', ''))
 
 	let status = get(item, 'id_str', '')
 	call add(s:curbuffer.statuses, status)
+	call add(s:curbuffer.inreplyto, get(item, 'in_reply_to_status_id_str', ''))
 
-	call add(text, user.': '.tweet.' |'.pubdate.'|')
+	call add(text, user.': '.line.' |'.pubdate.'|')
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -5185,6 +5186,11 @@ function! s:get_summize(query, page)
 
     let url = 'http://search.twitter.com/search.json?'.param.'include_entities=true&q='.s:url_encode(a:query)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+
+    " Twitter Search API doesn't return in_reply_to_status_id_str yet, so work
+    " around this by hacking the JSON output.
+    let output = substitute(output, '"in_reply_to_status_id":\(\d\+\)', '\0,"in_reply_to_status_id_str":"\1"', 'g')
+
     let result = s:parse_json(output)
 
     if error != ''
