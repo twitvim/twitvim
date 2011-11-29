@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.7.2
+" Version: 0.7.3
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 16, 2011
+" Last updated: November 28, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -5092,9 +5092,7 @@ function! s:show_summize(searchres, page)
 
     let s:curbuffer.dmids = []
 
-    let channel = s:xml_remove_elements(a:searchres, 'entry')
-    let title = s:convert_entity(s:xml_get_element(channel, 'title'))
-
+    let title = 'Twitter Search - '.get(a:searchres, 'query', '')
     if a:page > 1
 	let title .= ' (page '.a:page.')'
     endif
@@ -5118,17 +5116,22 @@ function! s:show_summize(searchres, page)
 	let s:curbuffer.inreplyto = [0]
     endif
 
-    for item in s:xml_get_all(a:searchres, 'entry')
-	let title = s:xml_get_element(item, 'title')
-	let pubdate = s:time_filter(s:xml_get_element(item, 'updated'))
-	let sender = substitute(s:xml_get_element(item, 'uri'), 'http://twitter.com/', '', '')
+    for item in get(a:searchres, 'results', [])
+	let user = get(item, 'from_user', '')
+	let tweet = get(item, 'text', '')
 
-	" Parse and save the status ID.
-	let status = substitute(s:xml_get_element(item, 'id'), '^.*:', '', '')
+	" Remove nul characters.
+	let tweet = substitute(tweet, '[\x0]', ' ', 'g')
+
+	let tweet = s:convert_entity(tweet)
+	let pubdate = s:time_filter(get(item, 'created_at', ''))
+
+	let status = get(item, 'id_str', '')
 	call add(s:curbuffer.statuses, status)
 
-	call add(text, sender.": ".s:convert_entity(title).' |'.pubdate.'|')
+	call add(text, user.': '.tweet.' |'.pubdate.'|')
     endfor
+
     call s:twitter_wintext(text, "timeline")
     let s:curbuffer.buffer = text
 endfunction
@@ -5151,17 +5154,24 @@ function! s:get_summize(query, page)
 	let param .= 'rpp='.tcount.'&'
     endif
 
-    let url = 'http://search.twitter.com/search.atom?'.param.'q='.s:url_encode(a:query)
+    let url = 'http://search.twitter.com/search.json?'.param.'include_entities=true&q='.s:url_encode(a:query)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    let result = s:parse_json(output)
 
     if error != ''
-	call s:errormsg("Error querying Twitter Search: ".error)
+	let errormsg = get(result, 'error', '')
+	call s:errormsg("Error querying Twitter Search: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    if type(result) != type({})
+	call s:errormsg("Invalid JSON result from ".url)
 	return
     endif
 
     call s:save_buffer(0)
     let s:curbuffer = {}
-    call s:show_summize(output, a:page)
+    call s:show_summize(result, a:page)
     let s:curbuffer.buftype = "search"
 
     " Stick the query in here to differentiate between sets of search results.
