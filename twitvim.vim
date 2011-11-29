@@ -5097,6 +5097,28 @@ if !exists(":PRgala")
     command -nargs=? PRgala :call <SID>GetShortURL("cmdline", <q-args>, "call_rgala")
 endif
 
+
+" Get status text with t.co URL expansion. (JSON version)
+function! s:get_status_text_json(item)
+    let text = get(a:item, 'text', '')
+
+    " Remove nul characters.
+    let text = substitute(text, '[\x0]', ' ', 'g')
+
+    let entities = get(a:item, 'entities', {})
+
+    let urls = get(entities, 'urls', []) + get(entities, 'media', [])
+    for url in urls
+	let fromurl = get(url, 'url', '')
+	let tourl = get(url, 'expanded_url', '')
+	if fromurl != '' && tourl != ''
+	    let text = s:str_replace_all(text, fromurl, tourl)
+	endif
+    endfor
+
+    return text
+endfunction
+
 " Parse and format search results from Twitter Search API.
 function! s:show_summize(searchres, page)
     let text = []
@@ -5129,12 +5151,8 @@ function! s:show_summize(searchres, page)
 
     for item in get(a:searchres, 'results', [])
 	let user = get(item, 'from_user', '')
-	let tweet = get(item, 'text', '')
 
-	" Remove nul characters.
-	let tweet = substitute(tweet, '[\x0]', ' ', 'g')
-
-	let tweet = s:convert_entity(tweet)
+	let tweet = s:convert_entity(s:get_status_text_json(item))
 	let pubdate = s:time_filter(get(item, 'created_at', ''))
 
 	let status = get(item, 'id_str', '')
