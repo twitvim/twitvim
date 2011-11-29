@@ -1062,6 +1062,17 @@ function! s:url_encode(str)
     return substitute(a:str, '[^a-zA-Z0-9_.~-]', '\=s:url_encode_char(submatch(0))', 'g')
 endfunction
 
+" URL-decode a string.
+function! s:url_decode(str)
+    let s = substitute(a:str, '+', ' ', 'g')
+    let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
+    let encoded = iconv(s, 'utf-8', &encoding)
+    if encoded != ''
+	let s = encoded
+    endif
+    return s
+endfunction
+
 " Use curl to fetch a web page.
 function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let error = ""
@@ -5092,7 +5103,7 @@ function! s:show_summize(searchres, page)
 
     let s:curbuffer.dmids = []
 
-    let title = 'Twitter Search - '.get(a:searchres, 'query', '')
+    let title = 'Twitter Search - '.s:url_decode(get(a:searchres, 'query', ''))
     if a:page > 1
 	let title .= ' (page '.a:page.')'
     endif
