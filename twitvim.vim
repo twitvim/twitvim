@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: November 28, 2011
+" Last updated: December 5, 2011
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -327,7 +327,8 @@ function! s:parse_json(str)
 	let true = 1
 	let false = 0
 	let null = ''
-	sandbox let result = eval(a:str)
+	let str = substitute(a:str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
+	sandbox let result = eval(str)
 	return result
     catch
 	call s:errormsg('JSON parse error: '.v:exception)
@@ -5186,10 +5187,6 @@ function! s:get_summize(query, page)
 
     let url = 'http://search.twitter.com/search.json?'.param.'include_entities=true&q='.s:url_encode(a:query)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-
-    " Twitter Search API doesn't return in_reply_to_status_id_str yet, so work
-    " around this by hacking the JSON output.
-    let output = substitute(output, '"in_reply_to_status_id":\(\d\+\)', '\0,"in_reply_to_status_id_str":"\1"', 'g')
 
     let result = s:parse_json(output)
 
