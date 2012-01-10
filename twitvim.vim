@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: December 5, 2011
+" Last updated: January 10, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2304,7 +2304,24 @@ function! s:launch_browser(url)
     return 0
 endfunction
 
-let s:URLMATCH = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://\S\+'
+" let s:URLMATCH = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://\S\+'
+
+let s:URL_PROTOCOL = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://'
+let s:URL_DOMAIN = '[^[:space:])/]\+'
+let s:URL_PATH_CHARS = '[^[:space:]()]'
+
+" URL paths may contain balanced parentheses.
+let s:URL_PARENS = '('.s:URL_PATH_CHARS.'*)'
+
+" Avoid swallowing up certain punctuation characters after a URL but allow a
+" URL to end with a balanced parenthesis.
+let s:URL_PATH_END = '\%([^[:space:]\.,;:()]\|'.s:URL_PARENS.'\)'
+
+let s:URL_PATH = '\%('.s:URL_PATH_CHARS.'*\%('.s:URL_PARENS.s:URL_PATH_CHARS.'*\)*'.s:URL_PATH_END.'\)\|\%('.s:URL_PATH_CHARS.'\+\)'
+
+" Bring it all together. Use this regex to match a URL.
+let s:URLMATCH = s:URL_PROTOCOL.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
+
 
 " Launch web browser with the URL at the cursor position. If possible, this
 " function will try to recognize a URL within the current word. Otherwise,
