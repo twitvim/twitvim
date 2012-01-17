@@ -1810,8 +1810,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	{query} is not provided on the command line, the command will prompt
 	you for it. Search results are then displayed in the timeline buffer.
 
-	All of the Twitter Search operators are supported implicitly. See
-	http://search.twitter.com/operators for a list of search operators.
+	All of the Twitter Search operators are supported implicitly. For a
+	list of search operators, see:
+	https://support.twitter.com/groups/31-twitter-basics/topics/110-search/articles/71577-how-to-use-advanced-twitter-search
 
 	If you specify [count], that number is used as the page number. For
 	example, :2SearchTwitter hello displays the second page of search
@@ -1987,8 +1988,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.3 : 2011-11-28 * Switch to JSON API for Twitter Search so that
-			     we can expand t.co URLs and display in-reply-to.
+	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
+			     TwitVim can support t.co URL expansion and
+			     in-reply-to in search results.
+			   * Made the URL-matching pattern more accurate.
 	0.7.2 : 2011-11-16 * Allow users to use their own consumer key and
 			     secret. |twitvim_consumer_key|
 			     |twitvim_consumer_secret|

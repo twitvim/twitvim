@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 10, 2012
+" Last updated: January 17, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.2 2011-11-16'
+let s:user_agent = 'TwitVim 0.7.3 2012-01-17'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -3631,6 +3631,11 @@ endfunction
 
 if !exists(":RateLimitTwitter")
     command RateLimitTwitter :call <SID>get_rate_limit()
+endif
+
+" Show TwitVim version.
+if !exists(":TwitVimVersion")
+    command TwitVimVersion :echo s:user_agent
 endif
 
 " Set location field on Twitter profile.
