@@ -3667,6 +3667,23 @@ function! s:follow_user(user)
     redraw
     echo "Following user ".a:user."..."
 
+    " Make sure that we are not already following that user.
+    let url = s:get_api_root()."/friendships/show.xml?target_screen_name=".a:user
+    let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
+    if error != ''
+	let errormsg = s:xml_get_element(output, 'error')
+	call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
+	return
+    endif
+
+    let fship_source = s:xml_get_element(output, 'source')
+    let following = s:xml_get_element(fship_source, 'following')
+    if following == 'true'
+	redraw
+	echo "Already following ".a:user."'s timeline."
+	return
+    endif
+
     let parms = {}
     let parms["screen_name"] = a:user
 
