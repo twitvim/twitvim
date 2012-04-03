@@ -54,6 +54,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     twitvim_filter_regex.................: |twitvim_filter_regex|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
+	     twitvim_timestamp_format.............: |twitvim_timestamp_format|
 	4.2. Update Commands......................: |TwitVim-update-commands|
 	     :PosttoTwitter.......................: |:PosttoTwitter|
 	     :CPosttoTwitter......................: |:CPosttoTwitter|
@@ -805,9 +806,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	profile. Only a subset of the mappings in |:TwitVim-mappings| will
 	work in the info buffer.
 
-	TwitVim brings up a new timeline buffer only if one does not already
-	exist. Otherwise, it reuses the existing timeline buffer. The same
-	behavior applies to the info buffer.
+	TwitVim splits the window and opens a new timeline buffer only if one
+	does not already exist. Otherwise, it reuses the existing timeline
+	buffer. The same behavior applies to the info buffer.
+
+						*twitvim_timestamp_format*
+	You can customize the timestamp format in a timeline buffer by setting
+	twitvim_timestamp_format. For example, to show only the time, add this
+	to your vimrc:
+>
+		let twitvim_timestamp_format = '%I:%M %p'
+<
+	TwitVim uses |strftime()| to format timestamps, so you will need to
+	check the manual page of the C function strftime() to find out what
+	you can use here.
 
 
 ------------------------------------------------------------------------------
@@ -1988,6 +2000,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.7.4 : 2012-04-03 * Allow users to customize timestamp format in
+			     timeline displays. |twitvim_timestamp_format|
 	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
 			     TwitVim can support t.co URL expansion and
 			     in-reply-to in search results.

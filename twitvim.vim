@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.7.3
+" Version: 0.7.4
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 17, 2012
+" Last updated: April 3, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.3 2012-01-17'
+let s:user_agent = 'TwitVim 0.7.4 2012-04-03'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -133,6 +133,11 @@ endfunction
 " Allow user to override consumer secret.
 function! s:get_consumer_secret()
     return exists('g:twitvim_consumer_secret') ? g:twitvim_consumer_secret : s:gc_consumer_secret
+endfunction
+
+" Allow user to customize timestamp format in timeline display.
+function! s:get_timestamp_format()
+    return exists('g:twitvim_timestamp_format') ? g:twitvim_timestamp_format : '%I:%M %p %b %d, %Y'
 endfunction
 
 
@@ -483,7 +488,7 @@ function! s:time_filter(str)
 	return a:str
     endif
     let t = s:parse_time(a:str)
-    return t < 0 ? a:str : strftime('%I:%M %p %b %d, %Y', t)
+    return t < 0 ? a:str : strftime(s:get_timestamp_format(), t)
 endfunction
 
 " === End of time parser ===
