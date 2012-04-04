@@ -918,6 +918,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command displays the public timeline.
 
+	Note: The REST API call supporting this command has been deprecated by
+	Twitter. This command will cease to function on May 14, 2012.
+
 
 	:[count]DMTwitter				*:DMTwitter*
 
