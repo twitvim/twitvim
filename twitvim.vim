@@ -1946,6 +1946,7 @@ function! s:post_twitter(mesg, inreplyto)
 	let url = s:get_api_root()."/statuses/update.xml"
 	let parms["status"] = mesg
 	let parms["source"] = "twitvim"
+	let parms["include_entities"] = "true"
 
 	let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
 
