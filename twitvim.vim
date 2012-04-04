@@ -1873,6 +1873,25 @@ function! s:mbstrlen(s)
     return strlen(substitute(a:s, ".", "x", "g"))
 endfunction
 
+let s:short_url_length = 0
+let s:short_url_length_https = 0
+let s:last_config_query_time = 0
+
+" Get Twitter short URL lengths.
+function! s:get_short_url_lengths()
+    let now = localtime()
+    " Do the config query the first time it is needed and once a day thereafter.
+    if s:short_url_length == 0 || s:short_url_length_https == 0 || now - s:last_config_query_time > 24 * 60 * 60
+	let url = s:get_api_root().'/help/configuration.xml'
+	let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+	if error == ''
+	    let s:short_url_length = s:xml_get_element(output, 'short_url_length')
+	    let s:short_url_length_https = s:xml_get_element(output, 'short_url_length_https')
+	endif
+    endif
+    return [ s:short_url_length, s:short_url_length_https ]
+endfunction
+
 " Common code to post a message to Twitter.
 function! s:post_twitter(mesg, inreplyto)
     let parms = {}
@@ -1890,6 +1909,9 @@ function! s:post_twitter(mesg, inreplyto)
 
     " Convert internal newlines to spaces.
     let mesg = substitute(mesg, '\n', ' ', "g")
+
+    let [url, secure_url] = s:get_short_url_lengths()
+    " echom "Url lengths: ".url." ".secure_url
 
     let mesglen = s:mbstrlen(mesg)
 
