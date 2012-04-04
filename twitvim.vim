@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: April 3, 2012
+" Last updated: April 4, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.4 2012-04-03'
+let s:user_agent = 'TwitVim 0.7.4 2012-04-04'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -1892,6 +1892,17 @@ function! s:get_short_url_lengths()
     return [ s:short_url_length, s:short_url_length_https ]
 endfunction
 
+" Simulate Twitter's URL shortener by replacing any matching URLs with dummy strings.
+function! s:sim_shorten_urls(mesg)
+    let [url_len, secure_url_len] = s:get_short_url_lengths()
+    let mesg = a:mesg
+    if url_len > 0 && secure_url_len > 0
+	let mesg = substitute(mesg, s:URLMATCH_HTTPS, repeat('*', secure_url_len), 'g')
+	let mesg = substitute(mesg, s:URLMATCH_NON_HTTPS, repeat('*', url_len), 'g')
+    endif
+    return mesg
+endfunction
+
 " Common code to post a message to Twitter.
 function! s:post_twitter(mesg, inreplyto)
     let parms = {}
@@ -1910,10 +1921,16 @@ function! s:post_twitter(mesg, inreplyto)
     " Convert internal newlines to spaces.
     let mesg = substitute(mesg, '\n', ' ', "g")
 
-    let [url, secure_url] = s:get_short_url_lengths()
-    " echom "Url lengths: ".url." ".secure_url
+    if s:get_api_root() =~ 'twitter\.com'
+	" Pretend to shorten URLs.
+	let sim_mesg = s:sim_shorten_urls(mesg)
+    else
+	" Assume that identi.ca and other non-Twitter services don't do this
+	" URL-shortening madness.
+	let sim_mesg = mesg
+    endif
 
-    let mesglen = s:mbstrlen(mesg)
+    let mesglen = s:mbstrlen(sim_mesg)
 
     " Check tweet length. Note that the tweet length should be checked before
     " URL-encoding the special characters because URL-encoding increases the
@@ -2331,9 +2348,11 @@ function! s:launch_browser(url)
     return 0
 endfunction
 
-" let s:URLMATCH = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://\S\+'
 
 let s:URL_PROTOCOL = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\)://'
+let s:URL_PROTOCOL_HTTPS = '\%([Hh][Tt][Tt][Pp][Ss]\)://'
+let s:URL_PROTOCOL_NON_HTTPS = '\%([Hh][Tt][Tt][Pp]\|[Ff][Tt][Pp]\)://'
+
 let s:URL_DOMAIN = '[^[:space:])/]\+'
 let s:URL_PATH_CHARS = '[^[:space:]()]'
 
@@ -2348,6 +2367,8 @@ let s:URL_PATH = '\%('.s:URL_PATH_CHARS.'*\%('.s:URL_PARENS.s:URL_PATH_CHARS.'*\
 
 " Bring it all together. Use this regex to match a URL.
 let s:URLMATCH = s:URL_PROTOCOL.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
+let s:URLMATCH_HTTPS = s:URL_PROTOCOL_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
+let s:URLMATCH_NON_HTTPS = s:URL_PROTOCOL_NON_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
 
 
 " Launch web browser with the URL at the cursor position. If possible, this
