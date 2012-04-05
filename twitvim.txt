@@ -2023,7 +2023,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.4 : 2012-04-04 * Allow users to customize timestamp format in
+	0.7.4 : 2012-04-05 * Allow users to customize timestamp format in
 			     timeline displays. |twitvim_timestamp_format|
 			   * Take Twitter's URL-wrapping into account when
 			     counting characters in tweets. You no longer have

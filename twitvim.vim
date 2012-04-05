@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: April 4, 2012
+" Last updated: April 5, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.4 2012-04-04'
+let s:user_agent = 'TwitVim 0.7.4 2012-04-05'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -1542,6 +1542,7 @@ if { $login != "" } {
 lappend headers "User-Agent" [::vim::expr "s:user_agent"]
 
 set nettimeout [::vim::expr "s:get_net_timeout()"]
+set nettimeout [expr {round($nettimeout * 1000.0)}]
 
 set parms [list]
 set keys [split [::vim::expr "keys(a:parms)"] "\n"]
