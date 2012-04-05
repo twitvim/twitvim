@@ -1887,6 +1887,7 @@ function! s:get_short_url_lengths()
 	if error == ''
 	    let s:short_url_length = s:xml_get_element(output, 'short_url_length')
 	    let s:short_url_length_https = s:xml_get_element(output, 'short_url_length_https')
+	    let s:last_config_query_time = now
 	endif
     endif
     return [ s:short_url_length, s:short_url_length_https ]
