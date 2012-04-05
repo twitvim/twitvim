@@ -136,8 +136,15 @@ function! s:get_consumer_secret()
 endfunction
 
 " Allow user to customize timestamp format in timeline display.
+" Default is HH:MM AM/PM Mon DD, YYYY
 function! s:get_timestamp_format()
     return exists('g:twitvim_timestamp_format') ? g:twitvim_timestamp_format : '%I:%M %p %b %d, %Y'
+endfunction
+
+" Allow user to customize network timeout in seconds.
+" Default is 0 for no timeout, which defers to the system socket timeout.
+function! s:get_net_timeout()
+    return exists('g:twitvim_net_timeout') ? g:twitvim_net_timeout : 0
 endfunction
 
 
@@ -1090,6 +1097,8 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 	let curlcmd .= "-k "
     endif
 
+    let curlcmd .= '-m '.s:get_net_timeout().' '
+
     if a:proxy != ""
 	let curlcmd .= '-x "'.a:proxy.'" '
     endif
@@ -1154,6 +1163,7 @@ import vim
 try:
     import urllib
     import urllib2
+    import socket
     import base64
     import sys
 except:
@@ -1169,6 +1179,7 @@ function! s:python_curl(url, login, proxy, proxylogin, parms)
     python <<EOF
 import urllib
 import urllib2
+import socket
 import base64
 import sys
 import vim
@@ -1178,7 +1189,17 @@ def make_base64(s):
 	s = base64.b64encode(s)
     return s
 
+net_timeout = None
 try:
+    t = float(vim.eval("s:get_net_timeout()"))
+    if t > 0:
+	net_timeout = t
+except:
+    pass
+
+try:
+    socket.setdefaulttimeout(net_timeout)
+
     url = vim.eval("a:url")
     parms = vim.eval("a:parms")
 
@@ -1259,6 +1280,9 @@ sub make_base64 {
 }
 
 my $ua = LWP::UserAgent->new;
+
+my $timeout = VIM::Eval('s:get_net_timeout()');
+$ua->timeout($timeout);
 
 my $url = VIM::Eval('a:url');
 
@@ -1373,6 +1397,10 @@ if proxylogin != ''
 end
 
 net = Net::HTTP.new(*httpargs)
+
+net_timeout = VIM.evaluate('s:get_net_timeout()').to_f
+net.open_timeout = net_timeout
+net.read_timeout = net_timeout
 
 net.use_ssl = (url.scheme == 'https')
 
@@ -1513,6 +1541,8 @@ if { $login != "" } {
 
 lappend headers "User-Agent" [::vim::expr "s:user_agent"]
 
+set nettimeout [::vim::expr "s:get_net_timeout()"]
+
 set parms [list]
 set keys [split [::vim::expr "keys(a:parms)"] "\n"]
 if { [llength $keys] > 0 } {
@@ -1525,9 +1555,9 @@ if { [llength $keys] > 0 } {
 	}
 	set query [eval [concat ::http::formatQuery $parms]]
     }
-    set res [::http::geturl $url -headers $headers -query $query]
+    set res [::http::geturl $url -headers $headers -query $query -timeout $nettimeout]
 } else {
-    set res [::http::geturl $url -headers $headers]
+    set res [::http::geturl $url -headers $headers -timeout $nettimeout]
 }
 
 upvar #0 $res state

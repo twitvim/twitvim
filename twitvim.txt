@@ -607,8 +607,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	TwitVim requires the net/http, uri, and Base64 modules. These modules
 	are in the Ruby standard library.
 
-	In addition, if using the Ruby interface, TwitVim requires Vim
-	7.2.360 or later to fix an if_ruby problem with Windows sockets.
+	In addition, TwitVim requires Vim 7.2.360 or later to fix an if_ruby
+	problem with Windows sockets.
 
 	Alternatively, you can add the following patch to the Vim sources:
 
@@ -1999,6 +1999,26 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	them with |:CPosttoTwitter|. With the line length in your status line,
 	you will know when you've reached the 140-character boundary.
 
+------------------------------------------------------------------------------
+6.4. Network timeout				*TwitVim-network-timeout*
+
+	TwitVim may have problems connecting to Twitter sometimes. The system
+	default for socket timeouts may be as long as a few minutes, so
+	TwitVim will appear to hang for that length of time before displaying
+	an error message.
+
+							*twitvim_net_timeout*
+	You can set twitvim_net_timeout to reduce this timeout interval. For
+	example, add the following to your vimrc:
+>
+		let twitvim_net_timeout = 30
+<
+	to set the network timeout to 30 seconds.
+
+	Note: This option does not seem to work correctly if you are using
+	|twitvim_enable_perl|. It may take longer than that number of seconds
+	to time out.
+
 
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
@@ -2009,6 +2029,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     counting characters in tweets. You no longer have
 			     to shorten URLs manually if you use Twitter's
 			     t.co URL shortener.
+			   * Added network timeout option.
+			     |twitvim_net_timeout|
 	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
 			     TwitVim can support t.co URL expansion and
 			     in-reply-to in search results.
