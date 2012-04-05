@@ -1462,7 +1462,7 @@ begin
 	output = res.body.gsub("'", "''")
 	VIM.command("let output='#{output}'")
     end
-rescue => exc
+rescue Exception => exc
     VIM.command("let error='#{exc.message}'")
 end
 EOF
