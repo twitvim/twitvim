@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: April 5, 2012
+" Last updated: April 9, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.4 2012-04-05'
+let s:user_agent = 'TwitVim 0.7.4 2012-04-09'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -44,6 +44,11 @@ endfunction
 " Allow user to enable Python networking code by setting twitvim_enable_python.
 function! s:get_enable_python()
     return exists('g:twitvim_enable_python') ? g:twitvim_enable_python : 0
+endfunction
+
+" Allow user to enable Python 3 networking code by setting twitvim_enable_python3.
+function! s:get_enable_python3()
+    return exists('g:twitvim_enable_python3') ? g:twitvim_enable_python3 : 0
 endfunction
 
 " Allow user to enable Perl networking code by setting twitvim_enable_perl.
@@ -73,9 +78,9 @@ endfunction
 " user:password in base64 encoding.
 function! s:get_proxy_login()
     if exists('g:twitvim_proxy_login_b64') && g:twitvim_proxy_login_b64 != ''
-	return g:twitvim_proxy_login_b64
+        return g:twitvim_proxy_login_b64
     else
-	return exists('g:twitvim_proxy_login') ? g:twitvim_proxy_login : ''
+        return exists('g:twitvim_proxy_login') ? g:twitvim_proxy_login : ''
     endif
 endfunction
 
@@ -83,13 +88,13 @@ endfunction
 " by :FriendsTwitter, :UserTwitter, and :SearchTwitter.
 function! s:get_count()
     if exists('g:twitvim_count')
-	if g:twitvim_count < 1
-	    return 1
-	elseif g:twitvim_count > 200
-	    return 200
-	else
-	    return g:twitvim_count
-	endif
+        if g:twitvim_count < 1
+            return 1
+        elseif g:twitvim_count > 200
+            return 200
+        else
+            return g:twitvim_count
+        endif
     endif
     return 0
 endfunction
@@ -173,11 +178,11 @@ endfunction
 " authentication, e.g. identi.ca
 function! s:get_twitvim_login_noerror()
     if exists('g:twitvim_login_b64') && g:twitvim_login_b64 != ''
-	return g:twitvim_login_b64
+        return g:twitvim_login_b64
     elseif exists('g:twitvim_login') && g:twitvim_login != ''
-	return g:twitvim_login
+        return g:twitvim_login
     else
-	return ''
+        return ''
     endif
 endfunction
 
@@ -205,13 +210,13 @@ function! s:check_twitvim_login()
     let url = s:get_api_root()."/account/verify_credentials.xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error =~ '401'
-	return 0
+        return 0
     endif
 
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error logging into Twitter: ".(errormsg != '' ? errormsg : error))
-	return -1
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error logging into Twitter: ".(errormsg != '' ? errormsg : error))
+        return -1
     endif
 
     " The following check should not be required because Twitter is supposed to
@@ -219,12 +224,12 @@ function! s:check_twitvim_login()
     " Twitter.
     let error = s:xml_get_element(output, 'error')
     if error =~ '\ccould not authenticate'
-	return 0
+        return 0
     endif
 
     if error != ''
-	call s:errormsg("Error logging into Twitter: ".error)
-	return -1
+        call s:errormsg("Error logging into Twitter: ".error)
+        return -1
     endif
 
     redraw
@@ -241,33 +246,33 @@ endfunction
 " Switch to a different Twitter user.
 function! s:switch_twitvim_login(user)
     if s:tokens == {}
-	call s:read_tokens()
+        call s:read_tokens()
     endif
     let user = a:user
     if user == ''
-	let namelist = s:list_tokens()
-	if namelist == []
-	    call s:errormsg('No logins to switch to. Use :SetLoginTwitter to log in.')
-	    return
-	endif
+        let namelist = s:list_tokens()
+        if namelist == []
+            call s:errormsg('No logins to switch to. Use :SetLoginTwitter to log in.')
+            return
+        endif
 
-	let menu = []
-	call add(menu, 'Choose a login to switch to:')
-	let namecount = 0
-	for name in namelist
-	    let namecount += 1
-	    call add(menu, namecount.'. '.name)
-	endfor
+        let menu = []
+        call add(menu, 'Choose a login to switch to:')
+        let namecount = 0
+        for name in namelist
+            let namecount += 1
+            call add(menu, namecount.'. '.name)
+        endfor
 
-	call inputsave()
-	let input = inputlist(menu)
-	call inputrestore()
-	if input < 1 || input > len(namelist)
-	    " Invalid input cancels the command.
-	    return
-	endif
+        call inputsave()
+        let input = inputlist(menu)
+        call inputrestore()
+        if input < 1 || input > len(namelist)
+            " Invalid input cancels the command.
+            return
+        endif
 
-	let user = namelist[input - 1]
+        let user = namelist[input - 1]
     endif
     call s:switch_token(user)
     call s:write_tokens(s:cached_username)
@@ -279,17 +284,17 @@ let s:cached_username = ''
 " See if we can save time by using the cached username.
 function! s:get_twitvim_cached_username()
     if s:get_api_root() =~ 'twitter\.com'
-	if s:cached_username == ''
-	    return ''
-	endif
+        if s:cached_username == ''
+            return ''
+        endif
     else
-	" In Twitter-compatible services that use Basic authentication, the
-	" user may have changed the login info on the fly. So we have to watch
-	" out for that.
-	let login = s:get_twitvim_login_noerror()
-	if login == '' || login != s:cached_login
-	    return ''
-	endif
+        " In Twitter-compatible services that use Basic authentication, the
+        " user may have changed the login info on the fly. So we have to watch
+        " out for that.
+        let login = s:get_twitvim_login_noerror()
+        if login == '' || login != s:cached_login
+            return ''
+        endif
     endif
     return s:cached_username
 endfunction
@@ -299,7 +304,7 @@ function! s:get_twitvim_username()
     " If we already have the info, no need to get it again.
     let username = s:get_twitvim_cached_username()
     if username != ''
-	return username
+        return username
     endif
 
     redraw
@@ -308,9 +313,9 @@ function! s:get_twitvim_username()
     let url = s:get_api_root()."/account/verify_credentials.xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error verifying login credentials: ".(errormsg != '' ? errormsg : error))
-	return ''
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error verifying login credentials: ".(errormsg != '' ? errormsg : error))
+        return ''
     endif
 
     redraw
@@ -336,15 +341,15 @@ endfunction
 
 function! s:parse_json(str)
     try
-	let true = 1
-	let false = 0
-	let null = ''
-	let str = substitute(a:str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
-	sandbox let result = eval(str)
-	return result
+        let true = 1
+        let false = 0
+        let null = ''
+        let str = substitute(a:str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
+        sandbox let result = eval(str)
+        return result
     catch
-	call s:errormsg('JSON parse error: '.v:exception)
-	return {}
+        call s:errormsg('JSON parse error: '.v:exception)
+        return {}
     endtry
 endfunction
 
@@ -363,12 +368,12 @@ function! s:xml_get_all(xmlstr, elem)
     let pos = 0
 
     while 1
-	let matchres = matchlist(a:xmlstr, pat, pos)
-	if matchres == []
-	    return matches
-	endif
-	call add(matches, matchres[1])
-	let pos = matchend(a:xmlstr, pat, pos)
+        let matchres = matchlist(a:xmlstr, pat, pos)
+        if matchres == []
+            return matches
+        endif
+        call add(matches, matchres[1])
+        let pos = matchend(a:xmlstr, pat, pos)
     endwhile
 endfunction
 
@@ -387,7 +392,7 @@ endfunction
 function! s:xml_get_attr_nth(xmlstr, elem, n)
     let matchres = matchlist(a:xmlstr, '<'.a:elem.'\s\+\([^>]*\)>', -1, a:n)
     if matchres == []
-	return {}
+        return {}
     endif
 
     let matchcount = 1
@@ -395,13 +400,13 @@ function! s:xml_get_attr_nth(xmlstr, elem, n)
     let attrs = {}
 
     while 1
-	let matchres = matchlist(attrstr, '\(\w\+\)="\([^"]*\)"', -1, matchcount)
-	if matchres == []
-	    break
-	endif
+        let matchres = matchlist(attrstr, '\(\w\+\)="\([^"]*\)"', -1, matchcount)
+        if matchres == []
+            break
+        endif
 
-	let attrs[matchres[1]] = matchres[2]
-	let matchcount += 1
+        let attrs[matchres[1]] = matchres[2]
+        let matchcount += 1
     endwhile
 
     return attrs
@@ -437,9 +442,9 @@ endfunction
 function! s:conv_month(s)
     let monthnames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     for mon in range(len(monthnames))
-	if monthnames[mon] == tolower(a:s)
-	    return mon + 1
-	endif	
+        if monthnames[mon] == tolower(a:s)
+            return mon + 1
+        endif   
     endfor
     return 0
 endfunction
@@ -447,15 +452,15 @@ endfunction
 function! s:timegm2(matchres, indxlist)
     let args = []
     for i in a:indxlist
-	if i < 0
-	    let mon = s:conv_month(a:matchres[-i])
-	    if mon == 0
-		return -1
-	    endif
-	    let args = add(args, mon)
-	else
-	    let args = add(args, a:matchres[i] + 0)
-	endif
+        if i < 0
+            let mon = s:conv_month(a:matchres[-i])
+            if mon == 0
+                return -1
+            endif
+            let args = add(args, mon)
+        else
+            let args = add(args, a:matchres[i] + 0)
+        endif
     endfor
     return call('s:timegm', args)
 endfunction
@@ -465,25 +470,25 @@ function! s:parse_time(str)
     " This timestamp format is used by Twitter in timelines.
     let matchres = matchlist(a:str, '^\w\+,\s\+\(\d\+\)\s\+\(\w\+\)\s\+\(\d\+\)\s\+\(\d\+\):\(\d\+\):\(\d\+\)\s\++0000$')
     if matchres != []
-	return s:timegm2(matchres, [3, -2, 1, 4, 5, 6])
+        return s:timegm2(matchres, [3, -2, 1, 4, 5, 6])
     endif
 
     " This timestamp format is used by Twitter in response to an update.
     let matchres = matchlist(a:str, '^\w\+\s\+\(\w\+\)\s\+\(\d\+\)\s\+\(\d\+\):\(\d\+\):\(\d\+\)\s\++0000\s\+\(\d\+\)$')
     if matchres != []
-	return s:timegm2(matchres, [6, -1, 2, 3, 4, 5])
+        return s:timegm2(matchres, [6, -1, 2, 3, 4, 5])
     endif
-	
+        
     " This timestamp format is used by Twitter Search.
     let matchres = matchlist(a:str, '^\(\d\+\)-\(\d\+\)-\(\d\+\)T\(\d\+\):\(\d\+\):\(\d\+\)Z$')
     if matchres != []
-	return s:timegm2(matchres, range(1, 6))
+        return s:timegm2(matchres, range(1, 6))
     endif
 
     " This timestamp format is used by Twitter Rate Limit.
     let matchres = matchlist(a:str, '^\(\d\+\)-\(\d\+\)-\(\d\+\)T\(\d\+\):\(\d\+\):\(\d\+\)+00:00$')
     if matchres != []
-	return s:timegm2(matchres, range(1, 6))
+        return s:timegm2(matchres, range(1, 6))
     endif
 
     return -1
@@ -492,7 +497,7 @@ endfunction
 " Convert the Twitter timestamp to local time and simplify it.
 function! s:time_filter(str)
     if !exists("*strftime")
-	return a:str
+        return a:str
     endif
     let t = s:parse_time(a:str)
     return t < 0 ? a:str : strftime(s:get_timestamp_format(), t)
@@ -526,13 +531,13 @@ endfunction
 function! s:switch_token(name)
     let tokenrec = s:find_token(a:name)
     if tokenrec == {}
-	call s:errormsg("Can't switch to user ".a:name.".")
+        call s:errormsg("Can't switch to user ".a:name.".")
     else
-	let s:access_token = tokenrec.token
-	let s:access_token_secret = tokenrec.secret
-	let s:cached_username = tokenrec.name
-	redraw
-	echo "Logged in as ".s:cached_username."."
+        let s:access_token = tokenrec.token
+        let s:access_token_secret = tokenrec.secret
+        let s:cached_username = tokenrec.name
+        redraw
+        echo "Logged in as ".s:cached_username."."
     endif
 endfunction
 
@@ -541,10 +546,10 @@ endfunction
 function! s:list_tokens()
     let names = []
     for tokenrec in values(s:tokens)
-	" Need to use the names in the token records rather than keys(s:tokens)
-	" in order to present screen names in original case instead of all
-	" lowercase.
-	call add(names, tokenrec.name)
+        " Need to use the names in the token records rather than keys(s:tokens)
+        " in order to present screen names in original case instead of all
+        " lowercase.
+        call add(names, tokenrec.name)
     endfor
     return names
 endfunction
@@ -559,28 +564,28 @@ endfunction
 " Write the token file.
 function! s:write_tokens(current_user)
     if !s:get_disable_token_file()
-	let tokenfile = s:get_token_file()
+        let tokenfile = s:get_token_file()
 
-	let lines = []
-	call add(lines, s:token_header)
-	call add(lines, a:current_user)
-	for tokenrec in values(s:tokens)
-	    call add(lines, tokenrec.name)
-	    call add(lines, tokenrec.token)
-	    call add(lines, tokenrec.secret)
-	endfor
+        let lines = []
+        call add(lines, s:token_header)
+        call add(lines, a:current_user)
+        for tokenrec in values(s:tokens)
+            call add(lines, tokenrec.name)
+            call add(lines, tokenrec.token)
+            call add(lines, tokenrec.secret)
+        endfor
 
-	if writefile(lines, tokenfile) < 0
-	    call s:errormsg('Error writing token file: '.v:errmsg)
-	endif
+        if writefile(lines, tokenfile) < 0
+            call s:errormsg('Error writing token file: '.v:errmsg)
+        endif
 
-	" Check and change file permissions for security.
-	if has('unix')
-	    let perms = getfperm(tokenfile)
-	    if perms != '' && perms[-6:] != '------'
-		silent! execute "!chmod go-rwx '".tokenfile."'"
-	    endif
-	endif
+        " Check and change file permissions for security.
+        if has('unix')
+            let perms = getfperm(tokenfile)
+            if perms != '' && perms[-6:] != '------'
+                silent! execute "!chmod go-rwx '".tokenfile."'"
+            endif
+        endif
     endif
 endfunction
 
@@ -588,37 +593,37 @@ endfunction
 function! s:read_tokens()
     let tokenfile = s:get_token_file()
     if !s:get_disable_token_file() && filereadable(tokenfile)
-	let [hdr, current_user; tokens] = readfile(tokenfile, 't', 500)
-	if tokens == []
-	    " Legacy token file only has token and secret.
-	    let s:access_token = hdr
-	    let s:access_token_secret = current_user
-	    let s:cached_username = ''
+        let [hdr, current_user; tokens] = readfile(tokenfile, 't', 500)
+        if tokens == []
+            " Legacy token file only has token and secret.
+            let s:access_token = hdr
+            let s:access_token_secret = current_user
+            let s:cached_username = ''
 
-	    let user = s:get_twitvim_username()
-	    if user == ''
-		call s:errormsg('Invalid token in token file. Please relogin with :SetLoginTwitter.')
-		return
-	    endif
+            let user = s:get_twitvim_username()
+            if user == ''
+                call s:errormsg('Invalid token in token file. Please relogin with :SetLoginTwitter.')
+                return
+            endif
 
-	    let tokenrec = {}
-	    let tokenrec.token = s:access_token
-	    let tokenrec.secret = s:access_token_secret
-	    let tokenrec.name = user
+            let tokenrec = {}
+            let tokenrec.token = s:access_token
+            let tokenrec.secret = s:access_token_secret
+            let tokenrec.name = user
 
-	    call s:save_token(tokenrec)
-	    call s:write_tokens(user)
-	else
-	    " New token file contains tokens, 3 lines per record.
-	    for i in range(0, len(tokens) - 1, 3)
-		let tokenrec = {}
-		let tokenrec.name = tokens[i]
-		let tokenrec.token = tokens[i + 1]
-		let tokenrec.secret = tokens[i + 2]
-		call s:save_token(tokenrec)
-	    endfor
-	    call s:switch_token(current_user)
-	endif
+            call s:save_token(tokenrec)
+            call s:write_tokens(user)
+        else
+            " New token file contains tokens, 3 lines per record.
+            for i in range(0, len(tokens) - 1, 3)
+                let tokenrec = {}
+                let tokenrec.name = tokens[i]
+                let tokenrec.token = tokens[i + 1]
+                let tokenrec.secret = tokens[i + 2]
+                call s:save_token(tokenrec)
+            endfor
+            call s:switch_token(current_user)
+        endif
     endif
 endfunction
 
@@ -696,6 +701,40 @@ EOF
     return signature
 endfunction
 
+" Check if we can use Python 3 for HMAC-SHA1 digests.
+function! s:check_python3_hmac()
+    let can_python3 = 1
+    python3 <<EOF
+import vim
+try:
+    import base64
+    import hashlib
+    import hmac
+except:
+    vim.command('let can_python3 = 0')
+EOF
+    return can_python3
+endfunction
+
+" Compute HMAC-SHA1 digest. (Python 3 version)
+function! s:python3_hmac_sha1_digest(key, str)
+    python3 <<EOF
+import base64
+import hashlib
+import hmac
+import vim
+
+key = vim.eval("a:key")
+mstr = vim.eval("a:str")
+
+digest = hmac.new(str.encode(key), str.encode(mstr), hashlib.sha1).digest()
+signature = base64.encodestring(digest)[0:-1]
+
+vim.command("let signature='%s'" % bytes.decode(signature))
+EOF
+    return signature
+endfunction
+
 " Check if we can use Ruby for HMAC-SHA1 digests.
 function! s:check_ruby_hmac()
     let can_ruby = 1
@@ -761,8 +800,8 @@ endfunction
 function! s:openssl_hmac_sha1_digest(key, str)
     let output = system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
     if v:shell_error != 0
-	call s:errormsg("Error running openssl command: ".output)
-	return ""
+        call s:errormsg("Error running openssl command: ".output)
+        return ""
     endif
 
     " Remove trailing newlines.
@@ -774,16 +813,18 @@ endfunction
 " Find out which method we can use to compute a HMAC-SHA1 digest.
 function! s:get_hmac_method()
     if !exists('s:hmac_method')
-	let s:hmac_method = 'openssl'
-	if s:get_enable_perl() && has('perl') && s:check_perl_hmac()
-	    let s:hmac_method = 'perl'
-	elseif s:get_enable_python() && has('python') && s:check_python_hmac()
-	    let s:hmac_method = 'python'
-	elseif s:get_enable_ruby() && has('ruby') && s:check_ruby_hmac()
-	    let s:hmac_method = 'ruby'
-	elseif s:get_enable_tcl() && has('tcl') && s:check_tcl_hmac()
-	    let s:hmac_method = 'tcl'
-	endif
+        let s:hmac_method = 'openssl'
+        if s:get_enable_perl() && has('perl') && s:check_perl_hmac()
+            let s:hmac_method = 'perl'
+        elseif s:get_enable_python() && has('python') && s:check_python_hmac()
+            let s:hmac_method = 'python'
+        elseif s:get_enable_python3() && has('python3') && s:check_python3_hmac()
+            let s:hmac_method = 'python3'
+        elseif s:get_enable_ruby() && has('ruby') && s:check_ruby_hmac()
+            let s:hmac_method = 'ruby'
+        elseif s:get_enable_tcl() && has('tcl') && s:check_tcl_hmac()
+            let s:hmac_method = 'tcl'
+        endif
     endif
     return s:hmac_method
 endfunction
@@ -821,7 +862,7 @@ let s:gc_authorize_url = "https://api.twitter.com/oauth/authorize"
 " Simple nonce value generator. This needs to be randomized better.
 function! s:nonce()
     if !exists("s:nonce_val") || s:nonce_val < 1
-	let s:nonce_val = localtime() + 109
+        let s:nonce_val = localtime() + 109
     endif
 
     let retval = s:nonce_val
@@ -836,10 +877,10 @@ function! s:split_url(url)
     let baseurl = urlarray[0]
     let parms = {}
     if len(urlarray) > 1
-	for pstr in split(urlarray[1], '&')
-	    let [key, value] = split(pstr, '=')
-	    let parms[key] = value
-	endfor
+        for pstr in split(urlarray[1], '&')
+            let [key, value] = split(pstr, '=')
+            let parms[key] = value
+        endfor
     endif
     return [baseurl, parms]
 endfunction
@@ -869,8 +910,8 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     let content = ""
 
     for key in sort(keys(parms))
-	let value = s:url_encode(parms[key])
-	let content .= key . "=" . value . "&"
+        let value = s:url_encode(parms[key])
+        let content .= key . "=" . value . "&"
     endfor
     let content = content[0:-2]
 
@@ -884,16 +925,16 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     " Add padding character to make a multiple of 4 per the
     " requirement of OAuth.
     if strlen(signature) % 4
-	let signature .= "="
+        let signature .= "="
     endif
 
     let content = "OAuth "
 
     for key in keys(parms)
-	if key =~ "oauth"
-	    let value = s:url_encode(parms[key])
-	    let content .= key . '="' . value . '", '
-	endif
+        if key =~ "oauth"
+            let value = s:url_encode(parms[key])
+            let content .= key . '="' . value . '", '
+        endif
     endfor
     let content .= 'oauth_signature="' . s:url_encode(signature) . '"'
     return content
@@ -903,9 +944,9 @@ endfunction
 function! s:to_https(url)
     let url = a:url
     if s:get_api_root()[:5] == 'https:'
-	if url[:4] == 'http:'
-	    let url = 'https:'.url[5:]
-	endif
+        if url[:4] == 'http:'
+            let url = 'https:'.url[5:]
+        endif
     endif
     return url
 endfunction
@@ -921,18 +962,18 @@ function! s:do_oauth()
     let [error, output] = s:run_curl(req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
 
     if error != ''
-	call s:errormsg("Error from oauth/request_token: ".error)
-	return [-1, '', '', '']
+        call s:errormsg("Error from oauth/request_token: ".error)
+        return [-1, '', '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
     if matchres != []
-	let request_token = matchres[1]
+        let request_token = matchres[1]
     endif
 
     let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
     if matchres != []
-	let token_secret = matchres[1]
+        let token_secret = matchres[1]
     endif
 
     " Launch web browser to let user allow or deny the authentication request.
@@ -942,23 +983,23 @@ function! s:do_oauth()
     " authentication URL and ask the user to visit that URL.
     if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
 
-	" Attempt to shorten the auth URL.
-	let newurl = s:call_isgd(auth_url)
-	if newurl != ""
-	    let auth_url = newurl
-	else
-	    let newurl = s:call_bitly(auth_url)
-	    if newurl != ""
-		let auth_url = newurl
-	    endif
-	endif
+        " Attempt to shorten the auth URL.
+        let newurl = s:call_isgd(auth_url)
+        if newurl != ""
+            let auth_url = newurl
+        else
+            let newurl = s:call_bitly(auth_url)
+            if newurl != ""
+                let auth_url = newurl
+            endif
+        endif
 
-	echo "Visit the following URL in your browser to authenticate TwitVim:"
-	echo auth_url
+        echo "Visit the following URL in your browser to authenticate TwitVim:"
+        echo auth_url
     else
-	if s:launch_browser(auth_url) < 0
-	    return [-2, '', '', '']
-	endif
+        if s:launch_browser(auth_url) < 0
+            return [-2, '', '', '']
+        endif
     endif
 
     call inputsave()
@@ -966,8 +1007,8 @@ function! s:do_oauth()
     call inputrestore()
 
     if pin == ""
-	call s:warnmsg("No OAuth PIN entered")
-	return [-3, '', '', '']
+        call s:warnmsg("No OAuth PIN entered")
+        return [-3, '', '', '']
     endif
 
     " Call oauth/access_token to swap request token for access token.
@@ -979,23 +1020,23 @@ function! s:do_oauth()
     let [error, output] = s:run_curl(access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
 
     if error != ''
-	call s:errormsg("Error from oauth/access_token: ".error)
-	return [-4, '', '', '']
+        call s:errormsg("Error from oauth/access_token: ".error)
+        return [-4, '', '', '']
     endif
 
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
     if matchres != []
-	let request_token = matchres[1]
+        let request_token = matchres[1]
     endif
 
     let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
     if matchres != []
-	let token_secret = matchres[1]
+        let token_secret = matchres[1]
     endif
 
     let matchres = matchlist(output, 'screen_name=\([^&]\+\)')
     if matchres != []
-	let screen_name = matchres[1]
+        let screen_name = matchres[1]
     endif
 
     return [ 0, request_token, token_secret, screen_name ]
@@ -1005,7 +1046,7 @@ endfunction
 function! s:do_login()
     let [ retval, s:access_token, s:access_token_secret, s:cached_username ] = s:do_oauth()
     if retval < 0
-	return [ -1, "Error from do_oauth(): ".retval ]
+        return [ -1, "Error from do_oauth(): ".retval ]
     endif
 
     let tokenrec = {}
@@ -1025,32 +1066,32 @@ endfunction
 function! s:run_curl_oauth(url, login, proxy, proxylogin, parms)
     if a:login != '' && a:url =~ 'twitter\.com'
 
-	" Get access tokens from token file or do OAuth login.
-	if !exists('s:access_token') || s:access_token == ''
-	    call s:read_tokens()
-	    if !exists('s:access_token') || s:access_token == ''
-		let [ status, error ] = s:do_login()
-		if status < 0
-		    return [ error, '' ]
-		endif
-	    endif
-	endif
+        " Get access tokens from token file or do OAuth login.
+        if !exists('s:access_token') || s:access_token == ''
+            call s:read_tokens()
+            if !exists('s:access_token') || s:access_token == ''
+                let [ status, error ] = s:do_login()
+                if status < 0
+                    return [ error, '' ]
+                endif
+            endif
+        endif
 
-	let parms = copy(a:parms)
-	let parms["oauth_token"] = s:access_token
-	let oauth_hdr = s:getOauthResponse(a:url, a:parms == {} ? 'GET' : 'POST', parms, s:access_token_secret)
+        let parms = copy(a:parms)
+        let parms["oauth_token"] = s:access_token
+        let oauth_hdr = s:getOauthResponse(a:url, a:parms == {} ? 'GET' : 'POST', parms, s:access_token_secret)
 
-	return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
+        return s:run_curl(a:url, oauth_hdr, a:proxy, a:proxylogin, a:parms)
     else
-	if a:login != ''
-	    let login = s:get_twitvim_login_noerror()
-	    if login == ''
-		return [ 'Login info not set. Please add to vimrc: let twitvim_login="USER:PASS"', '' ]
-	    endif
-	else
-	    let login = a:login
-	endif
-	return s:run_curl(a:url, login, a:proxy, a:proxylogin, a:parms)
+        if a:login != ''
+            let login = s:get_twitvim_login_noerror()
+            if login == ''
+                return [ 'Login info not set. Please add to vimrc: let twitvim_login="USER:PASS"', '' ]
+            endif
+        else
+            let login = a:login
+        endif
+        return s:run_curl(a:url, login, a:proxy, a:proxylogin, a:parms)
     endif
 endfunction
 
@@ -1061,11 +1102,11 @@ endfunction
 function! s:url_encode_char(c)
     let utf = iconv(a:c, &encoding, "utf-8")
     if utf == ""
-	let utf = a:c
+        let utf = a:c
     endif
     let s = ""
     for i in range(strlen(utf))
-	let s .= printf("%%%02X", char2nr(utf[i]))
+        let s .= printf("%%%02X", char2nr(utf[i]))
     endfor
     return s
 endfunction
@@ -1081,7 +1122,7 @@ function! s:url_decode(str)
     let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
     let encoded = iconv(s, 'utf-8', &encoding)
     if encoded != ''
-	let s = encoded
+        let s = encoded
     endif
     return s
 endfunction
@@ -1094,50 +1135,50 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let curlcmd = "curl -s -S "
 
     if s:get_twitvim_cert_insecure()
-	let curlcmd .= "-k "
+        let curlcmd .= "-k "
     endif
 
     let curlcmd .= '-m '.s:get_net_timeout().' '
 
     if a:proxy != ""
-	let curlcmd .= '-x "'.a:proxy.'" '
+        let curlcmd .= '-x "'.a:proxy.'" '
     endif
 
     if a:proxylogin != ""
-	if stridx(a:proxylogin, ':') != -1
-	    let curlcmd .= '-U "'.a:proxylogin.'" '
-	else
-	    let curlcmd .= '-H "Proxy-Authorization: Basic '.a:proxylogin.'" '
-	endif
+        if stridx(a:proxylogin, ':') != -1
+            let curlcmd .= '-U "'.a:proxylogin.'" '
+        else
+            let curlcmd .= '-H "Proxy-Authorization: Basic '.a:proxylogin.'" '
+        endif
     endif
 
     if a:login != ""
-	if a:login =~ "^OAuth "
-	    let curlcmd .= '-H "Authorization: '.a:login.'" '
-	elseif stridx(a:login, ':') != -1
-	    let curlcmd .= '-u "'.a:login.'" '
-	else
-	    let curlcmd .= '-H "Authorization: Basic '.a:login.'" '
-	endif
+        if a:login =~ "^OAuth "
+            let curlcmd .= '-H "Authorization: '.a:login.'" '
+        elseif stridx(a:login, ':') != -1
+            let curlcmd .= '-u "'.a:login.'" '
+        else
+            let curlcmd .= '-H "Authorization: Basic '.a:login.'" '
+        endif
     endif
 
     let got_json = 0
     for [k, v] in items(a:parms)
-	if k == '__json'
-	    let got_json = 1
-	    let vsub = substitute(v, '"', '\\"', 'g')
-	    if  has('win32') || has('win64')
-		" Under Windows only, we need to quote some special characters.
-		let vsub = substitute(vsub, '[\\&|><^]', '"&"', 'g')
-	    endif
-	    let curlcmd .= '-d "'.vsub.'" '
-	else
-	    let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
-	endif
+        if k == '__json'
+            let got_json = 1
+            let vsub = substitute(v, '"', '\\"', 'g')
+            if  has('win32') || has('win64')
+                " Under Windows only, we need to quote some special characters.
+                let vsub = substitute(vsub, '[\\&|><^]', '"&"', 'g')
+            endif
+            let curlcmd .= '-d "'.vsub.'" '
+        else
+            let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
+        endif
     endfor
 
     if got_json
-	let curlcmd .= '-H "Content-Type: application/json" '
+        let curlcmd .= '-H "Content-Type: application/json" '
     endif
     
     let curlcmd .= '-H "User-Agent: '.s:user_agent.'" '
@@ -1147,9 +1188,9 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let output = system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
     if v:shell_error != 0
-	let error = output
+        let error = output
     elseif errormsg != ''
-	let error = errormsg
+        let error = errormsg
     endif
 
     return [ error, output ]
@@ -1186,14 +1227,14 @@ import vim
 
 def make_base64(s):
     if s.find(':') != -1:
-	s = base64.b64encode(s)
+        s = base64.b64encode(s)
     return s
 
 net_timeout = None
 try:
     t = float(vim.eval("s:get_net_timeout()"))
     if t > 0:
-	net_timeout = t
+        net_timeout = t
 except:
     pass
 
@@ -1204,31 +1245,123 @@ try:
     parms = vim.eval("a:parms")
 
     if parms.get('__json') is not None:
-	req = urllib2.Request(url, parms['__json'])
-	req.add_header('Content-Type', 'application/json')
+        req = urllib2.Request(url, parms['__json'])
+        req.add_header('Content-Type', 'application/json')
     else:
-	req = parms == {} and urllib2.Request(url) or urllib2.Request(url, urllib.urlencode(parms))
+        req = parms == {} and urllib2.Request(url) or urllib2.Request(url, urllib.urlencode(parms))
 
     login = vim.eval("a:login")
     if login != "":
-	if login[0:6] == "OAuth ":
-	    req.add_header('Authorization', login)
-	else:
-	    req.add_header('Authorization', 'Basic %s' % make_base64(login))
+        if login[0:6] == "OAuth ":
+            req.add_header('Authorization', login)
+        else:
+            req.add_header('Authorization', 'Basic %s' % make_base64(login))
 
     proxy = vim.eval("a:proxy")
     if proxy != "":
-	req.set_proxy(proxy, 'http')
+        req.set_proxy(proxy, 'http')
 
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
-	req.add_header('Proxy-Authorization', 'Basic %s' % make_base64(proxylogin))
+        req.add_header('Proxy-Authorization', 'Basic %s' % make_base64(proxylogin))
 
     req.add_header('User-Agent', vim.eval("s:user_agent"))
 
     f = urllib2.urlopen(req)
     out = ''.join(f.readlines())
 except urllib2.HTTPError, (httperr):
+    vim.command("let error='%s'" % str(httperr).replace("'", "''"))
+    vim.command("let output='%s'" % httperr.read().replace("'", "''"))
+except:
+    exctype, value = sys.exc_info()[:2]
+    errmsg = (exctype.__name__ + ': ' + str(value)).replace("'", "''")
+    vim.command("let error='%s'" % errmsg)
+    vim.command("let output='%s'" % errmsg)
+else:
+    vim.command("let output='%s'" % out.replace("'", "''"))
+EOF
+
+    return [ error, output ]
+endfunction
+
+" Check if we can use Python 3.
+function! s:check_python3()
+    let can_python3 = 1
+    python3 <<EOF
+import vim
+try:
+    import urllib
+    import urllib.request
+    import urllib.error
+    import socket
+    import base64
+    import sys
+except:
+    vim.command('let can_python3 = 0')
+EOF
+    return can_python3
+endfunction
+
+" Use Python 3 to fetch a web page.
+function! s:python3_curl(url, login, proxy, proxylogin, parms)
+    let error = ""
+    let output = ""
+    python3 <<EOF
+import urllib
+import urllib.request
+import urllib.error
+import socket
+import base64
+import sys
+import vim
+
+def make_base64(s):
+    if s.find(':') != -1:
+        s = bytes.decode(base64.b64encode(str.encode(s)))
+    return s
+
+net_timeout = None
+try:
+    t = float(vim.eval("s:get_net_timeout()"))
+    if t > 0:
+        net_timeout = t
+except:
+    pass
+
+try:
+    socket.setdefaulttimeout(net_timeout)
+
+    # hello = make_base64("test:hello")
+
+    url = vim.eval("a:url")
+    parms = vim.eval("a:parms")
+
+    if parms.get('__json') is not None:
+        req = urllib.request.Request(url, parms['__json'])
+        req.add_header('Content-Type', 'application/json')
+    else:
+        req = parms == {} and urllib.request.Request(url) or urllib.request.Request(url, urllib.urlencode(parms))
+
+    login = vim.eval("a:login")
+    if login != "":
+        if login[0:6] == "OAuth ":
+            req.add_header('Authorization', login)
+        else:
+            req.add_header('Authorization', 'Basic %s' % make_base64(login))
+
+    proxy = vim.eval("a:proxy")
+    if proxy != "":
+        req.set_proxy(proxy, 'http')
+
+    proxylogin = vim.eval("a:proxylogin")
+    if proxylogin != "":
+        req.add_header('Proxy-Authorization', 'Basic %s' % make_base64(proxylogin))
+
+    req.add_header('User-Agent', vim.eval("s:user_agent"))
+
+    f = urllib.request.urlopen(req)
+    out = ''.join([bytes.decode(s) for s in f.readlines()])
+except urllib.error.HTTPError as httperr:
     vim.command("let error='%s'" % str(httperr).replace("'", "''"))
     vim.command("let output='%s'" % httperr.read().replace("'", "''"))
 except:
@@ -1301,10 +1434,10 @@ for $k (split(/\n/, $keys)) {
 my $login = VIM::Eval('a:login');
 if ($login ne '') {
     if ($login =~ /^OAuth /) {
-	$ua->default_header('Authorization' => $login);
+        $ua->default_header('Authorization' => $login);
     }
     else {
-	$ua->default_header('Authorization' => 'Basic '.make_base64($login));
+        $ua->default_header('Authorization' => 'Basic '.make_base64($login));
     }
 }
 
@@ -1314,8 +1447,8 @@ my $response;
 
 if (defined $parms{'__json'}) {
     $response = $ua->post($url, 
-	'Content-Type' => 'application/json',
-	Content => $parms{'__json'});
+        'Content-Type' => 'application/json',
+        Content => $parms{'__json'});
 }
 else {
     $response = %parms ? $ua->post($url, \%parms) : $ua->get($url);
@@ -1426,41 +1559,41 @@ keys.each { |k|
 
 begin
     res = net.start { |http| 
-	path = "#{url.path}?#{url.query}"
-	if parms == {}
-	    req = Net::HTTP::Get.new(path)
-	elsif parms.has_key?('__json')
-	    req = Net::HTTP::Post.new(path)
-	    req.body = parms['__json']
-	    req.set_content_type('application/json')
-	else
-	    req = Net::HTTP::Post.new(path)
-	    req.set_form_data(parms)
-	end
+        path = "#{url.path}?#{url.query}"
+        if parms == {}
+            req = Net::HTTP::Get.new(path)
+        elsif parms.has_key?('__json')
+            req = Net::HTTP::Post.new(path)
+            req.body = parms['__json']
+            req.set_content_type('application/json')
+        else
+            req = Net::HTTP::Post.new(path)
+            req.set_form_data(parms)
+        end
 
-	login = VIM.evaluate('a:login')
-	if login != ''
-	    if login =~ /^OAuth /
-		req.add_field 'Authorization', login
-	    else
-		req.add_field 'Authorization', "Basic #{make_base64(login)}"
-	    end
-	end
+        login = VIM.evaluate('a:login')
+        if login != ''
+            if login =~ /^OAuth /
+                req.add_field 'Authorization', login
+            else
+                req.add_field 'Authorization', "Basic #{make_base64(login)}"
+            end
+        end
 
-	req['User-Agent'] = VIM.evaluate("s:user_agent")
+        req['User-Agent'] = VIM.evaluate("s:user_agent")
 
-	http.request(req)
+        http.request(req)
     }
     case res
     when Net::HTTPSuccess
-	output = res.body.gsub("'", "''")
-	VIM.command("let output='#{output}'")
+        output = res.body.gsub("'", "''")
+        VIM.command("let output='#{output}'")
     else
-	error = "#{res.code} #{res.message}".gsub("'", "''")
-	VIM.command("let error='#{error}'")
+        error = "#{res.code} #{res.message}".gsub("'", "''")
+        VIM.command("let error='#{error}'")
 
-	output = res.body.gsub("'", "''")
-	VIM.command("let output='#{output}'")
+        output = res.body.gsub("'", "''")
+        VIM.command("let output='#{output}'")
     end
 rescue Exception => exc
     VIM.command("let error='#{exc.message}'")
@@ -1502,7 +1635,7 @@ package require base64
 
 proc make_base64 {s} {
     if { [string first : $s] >= 0 } {
-	return [base64::encode $s]
+        return [base64::encode $s]
     }
     return $s
 }
@@ -1533,9 +1666,9 @@ if { $proxylogin != "" } {
 set login [::vim::expr a:login]
 if { $login != "" } {
     if {[string range $login 0 5] == "OAuth "} {
-	lappend headers "Authorization" $login
+        lappend headers "Authorization" $login
     } else {
-	lappend headers "Authorization" "Basic [make_base64 $login]"
+        lappend headers "Authorization" "Basic [make_base64 $login]"
     }
 }
 
@@ -1547,14 +1680,14 @@ set nettimeout [expr {round($nettimeout * 1000.0)}]
 set parms [list]
 set keys [split [::vim::expr "keys(a:parms)"] "\n"]
 if { [llength $keys] > 0 } {
-    if { [lsearch -exact $keys "__json"] != -1 } {	
-	set query [::vim::expr "a:parms\['__json']"]
-	lappend headers "Content-Type" "application/json"
+    if { [lsearch -exact $keys "__json"] != -1 } {      
+        set query [::vim::expr "a:parms\['__json']"]
+        lappend headers "Content-Type" "application/json"
     } else {
-	foreach key $keys {
-	    lappend parms $key [::vim::expr "a:parms\['$key']"]
-	}
-	set query [eval [concat ::http::formatQuery $parms]]
+        foreach key $keys {
+            lappend parms $key [::vim::expr "a:parms\['$key']"]
+        }
+        set query [eval [concat ::http::formatQuery $parms]]
     }
     set res [::http::geturl $url -headers $headers -query $query -timeout $nettimeout]
 } else {
@@ -1565,19 +1698,19 @@ upvar #0 $res state
 
 if { $state(status) == "ok" } {
     if { [ ::http::ncode $res ] >= 400 } {
-	set error $state(http)
-	::vim::command "let error = '$error'"
-	set output [string map {' ''} $state(body)]
-	::vim::command "let output = '$output'"
+        set error $state(http)
+        ::vim::command "let error = '$error'"
+        set output [string map {' ''} $state(body)]
+        ::vim::command "let output = '$output'"
     } else {
-	set output [string map {' ''} $state(body)]
-	::vim::command "let output = '$output'"
+        set output [string map {' ''} $state(body)]
+        ::vim::command "let output = '$output'"
     }
 } else {
     if { [ info exists state(error) ] } {
-	set error [string map {' ''} $state(error)]
+        set error [string map {' ''} $state(error)]
     } else {
-	set error "$state(status) error"
+        set error "$state(status) error"
     }
     ::vim::command "let error = '$error'"
 }
@@ -1591,16 +1724,18 @@ endfunction
 " Find out which method we can use to fetch a web page.
 function! s:get_curl_method()
     if !exists('s:curl_method')
-	let s:curl_method = 'curl'
-	if s:get_enable_perl() && has('perl') && s:check_perl()
-	    let s:curl_method = 'perl'
-	elseif s:get_enable_python() && has('python') && s:check_python()
-	    let s:curl_method = 'python'
-	elseif s:get_enable_ruby() && has('ruby') && s:check_ruby()
-	    let s:curl_method = 'ruby'
-	elseif s:get_enable_tcl() && has('tcl') && s:check_tcl()
-	    let s:curl_method = 'tcl'
-	endif
+        let s:curl_method = 'curl'
+        if s:get_enable_perl() && has('perl') && s:check_perl()
+            let s:curl_method = 'perl'
+        elseif s:get_enable_python() && has('python') && s:check_python()
+            let s:curl_method = 'python'
+        elseif s:get_enable_python3() && has('python3') && s:check_python3()
+            let s:curl_method = 'python3'
+        elseif s:get_enable_ruby() && has('ruby') && s:check_ruby()
+            let s:curl_method = 'ruby'
+        elseif s:get_enable_tcl() && has('tcl') && s:check_tcl()
+            let s:curl_method = 'tcl'
+        endif
     endif
     return s:curl_method
 endfunction
@@ -1611,15 +1746,15 @@ endfunction
 " encoding is already UTF-8.
 function! s:iconv_parms(parms)
     if s:get_curl_method() == 'curl' || &encoding == 'utf-8'
-	return a:parms
+        return a:parms
     endif
     let parms2 = {}
     for k in keys(a:parms)
-	let v = iconv(a:parms[k], &encoding, 'utf-8')
-	if v == ''
-	    let v = a:parms[k]
-	endif
-	let parms2[k] = v
+        let v = iconv(a:parms[k], &encoding, 'utf-8')
+        if v == ''
+            let v = a:parms[k]
+        endif
+        let parms2[k] = v
     endfor
     return parms2
 endfunction
@@ -1707,8 +1842,8 @@ function! s:add_buffer(infobuf)
     " If stack is already full, remove the buffer at the bottom of the stack to
     " make room.
     if stack.ptr >= s:bufstackmax
-	call remove(stack.stack, 0)
-	let stack.ptr -= 1
+        call remove(stack.stack, 0)
+        let stack.ptr -= 1
     endif
 
     let stack.ptr += 1
@@ -1725,13 +1860,13 @@ function! s:is_same(infobuf, a, b)
     let a = a:a
     let b = a:b
     if a:infobuf
-	if a.buftype == b.buftype && a.cursor == b.cursor && a.user == b.user && a.list == b.list
-	    return 1
-	endif
+        if a.buftype == b.buftype && a.cursor == b.cursor && a.user == b.user && a.list == b.list
+            return 1
+        endif
     else
-	if a.buftype == b.buftype && a.list == b.list && a.user == b.user && a.page == b.page
-	    return 1
-	endif
+        if a.buftype == b.buftype && a.list == b.list && a.user == b.user && a.page == b.page
+            return 1
+        endif
     endif
     return 0
 endfunction
@@ -1744,26 +1879,26 @@ function! s:save_buffer(infobuf)
     let winname = a:infobuf ? s:user_winname : s:twit_winname
 
     if cur == {}
-	return
+        return
     endif
 
     " Save buffer contents and cursor position.
     let twit_bufnr = bufwinnr('^'.winname.'$')
     if twit_bufnr > 0
-	let curwin = winnr()
-	execute twit_bufnr . "wincmd w"
-	let cur.buffer = getline(1, '$')
-	let cur.view = winsaveview()
-	execute curwin .  "wincmd w"
-	
-	" If current buffer is the same type as buffer at the top of the stack,
-	" then just copy it.
-	if stack.ptr >= 0 && s:is_same(a:infobuf, cur, stack.stack[stack.ptr])
-	    let stack.stack[stack.ptr] = deepcopy(cur)
-	else
-	    " Otherwise, push the current buffer onto the stack.
-	    call s:add_buffer(a:infobuf)
-	endif
+        let curwin = winnr()
+        execute twit_bufnr . "wincmd w"
+        let cur.buffer = getline(1, '$')
+        let cur.view = winsaveview()
+        execute curwin .  "wincmd w"
+        
+        " If current buffer is the same type as buffer at the top of the stack,
+        " then just copy it.
+        if stack.ptr >= 0 && s:is_same(a:infobuf, cur, stack.stack[stack.ptr])
+            let stack.stack[stack.ptr] = deepcopy(cur)
+        else
+            " Otherwise, push the current buffer onto the stack.
+            call s:add_buffer(a:infobuf)
+        endif
     endif
 
     " If twit_bufnr returned -1, the user closed the window manually. So we
@@ -1777,15 +1912,15 @@ function! s:back_buffer(infobuf)
     call s:save_buffer(a:infobuf)
 
     if stack.ptr < 1
-	call s:warnmsg("Already at oldest buffer. Can't go back further.")
-	return -1
+        call s:warnmsg("Already at oldest buffer. Can't go back further.")
+        return -1
     endif
 
     let stack.ptr -= 1
     if a:infobuf
-	let s:infobuffer = deepcopy(stack.stack[stack.ptr])
+        let s:infobuffer = deepcopy(stack.stack[stack.ptr])
     else
-	let s:curbuffer = deepcopy(stack.stack[stack.ptr])
+        let s:curbuffer = deepcopy(stack.stack[stack.ptr])
     endif
     let cur = a:infobuf ? s:infobuffer : s:curbuffer
     let wintype = a:infobuf ? 'userinfo' : 'timeline'
@@ -1801,15 +1936,15 @@ function! s:fwd_buffer(infobuf)
     call s:save_buffer(a:infobuf)
 
     if stack.ptr + 1 >= len(stack.stack)
-	call s:warnmsg("Already at newest buffer. Can't go forward.")
-	return -1
+        call s:warnmsg("Already at newest buffer. Can't go forward.")
+        return -1
     endif
 
     let stack.ptr += 1
     if a:infobuf
-	let s:infobuffer = deepcopy(stack.stack[stack.ptr])
+        let s:infobuffer = deepcopy(stack.stack[stack.ptr])
     else
-	let s:curbuffer = deepcopy(stack.stack[stack.ptr])
+        let s:curbuffer = deepcopy(stack.stack[stack.ptr])
     endif
     let cur = a:infobuf ? s:infobuffer : s:curbuffer
     let wintype = a:infobuf ? 'userinfo' : 'timeline'
@@ -1836,16 +1971,16 @@ function! s:show_bufstack(infobuf)
     let stack = a:infobuf ? s:infobufstack : s:bufstack
 
     for i in range(len(stack.stack) - 1, 0, -1)
-	let s = i.':'
-	let s .= ' type='.stack.stack[i].buftype
-	let s .= ' user='.stack.stack[i].user
-	let s .= ' list='.stack.stack[i].list
-	if a:infobuf
-	    let s .= ' cursor='.stack.stack[i].cursor
-	else
-	    let s .= ' page='.stack.stack[i].page
-	endif
-	echo s
+        let s = i.':'
+        let s .= ' type='.stack.stack[i].buftype
+        let s .= ' user='.stack.stack[i].user
+        let s .= ' list='.stack.stack[i].list
+        if a:infobuf
+            let s .= ' cursor='.stack.stack[i].cursor
+        else
+            let s .= ' page='.stack.stack[i].page
+        endif
+        echo s
     endfor
 endfunction
 
@@ -1871,30 +2006,30 @@ endif
 function! s:add_update(output)
     if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list" || s:curbuffer.buftype == "retweeted_by_me" || s:curbuffer.buftype == "retweeted_to_me")
 
-	" Parse the output from the Twitter update call.
-	let line = s:format_status_xml(a:output)
+        " Parse the output from the Twitter update call.
+        let line = s:format_status_xml(a:output)
 
-	" Line number where new tweet will be inserted. It should be 3 if
-	" header is shown and 1 if header is hidden.
-	let insline = s:curbuffer.showheader ? 3 : 1
+        " Line number where new tweet will be inserted. It should be 3 if
+        " header is shown and 1 if header is hidden.
+        let insline = s:curbuffer.showheader ? 3 : 1
 
-	" Add the status ID to the current buffer's statuses list.
-	call insert(s:curbuffer.statuses, s:xml_get_element(a:output, 'id'), insline)
+        " Add the status ID to the current buffer's statuses list.
+        call insert(s:curbuffer.statuses, s:xml_get_element(a:output, 'id'), insline)
 
-	" Add in-reply-to ID to current buffer's in-reply-to list.
-	call insert(s:curbuffer.inreplyto, s:xml_get_element(a:output, 'in_reply_to_status_id'), insline)
+        " Add in-reply-to ID to current buffer's in-reply-to list.
+        call insert(s:curbuffer.inreplyto, s:xml_get_element(a:output, 'in_reply_to_status_id'), insline)
 
-	let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
-	if twit_bufnr > 0
-	    let curwin = winnr()
-	    execute twit_bufnr . "wincmd w"
-	    setlocal modifiable
-	    call append(insline - 1, line)
-	    execute "normal! ".insline."G"
-	    setlocal nomodifiable
-	    let s:curbuffer.buffer = getline(1, '$')
-	    execute curwin .  "wincmd w"
-	endif
+        let twit_bufnr = bufwinnr('^'.s:twit_winname.'$')
+        if twit_bufnr > 0
+            let curwin = winnr()
+            execute twit_bufnr . "wincmd w"
+            setlocal modifiable
+            call append(insline - 1, line)
+            execute "normal! ".insline."G"
+            setlocal nomodifiable
+            let s:curbuffer.buffer = getline(1, '$')
+            execute curwin .  "wincmd w"
+        endif
     endif
 endfunction
 
@@ -1913,13 +2048,13 @@ function! s:get_short_url_lengths()
     let now = localtime()
     " Do the config query the first time it is needed and once a day thereafter.
     if s:short_url_length == 0 || s:short_url_length_https == 0 || now - s:last_config_query_time > 24 * 60 * 60
-	let url = s:get_api_root().'/help/configuration.xml'
-	let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-	if error == ''
-	    let s:short_url_length = s:xml_get_element(output, 'short_url_length')
-	    let s:short_url_length_https = s:xml_get_element(output, 'short_url_length_https')
-	    let s:last_config_query_time = now
-	endif
+        let url = s:get_api_root().'/help/configuration.xml'
+        let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+        if error == ''
+            let s:short_url_length = s:xml_get_element(output, 'short_url_length')
+            let s:short_url_length_https = s:xml_get_element(output, 'short_url_length_https')
+            let s:last_config_query_time = now
+        endif
     endif
     return [ s:short_url_length, s:short_url_length_https ]
 endfunction
@@ -1929,8 +2064,8 @@ function! s:sim_shorten_urls(mesg)
     let [url_len, secure_url_len] = s:get_short_url_lengths()
     let mesg = a:mesg
     if url_len > 0 && secure_url_len > 0
-	let mesg = substitute(mesg, s:URLMATCH_HTTPS, repeat('*', secure_url_len), 'g')
-	let mesg = substitute(mesg, s:URLMATCH_NON_HTTPS, repeat('*', url_len), 'g')
+        let mesg = substitute(mesg, s:URLMATCH_HTTPS, repeat('*', secure_url_len), 'g')
+        let mesg = substitute(mesg, s:URLMATCH_NON_HTTPS, repeat('*', url_len), 'g')
     endif
     return mesg
 endfunction
@@ -1941,7 +2076,7 @@ function! s:post_twitter(mesg, inreplyto)
 
     " Add in_reply_to_status_id if status ID is available.
     if a:inreplyto != 0
-	let parms["in_reply_to_status_id"] = a:inreplyto
+        let parms["in_reply_to_status_id"] = a:inreplyto
     endif
 
     let mesg = a:mesg
@@ -1954,12 +2089,12 @@ function! s:post_twitter(mesg, inreplyto)
     let mesg = substitute(mesg, '\n', ' ', "g")
 
     if s:get_api_root() =~ 'twitter\.com'
-	" Pretend to shorten URLs.
-	let sim_mesg = s:sim_shorten_urls(mesg)
+        " Pretend to shorten URLs.
+        let sim_mesg = s:sim_shorten_urls(mesg)
     else
-	" Assume that identi.ca and other non-Twitter services don't do this
-	" URL-shortening madness.
-	let sim_mesg = mesg
+        " Assume that identi.ca and other non-Twitter services don't do this
+        " URL-shortening madness.
+        let sim_mesg = mesg
     endif
 
     let mesglen = s:mbstrlen(sim_mesg)
@@ -1968,28 +2103,28 @@ function! s:post_twitter(mesg, inreplyto)
     " URL-encoding the special characters because URL-encoding increases the
     " string length.
     if mesglen > s:char_limit
-	call s:warnmsg("Your tweet has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
+        call s:warnmsg("Your tweet has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
     elseif mesglen < 1
-	call s:warnmsg("Your tweet was empty. It was not sent.")
+        call s:warnmsg("Your tweet was empty. It was not sent.")
     else
-	redraw
-	echo "Sending update to Twitter..."
+        redraw
+        echo "Sending update to Twitter..."
 
-	let url = s:get_api_root()."/statuses/update.xml"
-	let parms["status"] = mesg
-	let parms["source"] = "twitvim"
-	let parms["include_entities"] = "true"
+        let url = s:get_api_root()."/statuses/update.xml"
+        let parms["status"] = mesg
+        let parms["source"] = "twitvim"
+        let parms["include_entities"] = "true"
 
-	let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+        let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
 
-	if error != ''
-	    let errormsg = s:xml_get_element(output, 'error')
-	    call s:errormsg("Error posting your tweet: ".(errormsg != '' ? errormsg : error))
-	else
-	    call s:add_update(output)
-	    redraw
-	    echo "Your tweet was sent. You used ".mesglen." characters."
-	endif
+        if error != ''
+            let errormsg = s:xml_get_element(output, 'error')
+            call s:errormsg("Error posting your tweet: ".(errormsg != '' ? errormsg : error))
+        else
+            call s:add_update(output)
+            redraw
+            echo "Your tweet was sent. You used ".mesglen." characters."
+        endif
     endif
 endfunction
 
@@ -2015,9 +2150,9 @@ endfunction
 function! s:Quick_Reply()
     let username = s:get_user_name(getline('.'))
     if username != ""
-	" If the status ID is not available, get() will return 0 and
-	" post_twitter() won't add in_reply_to_status_id to the update.
-	call s:CmdLine_Twitter('@'.username.' ', get(s:curbuffer.statuses, line('.')))
+        " If the status ID is not available, get() will return 0 and
+        " post_twitter() won't add in_reply_to_status_id to the update.
+        call s:CmdLine_Twitter('@'.username.' ', get(s:curbuffer.statuses, line('.')))
     endif
 endfunction
 
@@ -2028,25 +2163,25 @@ function! s:get_all_names(line)
 
     let username = s:get_user_name(getline('.'))
     if username != ""
-	" Add this to the beginning of the list because we want the tweet
-	" author to be the main addressee in the reply to all.
-	let names = [ username ]
-	let dictnames[tolower(username)] = 1
+        " Add this to the beginning of the list because we want the tweet
+        " author to be the main addressee in the reply to all.
+        let names = [ username ]
+        let dictnames[tolower(username)] = 1
     endif
 
     let matchcount = 1
     while 1
-	let matchres = matchlist(a:line, '@\(\w\+\)', -1, matchcount)
-	if matchres == []
-	    break
-	endif
-	let name = matchres[1]
-	" Don't add duplicate names.
-	if !has_key(dictnames, tolower(name))
-	    call add(names, name)
-	    let dictnames[tolower(name)] = 1
-	endif
-	let matchcount += 1
+        let matchres = matchlist(a:line, '@\(\w\+\)', -1, matchcount)
+        if matchres == []
+            break
+        endif
+        let name = matchres[1]
+        " Don't add duplicate names.
+        if !has_key(dictnames, tolower(name))
+            call add(names, name)
+            let dictnames[tolower(name)] = 1
+        endif
+        let matchcount += 1
     endwhile
 
     return names
@@ -2061,17 +2196,17 @@ function! s:Reply_All()
     let user = s:get_twitvim_username()
     let names2 = []
     for name in names
-	if name != user
-	    call add(names2, name)
-	endif
+        if name != user
+            call add(names2, name)
+        endif
     endfor
 
     let replystr = '@'.join(names2, ' @').' '
 
     if names != []
-	" If the status ID is not available, get() will return 0 and
-	" post_twitter() won't add in_reply_to_status_id to the update.
-	call s:CmdLine_Twitter(replystr, get(s:curbuffer.statuses, line('.')))
+        " If the status ID is not available, get() will return 0 and
+        " post_twitter() won't add in_reply_to_status_id to the update.
+        call s:CmdLine_Twitter(replystr, get(s:curbuffer.statuses, line('.')))
     endif
 endfunction
 
@@ -2080,8 +2215,8 @@ endfunction
 function! s:Quick_DM()
     let username = s:get_user_name(getline('.'))
     if username != ""
-	" call s:CmdLine_Twitter('d '.username.' ', 0)
-	call s:send_dm(username, '')
+        " call s:CmdLine_Twitter('d '.username.' ', 0)
+        call s:send_dm(username, '')
     endif
 endfunction
 
@@ -2106,9 +2241,9 @@ function! s:Retweet()
     let line = getline('.')
     let username = s:get_user_name(line)
     if username != ""
-	let retweet = substitute(s:get_retweet_fmt(), '%s', '@'.username, '')
-	let retweet = substitute(retweet, '%t', s:get_tweet(line), '')
-	call s:CmdLine_Twitter(retweet, 0)
+        let retweet = substitute(s:get_retweet_fmt(), '%s', '@'.username, '')
+        let retweet = substitute(retweet, '%t', s:get_tweet(line), '')
+        call s:CmdLine_Twitter(retweet, 0)
     endif
 endfunction
 
@@ -2117,16 +2252,16 @@ function! s:Retweet_2()
 
     " Do an old-style retweet if user has set twitvim_old_retweet.
     if s:get_old_retweet()
-	call s:Retweet()
-	return
+        call s:Retweet()
+        return
     endif
 
     let status = get(s:curbuffer.statuses, line('.'))
     if status == 0
-	" Fall back to old-style retweeting if we can't get this tweet's status
-	" ID.
-	call s:Retweet()
-	return
+        " Fall back to old-style retweeting if we can't get this tweet's status
+        " ID.
+        call s:Retweet()
+        return
     endif
 
     " Confirm with user before retweeting. Only for new-style retweets because
@@ -2135,9 +2270,9 @@ function! s:Retweet_2()
     let answer = input('Retweet "'.s:strtrunc(getline('.'), 40).'"? (y/n) ')
     call inputrestore()
     if answer != 'y' && answer != 'Y'
-	redraw
-	echo "Not retweeted."
-	return
+        redraw
+        echo "Not retweeted."
+        return
     endif
 
     let parms = {}
@@ -2152,12 +2287,12 @@ function! s:Retweet_2()
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error retweeting: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error retweeting: ".(errormsg != '' ? errormsg : error))
     else
-	call s:add_update(output)
-	redraw
-	echo "Retweeted."
+        call s:add_update(output)
+        redraw
+        echo "Retweeted."
     endif
 endfunction
 
@@ -2167,8 +2302,8 @@ function! s:show_inreplyto()
 
     let inreplyto = get(s:curbuffer.inreplyto, lineno)
     if inreplyto == 0
-	call s:warnmsg("No in-reply-to information for current line.")
-	return
+        call s:warnmsg("No in-reply-to information for current line.")
+        return
     endif
 
     redraw
@@ -2181,9 +2316,9 @@ function! s:show_inreplyto()
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting in-reply-to tweet: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting in-reply-to tweet: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     let line = s:format_status_xml(output)
@@ -2210,7 +2345,7 @@ function! s:strtrunc(s, len)
     let slen = strlen(substitute(a:s, ".", "x", "g"))
     let s = substitute(a:s, '^\(.\{,'.a:len.'}\).*$', '\1', '')
     if slen > a:len
-	let s .= '...'
+        let s .= '...'
     endif
     return s
 endfunction
@@ -2233,16 +2368,16 @@ function! s:do_delete_tweet()
     let url = s:get_api_root().'/'.(isdm ? "direct_messages" : "statuses")."/destroy/".id.".xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error deleting ".obj.": ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error deleting ".obj.": ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     if isdm
-	call remove(s:curbuffer.dmids, lineno)
+        call remove(s:curbuffer.dmids, lineno)
     else
-	call remove(s:curbuffer.statuses, lineno)
-	call remove(s:curbuffer.inreplyto, lineno)
+        call remove(s:curbuffer.statuses, lineno)
+        call remove(s:curbuffer.inreplyto, lineno)
     endif
 
     " Already in the correct buffer so no need to search or switch buffers.
@@ -2265,18 +2400,18 @@ function! s:delete_tweet()
 
     let id = get(isdm ? s:curbuffer.dmids : s:curbuffer.statuses, lineno)
     if id == 0
-	call s:warnmsg("No erasable ".obj." on current line.")
-	return
+        call s:warnmsg("No erasable ".obj." on current line.")
+        return
     endif
 
     call inputsave()
     let answer = input('Delete "'.s:strtrunc(getline('.'), 40).'"? (y/n) ')
     call inputrestore()
     if answer == 'y' || answer == 'Y'
-	call s:do_delete_tweet()
+        call s:do_delete_tweet()
     else
-	redraw
-	echo uobj "not deleted."
+        redraw
+        echo uobj "not deleted."
     endif
 endfunction
 
@@ -2284,8 +2419,8 @@ endfunction
 function! s:fave_tweet(unfave)
     let id = get(s:curbuffer.statuses, line('.'))
     if id == 0
-	call s:warnmsg('Nothing to '.(a:unfave ? 'unfavorite' : 'favorite').' on current line.')
-	return
+        call s:warnmsg('Nothing to '.(a:unfave ? 'unfavorite' : 'favorite').' on current line.')
+        return
     endif
 
     redraw
@@ -2299,9 +2434,9 @@ function! s:fave_tweet(unfave)
     let url = s:get_api_root().'/favorites/'.(a:unfave ? 'destroy' : 'create').'/'.id.'.xml'
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     redraw
@@ -2343,10 +2478,10 @@ vmenu Plugin.TwitVim.Post\ selection <Plug>TwitvimVisual
 " Launch web browser with the given URL.
 function! s:launch_browser(url)
     if !exists('g:twitvim_browser_cmd') || g:twitvim_browser_cmd == ''
-	" Beep and error-highlight 
-	execute "normal! \<Esc>"
-	call s:errormsg('Browser cmd not set. Please add to .vimrc: let twitvim_browser_cmd="browsercmd"')
-	return -1
+        " Beep and error-highlight 
+        execute "normal! \<Esc>"
+        call s:errormsg('Browser cmd not set. Please add to .vimrc: let twitvim_browser_cmd="browsercmd"')
+        return -1
     endif
 
     let startcmd = has("win32") || has("win64") ? "!start " : "! "
@@ -2363,7 +2498,7 @@ function! s:launch_browser(url)
     " causes the shell to background the process and cut off the URL at that
     " point.
     if has('unix')
-	let url = substitute(url, '&', '\\&', 'g')
+        let url = substitute(url, '&', '\\&', 'g')
     endif
 
     redraw
@@ -2371,11 +2506,11 @@ function! s:launch_browser(url)
     let v:errmsg = ""
     silent! execute startcmd g:twitvim_browser_cmd url endcmd
     if v:errmsg == ""
-	redraw!
-	echo "Web browser launched."
+        redraw!
+        echo "Web browser launched."
     else
-	call s:errormsg('Error launching browser: '.v:errmsg)
-	return -2
+        call s:errormsg('Error launching browser: '.v:errmsg)
+        return -2
     endif
 
     return 0
@@ -2416,58 +2551,58 @@ function! s:launch_url_cword(infobuf)
     " non-word character.
     let matchres = matchlist(s, '\w\@<!@\(\w\+\)')
     if matchres != []
-	call s:get_timeline("user", matchres[1], 1)
-	return
+        call s:get_timeline("user", matchres[1], 1)
+        return
     endif
 
     if a:infobuf
-	" Don't match ^word: if in profile buffer. It leads to all kinds of
-	" false matches. Instead, parse a Name: line specially.
-	let name = s:info_getname()
-	if name != ''
-	    call s:get_timeline("user", name, 1)
-	    return
-	endif
+        " Don't match ^word: if in profile buffer. It leads to all kinds of
+        " false matches. Instead, parse a Name: line specially.
+        let name = s:info_getname()
+        if name != ''
+            call s:get_timeline("user", name, 1)
+            return
+        endif
 
-	" Parse a Website: line specially.
-	let matchres = matchlist(getline('.'), '^Website: \('.s:URLMATCH.'\)')
-	if matchres != []
-	    call s:launch_browser(matchres[1])
-	    return
-	endif
+        " Parse a Website: line specially.
+        let matchres = matchlist(getline('.'), '^Website: \('.s:URLMATCH.'\)')
+        if matchres != []
+            call s:launch_browser(matchres[1])
+            return
+        endif
 
-	" Don't do anything on field labels in profile buffer.
-	" Otherwise, the code below will needlessly launch a web browser.
-	let matchres = matchlist(s, '^\(\w\+\):$')
-	if matchres != []
-	    return
-	endif
+        " Don't do anything on field labels in profile buffer.
+        " Otherwise, the code below will needlessly launch a web browser.
+        let matchres = matchlist(s, '^\(\w\+\):$')
+        if matchres != []
+            return
+        endif
     else
-	" In a trending topics list, the whole line is a search term.
-	if s:curbuffer.buftype == 'trends'
-	    if !s:curbuffer.showheader || line('.') > 2
-		call s:get_summize(getline('.'), 1)
-	    endif
-	    return
-	endif
+        " In a trending topics list, the whole line is a search term.
+        if s:curbuffer.buftype == 'trends'
+            if !s:curbuffer.showheader || line('.') > 2
+                call s:get_summize(getline('.'), 1)
+            endif
+            return
+        endif
 
-	if col('.') == 1 && s == '+'
-	    " If the cursor is on the '+' in a reply expansion, use the second
-	    " word instead.
-	    let matchres = matchlist(getline('.'), '^+ \(\w\+\):')
-	    if matchres != []
-		call s:get_timeline("user", matchres[1], 1)
-		return
-	    endif
-	endif
+        if col('.') == 1 && s == '+'
+            " If the cursor is on the '+' in a reply expansion, use the second
+            " word instead.
+            let matchres = matchlist(getline('.'), '^+ \(\w\+\):')
+            if matchres != []
+                call s:get_timeline("user", matchres[1], 1)
+                return
+            endif
+        endif
 
-	" Handle username: at the beginning of the line by showing that user's
-	" timeline.
-	let matchres = matchlist(s, '^\(\w\+\):$')
-	if matchres != []
-	    call s:get_timeline("user", matchres[1], 1)
-	    return
-	endif
+        " Handle username: at the beginning of the line by showing that user's
+        " timeline.
+        let matchres = matchlist(s, '^\(\w\+\):$')
+        if matchres != []
+            call s:get_timeline("user", matchres[1], 1)
+            return
+        endif
     endif
 
     " Handle #-hashtags by showing the Twitter Search for that hashtag.
@@ -2475,8 +2610,8 @@ function! s:launch_url_cword(infobuf)
     " non-word character.
     let matchres = matchlist(s, '\w\@<!\(#\w\+\)')
     if matchres != []
-	call s:get_summize(matchres[1], 1)
-	return
+        call s:get_summize(matchres[1], 1)
+        return
     endif
 
     let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
@@ -2487,9 +2622,9 @@ endfunction
 function! s:info_getname()
     let matchres = matchlist(getline('.'), '^Name: \(\w\+\)')
     if matchres != []
-	return matchres[1]
+        return matchres[1]
     else
-	return ''
+        return ''
     endif
 endfunction
 
@@ -2497,18 +2632,18 @@ endfunction
 function! s:get_deckly(url)
     let [error, output] = s:run_curl(a:url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg('Error getting deck.ly page: '.error)
-	return ''
+        call s:errormsg('Error getting deck.ly page: '.error)
+        return ''
     endif
     let matchres = matchlist(output, '<div\s\+id="deckly-post"[^>]\+>\(\_.*\)</div>')
     if matchres == []
-	call s:errormsg('Could not find long post in deck.ly page.')
-	return ''
+        call s:errormsg('Could not find long post in deck.ly page.')
+        return ''
     endif
     let matchres = matchlist(matchres[1], '<p>\(\_.\{-}\)</p>')
     if matchres == []
-	call s:errormsg('Could not find long post in deckly-post div.')
-	return ''
+        call s:errormsg('Could not find long post in deckly-post div.')
+        return ''
     endif
     let s = matchres[1]
     let s = substitute(s, '<a\>[^>]\+>', '', 'g')
@@ -2524,35 +2659,35 @@ function! s:call_longurl(url)
     let url = 'http://api.longurl.org/v1/expand?url='.s:url_encode(a:url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error calling LongURL API: ".error)
-	return ""
+        call s:errormsg("Error calling LongURL API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from LongURL."
+        redraw
+        echo "Received response from LongURL."
 
-	let longurl = s:xml_get_element(output, 'long_url')
-	if longurl != ""
-	    let longurl = substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
+        let longurl = s:xml_get_element(output, 'long_url')
+        if longurl != ""
+            let longurl = substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
 
-	    " If it is a deck.ly URL, attempt to get the long tweet.
-	    if a:url =~? 'deck\.ly' && longurl =~? 'tweetdeck\.com/twitter'
-		let longpost = s:get_deckly(longurl)
-		if longpost != ''
-		    return longpost
-		endif
-	    endif
+            " If it is a deck.ly URL, attempt to get the long tweet.
+            if a:url =~? 'deck\.ly' && longurl =~? 'tweetdeck\.com/twitter'
+                let longpost = s:get_deckly(longurl)
+                if longpost != ''
+                    return longpost
+                endif
+            endif
 
-	    return longurl
-	endif
+            return longurl
+        endif
 
-	let errormsg = s:xml_get_element(output, 'error')
-	if errormsg != ""
-	    call s:errormsg("LongURL error: ".errormsg)
-	    return ""
-	endif
+        let errormsg = s:xml_get_element(output, 'error')
+        if errormsg != ""
+            call s:errormsg("LongURL error: ".errormsg)
+            return ""
+        endif
 
-	call s:errormsg("Unknown response from LongURL: ".output)
-	return ""
+        call s:errormsg("Unknown response from LongURL: ".output)
+        return ""
     endif
 endfunction
 
@@ -2562,13 +2697,13 @@ endfunction
 function! s:do_longurl(s)
     let s = a:s
     if s == ""
-	let s = expand("<cWORD>")
-	let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
+        let s = expand("<cWORD>")
+        let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
     endif
     let result = s:call_longurl(s)
     if result != ""
-	redraw
-	echo s.' expands to '.result
+        redraw
+        echo s.' expands to '.result
     endif
 endfunction
 
@@ -2577,8 +2712,8 @@ endfunction
 function! s:do_user_info_infobuf()
     let name = s:info_getname()
     if name != ''
-	call s:get_user_info(name)
-	return
+        call s:get_user_info(name)
+        return
     endif
 
     " Fall back to original user info function.
@@ -2590,19 +2725,19 @@ endfunction
 function! s:do_user_info(s)
     let s = a:s
     if s == ''
-	let s = expand("<cword>")
-	
-	" Handle @-replies.
-	let matchres = matchlist(s, '^@\(\w\+\)')
-	if matchres != []
-	    let s = matchres[1]
-	else
-	    " Handle username: at the beginning of the line.
-	    let matchres = matchlist(s, '^\(\w\+\):$')
-	    if matchres != []
-		let s = matchres[1]
-	    endif
-	endif
+        let s = expand("<cword>")
+        
+        " Handle @-replies.
+        let matchres = matchlist(s, '^@\(\w\+\)')
+        if matchres != []
+            let s = matchres[1]
+        else
+            " Handle username: at the beginning of the line.
+            let matchres = matchlist(s, '^\(\w\+\):$')
+            if matchres != []
+                let s = matchres[1]
+            endif
+        endif
     endif
 
     call s:get_user_info(s)
@@ -2614,25 +2749,25 @@ endfunction
 " Get bytes from character code.
 function! s:nr2byte(nr)
     if a:nr < 0x80
-	return nr2char(a:nr)
+        return nr2char(a:nr)
     elseif a:nr < 0x800
-	return nr2char(a:nr/64+192).nr2char(a:nr%64+128)
+        return nr2char(a:nr/64+192).nr2char(a:nr%64+128)
     else
-	return nr2char(a:nr/4096%16+224).nr2char(a:nr/64%64+128).nr2char(a:nr%64+128)
+        return nr2char(a:nr/4096%16+224).nr2char(a:nr/64%64+128).nr2char(a:nr%64+128)
     endif
 endfunction
 
 " Convert character code from utf-8 to encoding.
 function! s:nr2enc_char(charcode)
     if &encoding == 'utf-8'
-	return nr2char(a:charcode)
+        return nr2char(a:charcode)
     endif
     let char = s:nr2byte(a:charcode)
     if strlen(char) > 1
-	let iconv_str = iconv(char, 'utf-8', &encoding)
-	if iconv_str != ""
-	    let char = strtrans(iconv_str)
-	endif
+        let iconv_str = iconv(char, 'utf-8', &encoding)
+        if iconv_str != ""
+            let char = strtrans(iconv_str)
+        endif
     endif
     return char
 endfunction
@@ -2659,39 +2794,39 @@ let s:twit_winname = "Twitter_".localtime()
 function! s:twitter_win_syntax(wintype)
     " Beautify the Twitter window with syntax highlighting.
     if has("syntax") && exists("g:syntax_on")
-	" Reset syntax items in case there are any predefined in the new buffer.
-	syntax clear
+        " Reset syntax items in case there are any predefined in the new buffer.
+        syntax clear
 
-	" Twitter user name: from start of line to first colon.
-	syntax match twitterUser /^.\{-1,}:/
+        " Twitter user name: from start of line to first colon.
+        syntax match twitterUser /^.\{-1,}:/
 
-	" Use the bars to recognize the time but hide the bars.
-	syntax match twitterTime /|[^|]\+|$/ contains=twitterTimeBar
-	syntax match twitterTimeBar /|/ contained
+        " Use the bars to recognize the time but hide the bars.
+        syntax match twitterTime /|[^|]\+|$/ contains=twitterTimeBar
+        syntax match twitterTimeBar /|/ contained
 
-	" Highlight links in tweets.
-	execute 'syntax match twitterLink "\<'.s:URLMATCH.'"'
+        " Highlight links in tweets.
+        execute 'syntax match twitterLink "\<'.s:URLMATCH.'"'
 
-	" An @-reply must be preceded by a non-word character and ends at a
-	" non-word character.
-	syntax match twitterReply "\w\@<!@\w\+"
+        " An @-reply must be preceded by a non-word character and ends at a
+        " non-word character.
+        syntax match twitterReply "\w\@<!@\w\+"
 
-	" A #-hashtag must be preceded by a non-word character and ends at a
-	" non-word character.
-	syntax match twitterLink "\w\@<!#\w\+"
+        " A #-hashtag must be preceded by a non-word character and ends at a
+        " non-word character.
+        syntax match twitterLink "\w\@<!#\w\+"
 
-	" Use the extra star at the end to recognize the title but hide the
-	" star.
-	syntax match twitterTitle /^\%(\w\+:\)\@!.\+\*$/ contains=twitterTitleStar
-	syntax match twitterTitleStar /\*$/ contained
+        " Use the extra star at the end to recognize the title but hide the
+        " star.
+        syntax match twitterTitle /^\%(\w\+:\)\@!.\+\*$/ contains=twitterTitleStar
+        syntax match twitterTitleStar /\*$/ contained
 
-	highlight default link twitterUser Identifier
-	highlight default link twitterTime String
-	highlight default link twitterTimeBar Ignore
-	highlight default link twitterTitle Title
-	highlight default link twitterTitleStar Ignore
-	highlight default link twitterLink Underlined
-	highlight default link twitterReply Label
+        highlight default link twitterUser Identifier
+        highlight default link twitterTime String
+        highlight default link twitterTimeBar Ignore
+        highlight default link twitterTitle Title
+        highlight default link twitterTitleStar Ignore
+        highlight default link twitterLink Underlined
+        highlight default link twitterReply Label
     endif
 endfunction
 
@@ -2704,90 +2839,90 @@ function! s:twitter_win(wintype)
 
     let twit_bufnr = bufwinnr('^'.winname.'$')
     if twit_bufnr > 0
-	execute twit_bufnr . "wincmd w"
+        execute twit_bufnr . "wincmd w"
     else
-	let newwin = 1
-	execute "new " . winname
-	setlocal noswapfile
-	setlocal buftype=nofile
-	setlocal bufhidden=delete 
-	setlocal foldcolumn=0
-	setlocal nobuflisted
-	setlocal nospell
+        let newwin = 1
+        execute "new " . winname
+        setlocal noswapfile
+        setlocal buftype=nofile
+        setlocal bufhidden=delete 
+        setlocal foldcolumn=0
+        setlocal nobuflisted
+        setlocal nospell
 
-	" Launch browser with URL in visual selection or at cursor position.
-	nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(0)<cr>
-	nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(0)<cr>
-	vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
-	vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
+        " Launch browser with URL in visual selection or at cursor position.
+        nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(0)<cr>
+        nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(0)<cr>
+        vnoremap <buffer> <silent> <A-g> y:call <SID>launch_browser(@")<cr>
+        vnoremap <buffer> <silent> <Leader>g y:call <SID>launch_browser(@")<cr>
 
-	" Get user info for current word or selection.
-	nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info("")<cr>
-	vnoremap <buffer> <silent> <Leader>p y:call <SID>do_user_info(@")<cr>
+        " Get user info for current word or selection.
+        nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info("")<cr>
+        vnoremap <buffer> <silent> <Leader>p y:call <SID>do_user_info(@")<cr>
 
-	" Call LongURL API on current word or selection.
-	nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
-	vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
+        " Call LongURL API on current word or selection.
+        nnoremap <buffer> <silent> <Leader>e :call <SID>do_longurl("")<cr>
+        vnoremap <buffer> <silent> <Leader>e y:call <SID>do_longurl(@")<cr>
 
-	if a:wintype == "userinfo"
-	    " Next page in info buffer.
-	    nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageInfo()<cr>
+        if a:wintype == "userinfo"
+            " Next page in info buffer.
+            nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageInfo()<cr>
 
-	    " Previous page in info buffer.
-	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageInfo()<cr>
-	    
-	    " Refresh info buffer.
-	    nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshInfo()<cr>
+            " Previous page in info buffer.
+            nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageInfo()<cr>
+            
+            " Refresh info buffer.
+            nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshInfo()<cr>
 
-	    " We need this to be handled specially in the info buffer.
-	    nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>
-	    nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(1)<cr>
-	    
-	    " This also needs to be handled specially for Name: lines.
-	    nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info_infobuf()<cr>
+            " We need this to be handled specially in the info buffer.
+            nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(1)<cr>
+            nnoremap <buffer> <silent> <Leader>g :call <SID>launch_url_cword(1)<cr>
+            
+            " This also needs to be handled specially for Name: lines.
+            nnoremap <buffer> <silent> <Leader>p :call <SID>do_user_info_infobuf()<cr>
 
-	    " Go back and forth through buffer stack.
-	    nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(1)<cr>
-	    nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(1)<cr>
-	else
-	    " Quick reply feature for replying from the timeline.
-	    nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
-	    nnoremap <buffer> <silent> <Leader>r :call <SID>Quick_Reply()<cr>
+            " Go back and forth through buffer stack.
+            nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(1)<cr>
+            nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(1)<cr>
+        else
+            " Quick reply feature for replying from the timeline.
+            nnoremap <buffer> <silent> <A-r> :call <SID>Quick_Reply()<cr>
+            nnoremap <buffer> <silent> <Leader>r :call <SID>Quick_Reply()<cr>
 
-	    " Quick DM feature for direct messaging from the timeline.
-	    nnoremap <buffer> <silent> <A-d> :call <SID>Quick_DM()<cr>
-	    nnoremap <buffer> <silent> <Leader>d :call <SID>Quick_DM()<cr>
+            " Quick DM feature for direct messaging from the timeline.
+            nnoremap <buffer> <silent> <A-d> :call <SID>Quick_DM()<cr>
+            nnoremap <buffer> <silent> <Leader>d :call <SID>Quick_DM()<cr>
 
-	    " Retweet feature for replicating another user's tweet.
-	    nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet_2()<cr>
+            " Retweet feature for replicating another user's tweet.
+            nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet_2()<cr>
 
-	    " Reply to all feature.
-	    nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
+            " Reply to all feature.
+            nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
 
-	    " Show in-reply-to for current tweet.
-	    nnoremap <buffer> <silent> <Leader>@ :call <SID>show_inreplyto()<cr>
+            " Show in-reply-to for current tweet.
+            nnoremap <buffer> <silent> <Leader>@ :call <SID>show_inreplyto()<cr>
 
-	    " Delete tweet or message on current line.
-	    nnoremap <buffer> <silent> <Leader>X :call <SID>delete_tweet()<cr>
+            " Delete tweet or message on current line.
+            nnoremap <buffer> <silent> <Leader>X :call <SID>delete_tweet()<cr>
 
-	    " Refresh timeline.
-	    nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshTimeline()<cr>
+            " Refresh timeline.
+            nnoremap <buffer> <silent> <Leader><Leader> :call <SID>RefreshTimeline()<cr>
 
-	    " Next page in timeline.
-	    nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageTimeline()<cr>
+            " Next page in timeline.
+            nnoremap <buffer> <silent> <C-PageDown> :call <SID>NextPageTimeline()<cr>
 
-	    " Previous page in timeline.
-	    nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageTimeline()<cr>
+            " Previous page in timeline.
+            nnoremap <buffer> <silent> <C-PageUp> :call <SID>PrevPageTimeline()<cr>
 
-	    " Favorite a tweet.
-	    nnoremap <buffer> <silent> <Leader>f :call <SID>fave_tweet(0)<cr>
-	    " Unfavorite a tweet.
-	    nnoremap <buffer> <silent> <Leader><C-f> :call <SID>fave_tweet(1)<cr>
+            " Favorite a tweet.
+            nnoremap <buffer> <silent> <Leader>f :call <SID>fave_tweet(0)<cr>
+            " Unfavorite a tweet.
+            nnoremap <buffer> <silent> <Leader><C-f> :call <SID>fave_tweet(1)<cr>
 
-	    " Go back and forth through buffer stack.
-	    nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(0)<cr>
-	    nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(0)<cr>
-	endif
+            " Go back and forth through buffer stack.
+            nnoremap <buffer> <silent> <C-o> :call <SID>back_buffer(0)<cr>
+            nnoremap <buffer> <silent> <C-i> :call <SID>fwd_buffer(0)<cr>
+        endif
     endif
 
     setlocal filetype=twitvim
@@ -2814,16 +2949,16 @@ function! s:twitter_wintext_view(text, wintype, view)
 
     " Restore the saved view if provided.
     if a:view != {}
-	call winrestview(a:view)
+        call winrestview(a:view)
     endif
 
     " Go back to original window after updating buffer. If a new window is
     " created then our saved curwin number is wrong so the best we can do is to
     " take the user back to the last-accessed window using 'wincmd p'.
     if newwin
-	wincmd p
+        wincmd p
     else
-	execute curwin .  "wincmd w"
+        execute curwin .  "wincmd w"
     endif
 endfunction
 
@@ -2836,7 +2971,7 @@ endfunction
 function! s:format_retweeted_status(item)
     let rt = s:xml_get_element(a:item, 'retweeted_status')
     if rt == ''
-	return ''
+        return ''
     endif
     let user = s:xml_get_element(rt, 'screen_name')
     let text = s:convert_entity(s:get_status_text(rt))
@@ -2851,12 +2986,12 @@ function! s:str_replace_all(str, findstr, replstr)
 
     let idx = 0
     while 1
-	let idx = stridx(s, a:findstr, idx)
-	if idx < 0
-	    break
-	endif
-	let s = strpart(s, 0, idx) . a:replstr . strpart(s, idx + findlen)
-	let idx += repllen
+        let idx = stridx(s, a:findstr, idx)
+        if idx < 0
+            break
+        endif
+        let s = strpart(s, 0, idx) . a:replstr . strpart(s, idx + findlen)
+        let idx += repllen
     endwhile
 
     return s
@@ -2876,34 +3011,34 @@ function! s:get_status_text(item)
     " element, so we handle that by only getting every other url element.
     let matchcount = 1
     while 1
-	let url = s:xml_get_nth(urls, 'url', matchcount * 2)
-	let expanded_url = s:xml_get_nth(urls, 'expanded_url', matchcount)
+        let url = s:xml_get_nth(urls, 'url', matchcount * 2)
+        let expanded_url = s:xml_get_nth(urls, 'expanded_url', matchcount)
 
-	if url == '' || expanded_url == ''
-	    break
-	endif
+        if url == '' || expanded_url == ''
+            break
+        endif
 
-	" echomsg "Replacing ".url." with ".expanded_url." in ".text
-	let text = s:str_replace_all(text, url, expanded_url)
+        " echomsg "Replacing ".url." with ".expanded_url." in ".text
+        let text = s:str_replace_all(text, url, expanded_url)
 
-	let matchcount += 1
+        let matchcount += 1
     endwhile
 
     " Expand media URLs too.
     let media = s:xml_get_element(entities, 'media')
     let matchcount = 1
     while 1
-	let url = s:xml_get_nth(media, 'url', matchcount)
-	let expanded_url = s:xml_get_nth(media, 'expanded_url', matchcount)
+        let url = s:xml_get_nth(media, 'url', matchcount)
+        let expanded_url = s:xml_get_nth(media, 'expanded_url', matchcount)
 
-	if url == '' || expanded_url == ''
-	    break
-	endif
+        if url == '' || expanded_url == ''
+            break
+        endif
 
-	" echomsg "Replacing ".url." with ".expanded_url." in ".text
-	let text = s:str_replace_all(text, url, expanded_url)
+        " echomsg "Replacing ".url." with ".expanded_url." in ".text
+        let text = s:str_replace_all(text, url, expanded_url)
 
-	let matchcount += 1
+        let matchcount += 1
     endwhile
 
     return text
@@ -2920,7 +3055,7 @@ function! s:format_status_xml(item)
     let user = s:xml_get_element(item, 'screen_name')
     let text = s:format_retweeted_status(a:item)
     if text == ''
-	let text = s:convert_entity(s:get_status_text(item))
+        let text = s:convert_entity(s:get_status_text(item))
     endif
     let pubdate = s:time_filter(s:xml_get_element(item, 'created_at'))
 
@@ -2938,13 +3073,13 @@ endfunction
 " true if there is a match and the item should be excluded from the timeline.
 function! s:check_filter(item)
     if s:get_filter_enable()
-	let filter = s:get_filter_regex()
-	if filter != ''
-	    let text = s:convert_entity(s:get_status_text(a:item))
-	    if match(text, filter) >= 0
-		return 1
-	    endif
-	endif
+        let filter = s:get_filter_regex()
+        if filter != ''
+            let text = s:convert_entity(s:get_status_text(a:item))
+            if match(text, filter) >= 0
+                return 1
+            endif
+        endif
     endif
     return 0
 endfunction
@@ -2959,49 +3094,49 @@ function! s:show_timeline_xml(timeline, tline_name, username, page)
 
     let title = substitute(a:tline_name, '^.', '\u&', '')." timeline"
     if a:username != ''
-	let title .= " for ".a:username
+        let title .= " for ".a:username
     endif
 
     " Special case titles for Retweets and Mentions.
     if a:tline_name == "retweeted_to_me"
-	let title = "Retweets by others"
+        let title = "Retweets by others"
     elseif a:tline_name == "retweeted_by_me"
-	let title = "Retweets by you"
+        let title = "Retweets by you"
     elseif a:tline_name == "replies"
-	let title = "Mentions timeline"
+        let title = "Mentions timeline"
     endif
 
     if a:page > 1
-	let title .= ' (page '.a:page.')'
+        let title .= ' (page '.a:page.')'
     endif
 
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
-	" Index of first status will be 3 to match line numbers in timeline
-	" display.
-	let s:curbuffer.statuses = [0, 0, 0]
-	let s:curbuffer.inreplyto = [0, 0, 0]
+        " Index of first status will be 3 to match line numbers in timeline
+        " display.
+        let s:curbuffer.statuses = [0, 0, 0]
+        let s:curbuffer.inreplyto = [0, 0, 0]
 
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, title.'*')
-	call add(text, repeat('=', s:mbstrlen(title)).'*')
+        " The extra stars at the end are for the syntax highlighter to
+        " recognize the title. Then the syntax highlighter hides the stars by
+        " coloring them the same as the background. It is a bad hack.
+        call add(text, title.'*')
+        call add(text, repeat('=', s:mbstrlen(title)).'*')
     else
-	" Index of first status will be 1 to match line numbers in timeline
-	" display.
-	let s:curbuffer.statuses = [0]
-	let s:curbuffer.inreplyto = [0]
+        " Index of first status will be 1 to match line numbers in timeline
+        " display.
+        let s:curbuffer.statuses = [0]
+        let s:curbuffer.inreplyto = [0]
     endif
 
     for item in s:xml_get_all(a:timeline, 'status')
-	if !s:check_filter(item)
-	    call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
-	    call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
+        if !s:check_filter(item)
+            call add(s:curbuffer.statuses, s:xml_get_element(item, 'id'))
+            call add(s:curbuffer.inreplyto, s:get_in_reply_to(item))
 
-	    let line = s:format_status_xml(item)
-	    call add(text, line)
-	endif
+            let line = s:format_status_xml(item)
+            call add(text, line)
+        endif
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -3016,17 +3151,17 @@ endfunction
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page)
     if a:tline_name == "public"
-	" No authentication is needed for public timeline.
-	let login = ''
+        " No authentication is needed for public timeline.
+        let login = ''
     else
-	let login = s:ologin
+        let login = s:ologin
     endif
 
     let url_fname = (a:tline_name == "favorites" || a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
 
     " Support pagination.
     if a:page > 1
-	let url_fname = s:add_to_url(url_fname, 'page='.a:page)
+        let url_fname = s:add_to_url(url_fname, 'page='.a:page)
     endif
 
     " Include retweets.
@@ -3038,15 +3173,15 @@ function! s:get_timeline(tline_name, username, page)
     " Twitter API allows you to specify a username for user_timeline to
     " retrieve another user's timeline.
     if a:username != ''
-	let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
+        let url_fname = s:add_to_url(url_fname, 'screen_name='.a:username)
     endif
 
     " Support count parameter in favorites, friends, user, mentions, and retweet timelines.
     if a:tline_name == 'favorites' || a:tline_name == 'friends' || a:tline_name == 'user' || a:tline_name == 'replies' || a:tline_name == 'retweeted_to_me' || a:tline_name == 'retweeted_by_me'
-	let tcount = s:get_count()
-	if tcount > 0
-	    let url_fname = s:add_to_url(url_fname, 'count='.tcount)
-	endif
+        let tcount = s:get_count()
+        if tcount > 0
+            let url_fname = s:add_to_url(url_fname, 'count='.tcount)
+        endif
     endif
 
     let tl_name = a:tline_name == "replies" ? "mentions" : a:tline_name
@@ -3059,9 +3194,9 @@ function! s:get_timeline(tline_name, username, page)
     let [error, output] = s:run_curl_oauth(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting Twitter ".tl_name." timeline: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting Twitter ".tl_name." timeline: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(0)
@@ -3085,25 +3220,25 @@ function! s:get_list_timeline(username, listname, page)
 
     let user = a:username
     if user == ''
-	let user = s:get_twitvim_username()
-	if user == ''
-	    call s:errormsg('Twitter login not set. Please specify a username.')
-	    return -1
-	endif
+        let user = s:get_twitvim_username()
+        if user == ''
+            call s:errormsg('Twitter login not set. Please specify a username.')
+            return -1
+        endif
     endif
 
     let url = s:get_api_root().'/lists/statuses.xml?slug='.a:listname.'&owner_screen_name='.user
 
     " Support pagination.
     if a:page > 1
-	let url = s:add_to_url(url, 'page='.a:page)
+        let url = s:add_to_url(url, 'page='.a:page)
     endif
 
     " Support count parameter.
     let tcount = s:get_count()
     if tcount > 0
-	let url = s:add_to_url(url, 'per_page='.tcount)
-	let url = s:add_to_url(url, 'count='.tcount)
+        let url = s:add_to_url(url, 'per_page='.tcount)
+        let url = s:add_to_url(url, 'count='.tcount)
     endif
 
     " Include entities to get URL expansions for t.co.
@@ -3118,9 +3253,9 @@ function! s:get_list_timeline(username, listname, page)
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting Twitter list timeline: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting Twitter list timeline: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(0)
@@ -3148,34 +3283,34 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
     let title = 'Direct messages '.a:sent_or_recv
 
     if a:page > 1
-	let title .= ' (page '.a:page.')'
+        let title .= ' (page '.a:page.')'
     endif
 
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
-	" Index of first dmid will be 3 to match line numbers in timeline
-	" display.
-	let s:curbuffer.dmids = [0, 0, 0]
+        " Index of first dmid will be 3 to match line numbers in timeline
+        " display.
+        let s:curbuffer.dmids = [0, 0, 0]
 
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, title.'*')
-	call add(text, repeat('=', s:mbstrlen(title)).'*')
+        " The extra stars at the end are for the syntax highlighter to
+        " recognize the title. Then the syntax highlighter hides the stars by
+        " coloring them the same as the background. It is a bad hack.
+        call add(text, title.'*')
+        call add(text, repeat('=', s:mbstrlen(title)).'*')
     else
-	" Index of first dmid will be 1 to match line numbers in timeline
-	" display.
-	let s:curbuffer.dmids = [0]
+        " Index of first dmid will be 1 to match line numbers in timeline
+        " display.
+        let s:curbuffer.dmids = [0]
     endif
 
     for item in s:xml_get_all(a:timeline, 'direct_message')
-	call add(s:curbuffer.dmids, s:xml_get_element(item, 'id'))
+        call add(s:curbuffer.dmids, s:xml_get_element(item, 'id'))
 
-	let user = s:xml_get_element(item, a:sent_or_recv == 'sent' ? 'recipient_screen_name' : 'sender_screen_name')
-	let mesg = s:get_status_text(item)
-	let date = s:time_filter(s:xml_get_element(item, 'created_at'))
+        let user = s:xml_get_element(item, a:sent_or_recv == 'sent' ? 'recipient_screen_name' : 'sender_screen_name')
+        let mesg = s:get_status_text(item)
+        let date = s:time_filter(s:xml_get_element(item, 'created_at'))
 
-	call add(text, user.": ".s:convert_entity(mesg).' |'.date.'|')
+        call add(text, user.": ".s:convert_entity(mesg).' |'.date.'|')
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -3195,7 +3330,7 @@ function! s:Direct_Messages(mode, page)
     " Support pagination.
     let pagearg = ''
     if a:page > 1
-	let url = s:add_to_url(url, 'page='.a:page)
+        let url = s:add_to_url(url, 'page='.a:page)
     endif
     
     " Include entities to get URL expansions for t.co.
@@ -3204,15 +3339,15 @@ function! s:Direct_Messages(mode, page)
     " Support count parameter.
     let tcount = s:get_count()
     if tcount > 0
-	let url = s:add_to_url(url, 'count='.tcount)
+        let url = s:add_to_url(url, 'count='.tcount)
     endif
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting Twitter direct messages ".s_or_r." timeline: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(0)
@@ -3234,7 +3369,7 @@ let s:woeid_list = {}
 " Get master list of WOEIDs from Twitter API.
 function! s:get_woeids()
     if s:woeid_list != {}
-	return s:woeid_list
+        return s:woeid_list
     endif
 
     redraw
@@ -3244,38 +3379,38 @@ function! s:get_woeids()
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     let result = s:parse_json(output)
     if error != ''
-	let errormsg = get(result, 'error', '')
-	call s:errormsg("Error retrieving list of WOEIDs: ".(errormsg != '' ? errormsg : error))
-	return {}
+        let errormsg = get(result, 'error', '')
+        call s:errormsg("Error retrieving list of WOEIDs: ".(errormsg != '' ? errormsg : error))
+        return {}
     endif
 
     if type(result) != type([])
-	call s:errormsg("Invalid JSON result from ".url)
-	return {}
+        call s:errormsg("Invalid JSON result from ".url)
+        return {}
     endif
 
     for location in result
-	let name = get(location, 'name', '')
-	let woeid = get(location, 'woeid', '')
-	let placetype = get(get(location, 'placeType', {}), 'name', '')
-	let country = get(location, 'country', '')
+        let name = get(location, 'name', '')
+        let woeid = get(location, 'woeid', '')
+        let placetype = get(get(location, 'placeType', {}), 'name', '')
+        let country = get(location, 'country', '')
 
-	if placetype == 'Supername'
-	    let s:woeid_list[name] = { 'woeid' : woeid, 'towns' : {} }
-	elseif placetype == 'Country' 
-	    if !has_key(s:woeid_list, country)
-		let s:woeid_list[country] = { 'towns' : {} }
-	    endif
-	    let s:woeid_list[country]['woeid'] = woeid
-	elseif placetype == 'Town'
-	    if !has_key(s:woeid_list, country)
-		let s:woeid_list[country] = { 'towns' : {} }
-	    endif
-	    let s:woeid_list[country]['towns'][name] = { 'woeid' : woeid }
-	else
-	    call s:errormsg('Unknown location type "'.placetype.'".')
-	    return {}
-	endif
+        if placetype == 'Supername'
+            let s:woeid_list[name] = { 'woeid' : woeid, 'towns' : {} }
+        elseif placetype == 'Country' 
+            if !has_key(s:woeid_list, country)
+                let s:woeid_list[country] = { 'towns' : {} }
+            endif
+            let s:woeid_list[country]['woeid'] = woeid
+        elseif placetype == 'Town'
+            if !has_key(s:woeid_list, country)
+                let s:woeid_list[country] = { 'towns' : {} }
+            endif
+            let s:woeid_list[country]['towns'][name] = { 'woeid' : woeid }
+        else
+            call s:errormsg('Unknown location type "'.placetype.'".')
+            return {}
+        endif
     endfor
 
     redraw
@@ -3287,27 +3422,27 @@ endfunction
 function! s:get_woeid_pagelen()
     let maxlen = &lines - 3
     if maxlen < 5
-	call s:errormsg('Window is not tall enough for menu.')
-	return -1
+        call s:errormsg('Window is not tall enough for menu.')
+        return -1
     endif
     return maxlen < 20 ? maxlen : 20
 endfunction
 
 function! s:comp_countries(a, b)
     if a:a == 'Worldwide'
-	return -1
+        return -1
     elseif a:b == 'Worldwide'
-	return 1
+        return 1
     elseif a:a == 'United States'
-	return -1
+        return -1
     elseif a:b == 'United States'
-	return 1
+        return 1
     elseif a:a == a:b
-	return 0
+        return 0
     elseif a:a < a:b
-	return -1
+        return -1
     else
-	return 1
+        return 1
     endif
 endfunction
 
@@ -3321,9 +3456,9 @@ endfunction
 
 function! s:get_woeid(country, town)
     if a:town == '' || a:town == a:country
-	return s:woeid_list[a:country]['woeid']
+        return s:woeid_list[a:country]['woeid']
     else
-	return s:woeid_list[a:country]['towns'][a:town]['woeid']
+        return s:woeid_list[a:country]['towns'][a:town]['woeid']
     endif
 endfunction
 
@@ -3332,16 +3467,16 @@ function! s:make_loc_menu(what, namelist, pagelen, indx)
     let menu = [ 'Pick a '.a:what.':' ]
     let item_count = 0
     for name in sublist
-	let item_count += 1
-	call add(menu, printf('%2d', item_count).'. '.name)
+        let item_count += 1
+        call add(menu, printf('%2d', item_count).'. '.name)
     endfor
     if a:indx + a:pagelen < len(a:namelist)
-	let item_count += 1
-	call add(menu, printf('%2d', item_count).'. next page')
+        let item_count += 1
+        call add(menu, printf('%2d', item_count).'. next page')
     endif
     if a:indx > 0
-	let item_count += 1
-	call add(menu, printf('%2d', item_count).'. previous page')
+        let item_count += 1
+        call add(menu, printf('%2d', item_count).'. previous page')
     endif
     return menu
 endfunction
@@ -3352,36 +3487,36 @@ function! s:pick_woeid_town(country)
     let pagelen = s:get_woeid_pagelen()
 
     while 1
-	let menu = s:make_loc_menu('location', towns, pagelen, indx)
+        let menu = s:make_loc_menu('location', towns, pagelen, indx)
 
-	call inputsave()
-	let input = inputlist(menu)
-	call inputrestore()
+        call inputsave()
+        let input = inputlist(menu)
+        call inputrestore()
 
-	if input < 1 || input >= len(menu)
-	    " Invalid input cancels the command.
-	    redraw
-	    echo 'Trends region unchanged.'
-	    return 0
-	endif
+        if input < 1 || input >= len(menu)
+            " Invalid input cancels the command.
+            redraw
+            echo 'Trends region unchanged.'
+            return 0
+        endif
 
-	let select = menu[input][4:]
+        let select = menu[input][4:]
 
-	if select == 'next page'
-	    let indx += pagelen
-	elseif select == 'previous page'
-	    let indx -= pagelen
-	    if indx < 0
-		indx = 0
-	    endif
-	else
-	    let g:twitvim_woeid = s:get_woeid(a:country, select)
+        if select == 'next page'
+            let indx += pagelen
+        elseif select == 'previous page'
+            let indx -= pagelen
+            if indx < 0
+                indx = 0
+            endif
+        else
+            let g:twitvim_woeid = s:get_woeid(a:country, select)
 
-	    redraw
-	    echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
+            redraw
+            echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
 
-	    return g:twitvim_woeid
-	end
+            return g:twitvim_woeid
+        end
     endwhile
 endfunction
 
@@ -3389,47 +3524,47 @@ endfunction
 function! s:pick_woeid()
     let indx = 0
     if s:get_woeids() == {}
-	return -1
+        return -1
     endif
     let countries = s:get_country_list()
     let pagelen = s:get_woeid_pagelen()
 
     while 1
-	let menu = s:make_loc_menu('country', countries, pagelen, indx)
+        let menu = s:make_loc_menu('country', countries, pagelen, indx)
 
-	call inputsave()
-	let input = inputlist(menu)
-	call inputrestore()
+        call inputsave()
+        let input = inputlist(menu)
+        call inputrestore()
 
-	if input < 1 || input >= len(menu)
-	    " Invalid input cancels the command.
-	    redraw
-	    echo 'Trends region unchanged.'
-	    return 0
-	endif
+        if input < 1 || input >= len(menu)
+            " Invalid input cancels the command.
+            redraw
+            echo 'Trends region unchanged.'
+            return 0
+        endif
 
-	let select = menu[input][4:]
+        let select = menu[input][4:]
 
-	if select == 'next page'
-	    let indx += pagelen
-	elseif select == 'previous page'
-	    let indx -= pagelen
-	    if indx < 0
-		indx = 0
-	    endif
-	else
-	    if s:woeid_list[select]['towns'] == {}
-		let g:twitvim_woeid = s:get_woeid(select, '')
+        if select == 'next page'
+            let indx += pagelen
+        elseif select == 'previous page'
+            let indx -= pagelen
+            if indx < 0
+                indx = 0
+            endif
+        else
+            if s:woeid_list[select]['towns'] == {}
+                let g:twitvim_woeid = s:get_woeid(select, '')
 
-		redraw
-		echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
+                redraw
+                echo 'Trends region set to '.select.' ('.g:twitvim_woeid.').'
 
-		return g:twitvim_woeid
-	    else
-		echo ' '
-		return s:pick_woeid_town(select)
-	    end
-	endif
+                return g:twitvim_woeid
+            else
+                echo ' '
+                return s:pick_woeid_town(select)
+            end
+        endif
     endwhile
 endfunction
 
@@ -3444,12 +3579,12 @@ function! s:show_trends_json(timeline)
 
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
-	call add(text, title.'*')
-	call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, title.'*')
+        call add(text, repeat('=', s:mbstrlen(title)).'*')
     endif
 
     for item in get(get(a:timeline, 0, {}), 'trends', {})
-	call add(text, s:convert_entity(get(item, 'name', '')))
+        call add(text, s:convert_entity(get(item, 'name', '')))
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -3465,14 +3600,14 @@ function! s:Local_Trends()
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     let result = s:parse_json(output)
     if error != ''
-	let errormsg = get(result, 'error', '')
-	call s:errormsg("Error retrieving trending topics: ".(errormsg != '' ? errormsg : error))
-	return {}
+        let errormsg = get(result, 'error', '')
+        call s:errormsg("Error retrieving trending topics: ".(errormsg != '' ? errormsg : error))
+        return {}
     endif
 
     if type(result) != type([])
-	call s:errormsg("Invalid JSON result from ".url)
-	return {}
+        call s:errormsg("Invalid JSON result from ".url)
+        return {}
     endif
 
     call s:save_buffer(0)
@@ -3498,46 +3633,46 @@ endif
 " next/prev pagination commands.
 function! s:load_timeline(buftype, user, list, page)
     if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me" || a:buftype == 'favorites'
-	call s:get_timeline(a:buftype, a:user, a:page)
+        call s:get_timeline(a:buftype, a:user, a:page)
     elseif a:buftype == "list"
-	call s:get_list_timeline(a:user, a:list, a:page)
+        call s:get_list_timeline(a:user, a:list, a:page)
     elseif a:buftype == "dmsent" || a:buftype == "dmrecv"
-	call s:Direct_Messages(a:buftype, a:page)
+        call s:Direct_Messages(a:buftype, a:page)
     elseif a:buftype == "search"
-	call s:get_summize(a:user, a:page)
+        call s:get_summize(a:user, a:page)
     elseif a:buftype == 'trends'
-	call s:Local_Trends()
+        call s:Local_Trends()
     endif
 endfunction
 
 " Refresh the timeline buffer.
 function! s:RefreshTimeline()
     if s:curbuffer != {}
-	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page)
+        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page)
     else
-	call s:warnmsg("No timeline buffer to refresh.")
+        call s:warnmsg("No timeline buffer to refresh.")
     endif
 endfunction
 
 " Go to next page in timeline.
 function! s:NextPageTimeline()
     if s:curbuffer != {}
-	call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page + 1)
+        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page + 1)
     else
-	call s:warnmsg("No timeline buffer.")
+        call s:warnmsg("No timeline buffer.")
     endif
 endfunction
 
 " Go to previous page in timeline.
 function! s:PrevPageTimeline()
     if s:curbuffer != {}
-	if s:curbuffer.page <= 1
-	    call s:warnmsg("Timeline is already on first page.")
-	else
-	    call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page - 1)
-	endif
+        if s:curbuffer.page <= 1
+            call s:warnmsg("Timeline is already on first page.")
+        else
+            call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page - 1)
+        endif
     else
-	call s:warnmsg("No timeline buffer.")
+        call s:warnmsg("No timeline buffer.")
     endif
 endfunction
 
@@ -3547,8 +3682,8 @@ function! s:DoList(page, arg1, ...)
     let user = ''
     let list = a:arg1
     if a:0 > 0
-	let user = a:arg1
-	let list = a:1
+        let user = a:arg1
+        let list = a:1
     endif
     call s:get_list_timeline(user, list, a:page)
 endfunction
@@ -3641,45 +3776,45 @@ function! s:do_send_dm(user, mesg)
     " before URL-encoding the special characters because URL-encoding increases
     " the string length.
     if mesglen > s:char_limit
-	call s:warnmsg("Your message has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
+        call s:warnmsg("Your message has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
     elseif mesglen < 1
-	call s:warnmsg("Your message was empty. It was not sent.")
+        call s:warnmsg("Your message was empty. It was not sent.")
     else
-	redraw
-	echo "Sending message to ".a:user."..."
+        redraw
+        echo "Sending message to ".a:user."..."
 
-	let url = s:get_api_root()."/direct_messages/new.xml"
-	let parms = { "source" : "twitvim", "user" : a:user, "text" : mesg }
+        let url = s:get_api_root()."/direct_messages/new.xml"
+        let parms = { "source" : "twitvim", "user" : a:user, "text" : mesg }
 
-	let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
+        let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
 
-	if error != ''
-	    let errormsg = s:xml_get_element(output, 'error')
-	    call s:errormsg("Error sending your message: ".(errormsg != '' ? errormsg : error))
-	else
-	    redraw
-	    echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
-	endif
+        if error != ''
+            let errormsg = s:xml_get_element(output, 'error')
+            call s:errormsg("Error sending your message: ".(errormsg != '' ? errormsg : error))
+        else
+            redraw
+            echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
+        endif
     endif
 endfunction
 
 " Send a direct message. Prompt user for message if not given.
 function! s:send_dm(user, mesg)
     if a:user == ""
-	call s:warnmsg("No recipient specified for direct message.")
-	return
+        call s:warnmsg("No recipient specified for direct message.")
+        return
     endif
 
     let mesg = a:mesg
     if mesg == ""
-	call inputsave()
-	let mesg = input("DM ".a:user.": ")
-	call inputrestore()
+        call inputsave()
+        let mesg = input("DM ".a:user.": ")
+        call inputrestore()
     endif
 
     if mesg == ""
-	call s:warnmsg("Your message was empty. It was not sent.")
-	return
+        call s:warnmsg("Your message was empty. It was not sent.")
+        return
     endif
 
     call s:do_send_dm(a:user, mesg)
@@ -3697,9 +3832,9 @@ function! s:get_rate_limit()
     let url = s:get_api_root()."/account/rate_limit_status.xml"
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting rate limit info: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting rate limit info: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     let remaining = s:xml_get_element(output, 'remaining-hits')
@@ -3729,9 +3864,9 @@ function! s:set_location(loc)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error setting location: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error setting location: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     redraw
@@ -3752,17 +3887,17 @@ function! s:follow_user(user)
     let url = s:get_api_root()."/friendships/show.xml?target_screen_name=".a:user
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     let fship_source = s:xml_get_element(output, 'source')
     let following = s:xml_get_element(fship_source, 'following')
     if following == 'true'
-	redraw
-	echo "Already following ".a:user."'s timeline."
-	return
+        redraw
+        echo "Already following ".a:user."'s timeline."
+        return
     endif
 
     let parms = {}
@@ -3772,16 +3907,16 @@ function! s:follow_user(user)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error following user: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error following user: ".(errormsg != '' ? errormsg : error))
     else
-	let protected = s:xml_get_element(output, 'protected')
-	redraw
-	if protected == "true"
-	    echo "Made request to follow ".a:user."'s protected timeline."
-	else
-	    echo "Now following ".a:user."'s timeline."
-	endif
+        let protected = s:xml_get_element(output, 'protected')
+        redraw
+        if protected == "true"
+            echo "Made request to follow ".a:user."'s protected timeline."
+        else
+            echo "Now following ".a:user."'s timeline."
+        endif
     endif
 endfunction
 
@@ -3802,11 +3937,11 @@ function! s:unfollow_user(user)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error unfollowing user: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error unfollowing user: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	echo "Stopped following ".a:user."'s timeline."
+        redraw
+        echo "Stopped following ".a:user."'s timeline."
     endif
 endfunction
 
@@ -3827,11 +3962,11 @@ function! s:block_user(user, unblock)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error ".(a:unblock ? "unblocking" : "blocking")." user: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error ".(a:unblock ? "unblocking" : "blocking")." user: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	echo "User ".a:user." is now ".(a:unblock ? "unblocked" : "blocked")."."
+        redraw
+        echo "User ".a:user." is now ".(a:unblock ? "unblocked" : "blocked")."."
     endif
 endfunction
 
@@ -3855,11 +3990,11 @@ function! s:report_spam(user)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error reporting user for spam: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error reporting user for spam: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	echo "Reported user ".a:user." for spam."
+        redraw
+        echo "Reported user ".a:user." for spam."
     endif
 endfunction
 
@@ -3871,11 +4006,11 @@ endif
 " Enable/disable retweets from user.
 function! s:enable_retweets(user, enable)
     if a:enable
-	let msg1 = "Enabling"
-	let msg2 = "Enabled"
+        let msg1 = "Enabling"
+        let msg2 = "Enabled"
     else
-	let msg1 = "Disabling"
-	let msg2 = "Disabled"
+        let msg1 = "Disabling"
+        let msg2 = "Disabled"
     endif
     let msg3 = substitute(msg1, '^.', '\l&', '')
 
@@ -3890,11 +4025,11 @@ function! s:enable_retweets(user, enable)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error ".msg3." retweets from user: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error ".msg3." retweets from user: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	echo msg2." retweets from user ".a:user."."
+        redraw
+        echo msg2." retweets from user ".a:user."."
     endif
 endfunction
 
@@ -3910,17 +4045,17 @@ endif
 function! s:add_to_list(remove, listname, username)
     let user = s:get_twitvim_username()
     if user == ''
-	call s:errormsg('Twitter login not set. Please specify a username.')
-	return -1
+        call s:errormsg('Twitter login not set. Please specify a username.')
+        return -1
     endif
 
     redraw
     if a:remove
-	echo "Removing ".a:username." from list ".a:listname."..."
-	let verb = 'destroy'
+        echo "Removing ".a:username." from list ".a:listname."..."
+        let verb = 'destroy'
     else
-	echo "Adding ".a:username." to list ".a:listname."..."
-	let verb = 'create'
+        echo "Adding ".a:username." to list ".a:listname."..."
+        let verb = 'create'
     endif
 
     let parms = {}
@@ -3932,23 +4067,23 @@ function! s:add_to_list(remove, listname, username)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error ".(a:remove ? "removing user from" : "adding user to")." list: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error ".(a:remove ? "removing user from" : "adding user to")." list: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	if a:remove
-	    echo "Removed ".a:username." from list ".a:listname."."
-	else
-	    echo "Added ".a:username." to list ".a:listname."."
-	endif
+        redraw
+        if a:remove
+            echo "Removed ".a:username." from list ".a:listname."."
+        else
+            echo "Added ".a:username." to list ".a:listname."."
+        endif
     endif
 endfunction
 
 function! s:do_add_to_list(arg1, ...)
     if a:0 == 0
-	call s:errormsg("Syntax: :AddToListTwitter listname username")
+        call s:errormsg("Syntax: :AddToListTwitter listname username")
     else
-	call s:add_to_list(0, a:arg1, a:1)
+        call s:add_to_list(0, a:arg1, a:1)
     endif
 endfunction
 
@@ -3959,9 +4094,9 @@ endif
 
 function! s:do_remove_from_list(arg1, ...)
     if a:0 == 0
-	call s:errormsg("Syntax: :RemoveFromListTwitter listname username")
+        call s:errormsg("Syntax: :RemoveFromListTwitter listname username")
     else
-	call s:add_to_list(1, a:arg1, a:1)
+        call s:add_to_list(1, a:arg1, a:1)
     endif
 endfunction
 
@@ -3976,11 +4111,11 @@ let s:user_winname = "TwitterInfo_".localtime()
 function! s:yesorno(s)
     let s = tolower(a:s)
     if s == "true" || s == "yes"
-	return "yes"
+        return "yes"
     elseif s == "false" || s == "no" || s == ""
-	return "no"
+        return "no"
     else
-	return s
+        return s
     endif
 endfunction
 
@@ -4029,9 +4164,9 @@ function! s:format_user_info(output, fship_output)
 
     let statusnode = s:xml_get_element(output, 'status')
     if statusnode != ""
-	let status = s:get_status_text(statusnode)
-	let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
-	call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+        let status = s:get_status_text(statusnode)
+        let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
+        call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
     endif
 
     " call add(text, fship_output)
@@ -4043,11 +4178,11 @@ endfunction
 function! s:get_user_info(username)
     let user = a:username
     if user == ''
-	let user = s:get_twitvim_username()
-	if user == ''
-	    call s:errormsg('Twitter login not set. Please specify a username.')
-	    return
-	endif
+        let user = s:get_twitvim_username()
+        if user == ''
+            call s:errormsg('Twitter login not set. Please specify a username.')
+            return
+        endif
     endif
 
     redraw
@@ -4060,17 +4195,17 @@ function! s:get_user_info(username)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting user info: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting user info: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     let url = s:get_api_root()."/friendships/show.xml?target_screen_name=".user
     let [error, fship_output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(fship_output, 'error')
-	call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(fship_output, 'error')
+        call s:errormsg("Error getting friendship info: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(1)
@@ -4110,11 +4245,11 @@ endfunction
 function! s:get_list_info(username, listname)
     let user = a:username
     if user == ''
-	let user = s:get_twitvim_username()
-	if user == ''
-	    call s:errormsg('Twitter login not set. Please specify a username.')
-	    return
-	endif
+        let user = s:get_twitvim_username()
+        if user == ''
+            call s:errormsg('Twitter login not set. Please specify a username.')
+            return
+        endif
     endif
 
     let list = a:listname
@@ -4125,9 +4260,9 @@ function! s:get_list_info(username, listname)
     let url = s:get_api_root().'/lists/show.xml?slug='.list.'&owner_screen_name='.user
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg('Error getting information on list '.user.'/'.list.': '.(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg('Error getting information on list '.user.'/'.list.': '.(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(1)
@@ -4150,8 +4285,8 @@ function! s:DoListInfo(arg1, ...)
     let user = ''
     let list = a:arg1
     if a:0 > 0
-	let user = a:arg1
-	let list = a:1
+        let user = a:arg1
+        let list = a:1
     endif
     call s:get_list_info(user, list)
 endfunction
@@ -4166,44 +4301,44 @@ function! s:format_user_list(output, title, show_following)
 
     let showheader = s:get_show_header()
     if showheader
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, a:title.'*')
-	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+        " The extra stars at the end are for the syntax highlighter to
+        " recognize the title. Then the syntax highlighter hides the stars by
+        " coloring them the same as the background. It is a bad hack.
+        call add(text, a:title.'*')
+        call add(text, repeat('=', s:mbstrlen(a:title)).'*')
     endif
 
     for user in s:xml_get_all(a:output, 'user')
-	let following_str = ''
-	if a:show_following
-	    let following = s:xml_get_element(user, 'following')
-	    if following == 'true'
-		let following_str = ' Following'
-	    else
-		let follow_req = s:xml_get_element(user, 'follow_request_sent')
-		let following_str = follow_req == 'true' ? ' Follow request sent' : ' Not following'
-	    endif
-	endif
+        let following_str = ''
+        if a:show_following
+            let following = s:xml_get_element(user, 'following')
+            if following == 'true'
+                let following_str = ' Following'
+            else
+                let follow_req = s:xml_get_element(user, 'follow_request_sent')
+                let following_str = follow_req == 'true' ? ' Follow request sent' : ' Not following'
+            endif
+        endif
 
-	let name = s:convert_entity(s:xml_get_element(user, 'name'))
-	let screen = s:xml_get_element(user, 'screen_name')
-	let location = s:convert_entity(s:xml_get_element(user, 'location'))
-	let slocation = location == '' ? '' : '|'.location
-	call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
+        let name = s:convert_entity(s:xml_get_element(user, 'name'))
+        let screen = s:xml_get_element(user, 'screen_name')
+        let location = s:convert_entity(s:xml_get_element(user, 'location'))
+        let slocation = location == '' ? '' : '|'.location
+        call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
 
-	let desc = s:xml_get_element(user, 'description')
-	if desc != ''
-	    call add(text, 'Bio: '.s:convert_entity(desc))
-	endif
+        let desc = s:xml_get_element(user, 'description')
+        if desc != ''
+            call add(text, 'Bio: '.s:convert_entity(desc))
+        endif
 
-	let statusnode = s:xml_get_element(user, 'status')
-	if statusnode != ""
-	    let status = s:get_status_text(statusnode)
-	    let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
-	    call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
-	endif
+        let statusnode = s:xml_get_element(user, 'status')
+        if statusnode != ""
+            let status = s:get_status_text(statusnode)
+            let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
+            call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
+        endif
 
-	call add(text, '')
+        call add(text, '')
     endfor
     return text
 endfunction
@@ -4212,7 +4347,7 @@ endfunction
 function! s:get_friends_ids_2(cursor, user, followers)
     let what = a:followers ? 'followers IDs' : 'friends IDs'
     if a:user != ''
-	let what .= ' of '.a:user
+        let what .= ' of '.a:user
     endif
 
     let query = '/' . (a:followers ? 'followers' : 'friends') . '/ids.xml'
@@ -4222,14 +4357,14 @@ function! s:get_friends_ids_2(cursor, user, followers)
 
     let url = s:get_api_root().query.'?cursor='.a:cursor
     if a:user != ''
-	let url = s:add_to_url(url, 'screen_name='.a:user)
+        let url = s:add_to_url(url, 'screen_name='.a:user)
     endif
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg('Error getting '.what.': '.(errormsg != '' ? errormsg : error))
-	return {}
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg('Error getting '.what.': '.(errormsg != '' ? errormsg : error))
+        return {}
     endif
     let result = {}
     let result.next_cursor = s:xml_get_element(output, 'next_cursor')
@@ -4248,9 +4383,9 @@ function! s:get_friends_info_2(ids, index)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg('Error getting friends/followers info: '.(errormsg != '' ? errormsg : error))
-	return ''
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg('Error getting friends/followers info: '.(errormsg != '' ? errormsg : error))
+        return ''
     endif
 
     return output
@@ -4259,38 +4394,38 @@ endfunction
 " Call Twitter API to get friends or followers list.
 function! s:get_friends_2(cursor, ids, next_cursor, prev_cursor, index, user, followers)
     if a:ids == []
-	let result = s:get_friends_ids_2(a:cursor, a:user, a:followers)
-	if result == {}
-	    return
-	endif
-	let ids = result.ids
-	let next_cursor = result.next_cursor
-	let prev_cursor = result.prev_cursor
-	if a:index < 0
-	    " If user is paging backwards, we want the last 100 IDs in the
-	    " list.
-	    let index = len(ids) - 100
-	    if index < 0
-		let index = 0
-	    endif
-	else
-	    let index = 0
-	endif
+        let result = s:get_friends_ids_2(a:cursor, a:user, a:followers)
+        if result == {}
+            return
+        endif
+        let ids = result.ids
+        let next_cursor = result.next_cursor
+        let prev_cursor = result.prev_cursor
+        if a:index < 0
+            " If user is paging backwards, we want the last 100 IDs in the
+            " list.
+            let index = len(ids) - 100
+            if index < 0
+                let index = 0
+            endif
+        else
+            let index = 0
+        endif
     else
-	let ids = a:ids
-	let next_cursor = a:next_cursor
-	let prev_cursor = a:prev_cursor
-	let index = a:index
+        let ids = a:ids
+        let next_cursor = a:next_cursor
+        let prev_cursor = a:prev_cursor
+        let index = a:index
     endif
 
     let output = s:get_friends_info_2(ids, index)
     if output == ''
-	return
+        return
     endif
 
     let title = a:followers ? 'Followers list' : 'Friends list'
     if a:user != ''
-	let title .= ' of '.a:user
+        let title .= ' of '.a:user
     endif
 
     let buftype = a:followers ? 'followers' : 'friends'
@@ -4316,25 +4451,25 @@ endfunction
 " Call Twitter API to get friends or followers list.
 function! s:get_friends(cursor, user, followers)
     if a:followers
-	let buftype = 'followers'
-	let query = '/statuses/followers.xml'
-	if a:user != ''
-	    let what = 'followers list of '.a:user
-	    let title = 'People following '.a:user
-	else
-	    let what = 'followers list'
-	    let title = 'People following you'
-	endif
+        let buftype = 'followers'
+        let query = '/statuses/followers.xml'
+        if a:user != ''
+            let what = 'followers list of '.a:user
+            let title = 'People following '.a:user
+        else
+            let what = 'followers list'
+            let title = 'People following you'
+        endif
     else
-	let buftype = 'friends'
-	let query = '/statuses/friends.xml'
-	if a:user != ''
-	    let what = 'friends list of '.a:user
-	    let title = 'People '.a:user.' is following'
-	else
-	    let what = 'friends list'
-	    let title = "People you're following"
-	endif
+        let buftype = 'friends'
+        let query = '/statuses/friends.xml'
+        if a:user != ''
+            let what = 'friends list of '.a:user
+            let title = 'People '.a:user.' is following'
+        else
+            let what = 'friends list'
+            let title = "People you're following"
+        endif
     endif
 
     redraw
@@ -4342,7 +4477,7 @@ function! s:get_friends(cursor, user, followers)
 
     let url = s:add_to_url(s:get_api_root().query, 'cursor='.a:cursor)
     if a:user != ''
-	let url = s:add_to_url(url, 'screen_name='.a:user)
+        let url = s:add_to_url(url, 'screen_name='.a:user)
     endif
 
     " Include entities to get URL expansions for t.co.
@@ -4350,9 +4485,9 @@ function! s:get_friends(cursor, user, followers)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(1)
@@ -4373,23 +4508,23 @@ endfunction
 function! s:get_list_members(cursor, user, list, subscribers)
     let user = a:user
     if user == ''
-	let user = s:get_twitvim_username()
-	if user == ''
-	    call s:errormsg('Twitter login not set. Please specify a username.')
-	    return
-	endif
+        let user = s:get_twitvim_username()
+        if user == ''
+            call s:errormsg('Twitter login not set. Please specify a username.')
+            return
+        endif
     endif
 
     if a:subscribers
-	let item = "list subscribers"
-	let query = "/subscribers"
-	let buftype = "listsubs"
-	let title = 'Subscribers to list '.user.'/'.a:list
+        let item = "list subscribers"
+        let query = "/subscribers"
+        let buftype = "listsubs"
+        let title = 'Subscribers to list '.user.'/'.a:list
     else
-	let item = "list members"
-	let query = "/members"
-	let buftype = "listmembers"
-	let title = 'Members of list '.user.'/'.a:list
+        let item = "list members"
+        let query = "/members"
+        let buftype = "listmembers"
+        let title = 'Members of list '.user.'/'.a:list
     endif
 
     redraw
@@ -4402,9 +4537,9 @@ function! s:get_list_members(cursor, user, list, subscribers)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting ".item.": ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting ".item.": ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(1)
@@ -4427,8 +4562,8 @@ function! s:DoListMembers(subscribers, arg1, ...)
     let user = ''
     let list = a:arg1
     if a:0 > 0
-	let user = a:arg1
-	let list = a:1
+        let user = a:arg1
+        let list = a:1
     endif
     call s:get_list_members(-1, user, list, a:subscribers)
 endfunction
@@ -4439,23 +4574,23 @@ function! s:format_list_list(output, title)
 
     let showheader = s:get_show_header()
     if showheader
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, a:title.'*')
-	call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+        " The extra stars at the end are for the syntax highlighter to
+        " recognize the title. Then the syntax highlighter hides the stars by
+        " coloring them the same as the background. It is a bad hack.
+        call add(text, a:title.'*')
+        call add(text, repeat('=', s:mbstrlen(a:title)).'*')
     endif
 
     for list in s:xml_get_all(a:output, 'list')
-	let name = s:xml_get_element(list, 'full_name')
-	let following = s:xml_get_element(list, 'member_count')
-	let followers = s:xml_get_element(list, 'subscriber_count')
-	call add(text, 'List: '.name.' (Following: '.following.' Followers: '.followers.')')
-	let desc = s:convert_entity(s:xml_get_element(list, 'description'))
-	if desc != ""
-	    call add(text, 'Desc: '.desc)
-	endif
-	call add(text, '')
+        let name = s:xml_get_element(list, 'full_name')
+        let following = s:xml_get_element(list, 'member_count')
+        let followers = s:xml_get_element(list, 'subscriber_count')
+        call add(text, 'List: '.name.' (Following: '.following.' Followers: '.followers.')')
+        let desc = s:convert_entity(s:xml_get_element(list, 'description'))
+        if desc != ""
+            call add(text, 'Desc: '.desc)
+        endif
+        call add(text, '')
     endfor
     return text
 endfunction
@@ -4465,23 +4600,23 @@ function! s:get_user_lists(cursor, user, what)
     let user = a:user
     let titlename = user
     if user == ''
-	let titlename = 'you'
+        let titlename = 'you'
     endif
     if a:what == "owned"
-	let item = "lists"
-	let query = "lists"
-	let title = "Lists owned by ".titlename
-	let buftype = 'userlists'
+        let item = "lists"
+        let query = "lists"
+        let title = "Lists owned by ".titlename
+        let buftype = 'userlists'
     elseif a:what == "memberships"
-	let item = "list memberships"
-	let query = "lists/memberships"
-	let title = "Lists following ".titlename
-	let buftype = 'userlistmem'
+        let item = "list memberships"
+        let query = "lists/memberships"
+        let title = "Lists following ".titlename
+        let buftype = 'userlistmem'
     else
-	let item = "list subscriptions"
-	let query = "lists/subscriptions"
-	let title = "Lists followed by ".titlename
-	let buftype = 'userlistsubs'
+        let item = "list subscriptions"
+        let query = "lists/subscriptions"
+        let title = "Lists followed by ".titlename
+        let buftype = 'userlistsubs'
     endif
 
     redraw
@@ -4489,13 +4624,13 @@ function! s:get_user_lists(cursor, user, what)
 
     let url = s:get_api_root().'/'.query.'.xml?cursor='.a:cursor
     if user != ''
-	let url = s:add_to_url(url, 'screen_name='.user)
+        let url = s:add_to_url(url, 'screen_name='.user)
     endif
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error getting user's ".item.": ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error getting user's ".item.": ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     call s:save_buffer(1)
@@ -4516,48 +4651,48 @@ endfunction
 " For use by next/prev pagination commands.
 function! s:load_prevnext_friends_info_2(buftype, infobuffer, previous)
     if a:previous
-	if a:infobuffer.findex == 0
-	    if a:infobuffer.prev_cursor == 0
-		call s:warnmsg('No previous page in info buffer.')
-		return
-	    endif
-	    let cursor = a:infobuffer.prev_cursor
-	    let ids = []
-	    let next_cursor = 0
-	    let prev_cursor = 0
+        if a:infobuffer.findex == 0
+            if a:infobuffer.prev_cursor == 0
+                call s:warnmsg('No previous page in info buffer.')
+                return
+            endif
+            let cursor = a:infobuffer.prev_cursor
+            let ids = []
+            let next_cursor = 0
+            let prev_cursor = 0
 
-	    " This tells s:get_friends_2() that we are paging backwards so
-	    " it'll display the last 100 items in the new ID list.
-	    let index = -1 
-	else
-	    let cursor = a:infobuffer.cursor
-	    let ids = a:infobuffer.flist
-	    let next_cursor = a:infobuffer.next_cursor
-	    let prev_cursor = a:infobuffer.prev_cursor
-	    let index = a:infobuffer.findex - 100
-	    if index < 0
-		let index = 0
-	    endif
-	endif
+            " This tells s:get_friends_2() that we are paging backwards so
+            " it'll display the last 100 items in the new ID list.
+            let index = -1 
+        else
+            let cursor = a:infobuffer.cursor
+            let ids = a:infobuffer.flist
+            let next_cursor = a:infobuffer.next_cursor
+            let prev_cursor = a:infobuffer.prev_cursor
+            let index = a:infobuffer.findex - 100
+            if index < 0
+                let index = 0
+            endif
+        endif
     else
-	let nextindex = a:infobuffer.findex + 100
-	if nextindex >= len(a:infobuffer.flist)
-	    if a:infobuffer.next_cursor == 0
-		call s:warnmsg('No next page in info buffer.')
-		return
-	    endif
-	    let cursor = a:infobuffer.next_cursor
-	    let ids = []
-	    let next_cursor = 0
-	    let prev_cursor = 0
-	    let index = 0
-	else
-	    let cursor = a:infobuffer.cursor
-	    let ids = a:infobuffer.flist
-	    let next_cursor = a:infobuffer.next_cursor
-	    let prev_cursor = a:infobuffer.prev_cursor
-	    let index = nextindex
-	endif
+        let nextindex = a:infobuffer.findex + 100
+        if nextindex >= len(a:infobuffer.flist)
+            if a:infobuffer.next_cursor == 0
+                call s:warnmsg('No next page in info buffer.')
+                return
+            endif
+            let cursor = a:infobuffer.next_cursor
+            let ids = []
+            let next_cursor = 0
+            let prev_cursor = 0
+            let index = 0
+        else
+            let cursor = a:infobuffer.cursor
+            let ids = a:infobuffer.flist
+            let next_cursor = a:infobuffer.next_cursor
+            let prev_cursor = a:infobuffer.prev_cursor
+            let index = nextindex
+        endif
     endif
 
     call s:get_friends_2(cursor, ids, next_cursor, prev_cursor, index, a:infobuffer.user, a:buftype == 'followers')
@@ -4567,70 +4702,70 @@ endfunction
 " For use by next/prev pagination commands.
 function! s:load_info(buftype, cursor, user, list)
     if a:buftype == "friends"
-	call s:get_friends(a:cursor, a:user, 0)
+        call s:get_friends(a:cursor, a:user, 0)
     elseif a:buftype == "followers"
-	call s:get_friends(a:cursor, a:user, 1)
+        call s:get_friends(a:cursor, a:user, 1)
     elseif a:buftype == "listmembers"
-	call s:get_list_members(a:cursor, a:user, a:list, 0)
+        call s:get_list_members(a:cursor, a:user, a:list, 0)
     elseif a:buftype == "listsubs"
-	call s:get_list_members(a:cursor, a:user, a:list, 1)
+        call s:get_list_members(a:cursor, a:user, a:list, 1)
     elseif a:buftype == "userlists"
-	call s:get_user_lists(a:cursor, a:user, 'owned')
+        call s:get_user_lists(a:cursor, a:user, 'owned')
     elseif a:buftype == "userlistmem"
-	call s:get_user_lists(a:cursor, a:user, 'memberships')
+        call s:get_user_lists(a:cursor, a:user, 'memberships')
     elseif a:buftype == "userlistsubs"
-	call s:get_user_lists(a:cursor, a:user, 'subscriptions')
+        call s:get_user_lists(a:cursor, a:user, 'subscriptions')
     elseif a:buftype == "profile"
-	call s:get_user_info(a:user)
+        call s:get_user_info(a:user)
     elseif a:buftype == 'listinfo'
-	call s:get_list_info(a:user, a:list)
+        call s:get_list_info(a:user, a:list)
     endif
 endfunction
 
 " Go to next page in info buffer.
 function! s:NextPageInfo()
     if s:infobuffer != {}
-" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-" 	    call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
-" 	    return
-" 	endif
-	if s:infobuffer.next_cursor == 0
-	    call s:warnmsg("No next page in info buffer.")
-	else
-	    call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor, s:infobuffer.user, s:infobuffer.list)
-	endif
+"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+"           call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
+"           return
+"       endif
+        if s:infobuffer.next_cursor == 0
+            call s:warnmsg("No next page in info buffer.")
+        else
+            call s:load_info(s:infobuffer.buftype, s:infobuffer.next_cursor, s:infobuffer.user, s:infobuffer.list)
+        endif
     else
-	call s:warnmsg("No info buffer.")
+        call s:warnmsg("No info buffer.")
     endif
 endfunction
 
 " Go to previous page in info buffer.
 function! s:PrevPageInfo()
     if s:infobuffer != {}
-" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-" 	    call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
-" 	    return
-" 	endif
-	if s:infobuffer.prev_cursor == 0
-	    call s:warnmsg("No previous page in info buffer.")
-	else
-	    call s:load_info(s:infobuffer.buftype, s:infobuffer.prev_cursor, s:infobuffer.user, s:infobuffer.list)
-	endif
+"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+"           call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
+"           return
+"       endif
+        if s:infobuffer.prev_cursor == 0
+            call s:warnmsg("No previous page in info buffer.")
+        else
+            call s:load_info(s:infobuffer.buftype, s:infobuffer.prev_cursor, s:infobuffer.user, s:infobuffer.list)
+        endif
     else
-	call s:warnmsg("No info buffer.")
+        call s:warnmsg("No info buffer.")
     endif
 endfunction
 
 " Refresh info buffer.
 function! s:RefreshInfo()
     if s:infobuffer != {}
-" 	if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-" 	    call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
-" 	    return
-" 	endif
-	call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
+"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+"           call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
+"           return
+"       endif
+        call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
     else
-	call s:warnmsg("No info buffer.")
+        call s:warnmsg("No info buffer.")
     endif
 endfunction
 
@@ -4671,22 +4806,22 @@ endif
 " Follow or unfollow a list.
 function! s:follow_list(unfollow, arg1, ...)
     if a:0 < 1
-	call s:errormsg('Please specify both a username and a list.')
-	return
+        call s:errormsg('Please specify both a username and a list.')
+        return
     endif
     let user = a:arg1
     let list = a:1
 
     if a:unfollow
-	let v1 = "Unfollowing"
-	let v2 = "unfollowing"
-	let v3 = "Stopped following"
-	let verb = 'destroy'
+        let v1 = "Unfollowing"
+        let v2 = "unfollowing"
+        let v3 = "Stopped following"
+        let verb = 'destroy'
     else
-	let v1 = "Following"
-	let v2 = "following"
-	let v3 = "Now following"
-	let verb = 'create'
+        let v1 = "Following"
+        let v2 = "following"
+        let v3 = "Now following"
+        let verb = 'create'
     endif
 
     redraw
@@ -4699,11 +4834,11 @@ function! s:follow_list(unfollow, arg1, ...)
 
     let [error, output] = s:run_curl_oauth(url, s:ologin, s:get_proxy(), s:get_proxy_login(), parms)
     if error != ''
-	let errormsg = s:xml_get_element(output, 'error')
-	call s:errormsg("Error ".v2." list: ".(errormsg != '' ? errormsg : error))
+        let errormsg = s:xml_get_element(output, 'error')
+        call s:errormsg("Error ".v2." list: ".(errormsg != '' ? errormsg : error))
     else
-	redraw
-	echo v3." list ".user."/".list."."
+        redraw
+        echo v3." list ".user."/".list."."
     endif
 endfunction
 
@@ -4722,12 +4857,12 @@ function! s:call_tweetburner(url)
     let [error, output] = s:run_curl('http://tweetburner.com/links', '', s:get_proxy(), s:get_proxy_login(), {'link[url]' : a:url})
 
     if error != ''
-	call s:errormsg("Error calling Tweetburner API: ".error)
-	return ""
+        call s:errormsg("Error calling Tweetburner API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from Tweetburner."
-	return output
+        redraw
+        echo "Received response from Tweetburner."
+        return output
     endif
 endfunction
 
@@ -4741,13 +4876,13 @@ function! s:call_snipurl(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling SnipURL API: ".error)
-	return ""
+        call s:errormsg("Error calling SnipURL API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from SnipURL."
-	" Get rid of extraneous newline at the beginning of SnipURL's output.
-	return substitute(output, '^\n', '', '')
+        redraw
+        echo "Received response from SnipURL."
+        " Get rid of extraneous newline at the beginning of SnipURL's output.
+        return substitute(output, '^\n', '', '')
     endif
 endfunction
 
@@ -4759,12 +4894,12 @@ function! s:call_metamark(url)
     let [error, output] = s:run_curl('http://metamark.net/api/rest/simple', '', s:get_proxy(), s:get_proxy_login(), {'long_url' : a:url})
 
     if error != ''
-	call s:errormsg("Error calling Metamark API: ".error)
-	return ""
+        call s:errormsg("Error calling Metamark API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from Metamark."
-	return output
+        redraw
+        echo "Received response from Metamark."
+        return output
     endif
 endfunction
 
@@ -4777,12 +4912,12 @@ function! s:call_tinyurl(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling TinyURL API: ".error)
-	return ""
+        call s:errormsg("Error calling TinyURL API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from TinyURL."
-	return output
+        redraw
+        echo "Received response from TinyURL."
+        return output
     endif
 endfunction
 
@@ -4790,7 +4925,7 @@ endfunction
 " default username and api key.
 function! s:get_bitly_key()
     if exists('g:twitvim_bitly_user') && exists('g:twitvim_bitly_key')
-	return [ g:twitvim_bitly_user, g:twitvim_bitly_key ]
+        return [ g:twitvim_bitly_user, g:twitvim_bitly_key ]
     endif
     return [ 'twitvim', 'R_a53414d2f36a90c3e189299c967e6efc' ]
 endfunction
@@ -4809,22 +4944,22 @@ function! s:call_bitly(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling bit.ly API: ".error)
-	return ""
+        call s:errormsg("Error calling bit.ly API: ".error)
+        return ""
     endif
 
     let status = s:xml_get_element(output, 'statusCode')
     if status != 'OK'
-	let errorcode = s:xml_get_element(output, 'errorCode')
-	let errormsg = s:xml_get_element(output, 'errorMessage')
-	if errorcode == 0
-	    " For reasons unknown, bit.ly sometimes return two error codes and
-	    " the first one is 0.
-	    let errorcode = s:xml_get_nth(output, 'errorCode', 2)
-	    let errormsg = s:xml_get_nth(output, 'errorMessage', 2)
-	endif
-	call s:errormsg("Error from bit.ly: ".errorcode." ".errormsg)
-	return ""
+        let errorcode = s:xml_get_element(output, 'errorCode')
+        let errormsg = s:xml_get_element(output, 'errorMessage')
+        if errorcode == 0
+            " For reasons unknown, bit.ly sometimes return two error codes and
+            " the first one is 0.
+            let errorcode = s:xml_get_nth(output, 'errorCode', 2)
+            let errormsg = s:xml_get_nth(output, 'errorMessage', 2)
+        endif
+        call s:errormsg("Error from bit.ly: ".errorcode." ".errormsg)
+        return ""
     endif
 
     let shorturl = s:xml_get_element(output, 'shortUrl')
@@ -4842,12 +4977,12 @@ function! s:call_isgd(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling is.gd API: ".error)
-	return ""
+        call s:errormsg("Error calling is.gd API: ".error)
+        return ""
     else
-	redraw
-	echo "Received response from is.gd."
-	return output
+        redraw
+        echo "Received response from is.gd."
+        return output
     endif
 endfunction
 
@@ -4868,17 +5003,17 @@ function! s:call_urlborg(url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling urlBorg API: ".error)
-	return ""
+        call s:errormsg("Error calling urlBorg API: ".error)
+        return ""
     else
-	if output !~ '\c^http'
-	    call s:errormsg("urlBorg error: ".output)
-	    return ""
-	endif
+        if output !~ '\c^http'
+            call s:errormsg("urlBorg error: ".output)
+            return ""
+        endif
 
-	redraw
-	echo "Received response from urlBorg."
-	return output
+        redraw
+        echo "Received response from urlBorg."
+        return output
     endif
 endfunction
 
@@ -4900,8 +5035,8 @@ function! s:call_trim(url)
     let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
 
     if error != ''
-	call s:errormsg("Error calling tr.im API: ".error)
-	return ""
+        call s:errormsg("Error calling tr.im API: ".error)
+        return ""
     endif
 
     let statusattr = s:xml_get_attr(output, 'status')
@@ -4909,13 +5044,13 @@ function! s:call_trim(url)
     let trimmsg = statusattr['code'].' '.statusattr['message']
 
     if statusattr['result'] == "OK"
-	return s:xml_get_element(output, 'url')
+        return s:xml_get_element(output, 'url')
     elseif statusattr['result'] == "ERROR"
-	call s:errormsg("tr.im error: ".trimmsg)
-	return ""
+        call s:errormsg("tr.im error: ".trimmsg)
+        return ""
     else
-	call s:errormsg("Unknown result from tr.im: ".trimmsg)
-	return ""
+        call s:errormsg("Unknown result from tr.im: ".trimmsg)
+        return ""
     endif
 endfunction
 
@@ -4930,7 +5065,7 @@ function! s:call_cligs(url)
 
     let key = s:get_cligs_key()
     if key != ''
-	let url .= '&key='.key
+        let url .= '&key='.key
     endif
 
     redraw
@@ -4938,8 +5073,8 @@ function! s:call_cligs(url)
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error calling Cligs API: ".error)
-	return ""
+        call s:errormsg("Error calling Cligs API: ".error)
+        return ""
     endif
 
     redraw
@@ -4956,14 +5091,14 @@ function! s:call_zima(url)
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error calling Zi.ma API: ".error)
-	return ""
+        call s:errormsg("Error calling Zi.ma API: ".error)
+        return ""
     endif
 
     let error = s:xml_get_element(output, 'h3')
     if error != ''
-	call s:errormsg("Error from Zi.ma: ".error)
-	return ""
+        call s:errormsg("Error from Zi.ma: ".error)
+        return ""
     endif
 
     redraw
@@ -4989,19 +5124,19 @@ function! s:call_googl(url)
     let result = s:parse_json(output)
 
     if has_key(result, 'error') && has_key(result.error, 'message')
-	call s:errormsg("Error calling goo.gl API: ".result.error.message)
-	return ""
+        call s:errormsg("Error calling goo.gl API: ".result.error.message)
+        return ""
     endif
 
     if has_key(result, 'id')
-	redraw
-	echo "Received response from goo.gl."
-	return result.id
+        redraw
+        echo "Received response from goo.gl."
+        return result.id
     endif
 
     if error != ''
-	call s:errormsg("Error calling goo.gl API: ".error)
-	return ""
+        call s:errormsg("Error calling goo.gl API: ".error)
+        return ""
     endif
 
     call s:errormsg("No result returned by goo.gl API.")
@@ -5022,19 +5157,19 @@ function! s:_call_googl(url)
     let result = s:parse_json(output)
 
     if has_key(result, 'error_message')
-	call s:errormsg("Error calling goo.gl API: ".result.error_message)
-	return ""
+        call s:errormsg("Error calling goo.gl API: ".result.error_message)
+        return ""
     endif
 
     if has_key(result, 'short_url')
-	redraw
-	echo "Received response from goo.gl."
-	return result.short_url
+        redraw
+        echo "Received response from goo.gl."
+        return result.short_url
     endif
 
     if error != ''
-	call s:errormsg("Error calling goo.gl API: ".error)
-	return ""
+        call s:errormsg("Error calling goo.gl API: ".error)
+        return ""
     endif
 
     call s:errormsg("No result returned by goo.gl API.")
@@ -5049,8 +5184,8 @@ function! s:call_rgala(url)
 
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
     if error != ''
-	call s:errormsg("Error calling Rga.la API: ".error)
-	return ""
+        call s:errormsg("Error calling Rga.la API: ".error)
+        return ""
     endif
 
     redraw
@@ -5066,25 +5201,25 @@ function! s:GetShortURL(tweetmode, url, shortfn)
     " Prompt the user to enter a URL if not provided on :Tweetburner command
     " line.
     if url == ""
-	call inputsave()
-	let url = input("URL to shorten: ")
-	call inputrestore()
+        call inputsave()
+        let url = input("URL to shorten: ")
+        call inputrestore()
     endif
 
     if url == ""
-	call s:warnmsg("No URL provided.")
-	return
+        call s:warnmsg("No URL provided.")
+        return
     endif
 
     let shorturl = call(function("s:".a:shortfn), [url])
     if shorturl != ""
-	if a:tweetmode == "cmdline"
-	    call s:CmdLine_Twitter(shorturl." ", 0)
-	elseif a:tweetmode == "append"
-	    execute "normal! a".shorturl."\<esc>"
-	else
-	    execute "normal! i".shorturl." \<esc>"
-	endif
+        if a:tweetmode == "cmdline"
+            call s:CmdLine_Twitter(shorturl." ", 0)
+        elseif a:tweetmode == "append"
+            execute "normal! a".shorturl."\<esc>"
+        else
+            execute "normal! i".shorturl." \<esc>"
+        endif
     endif
 endfunction
 
@@ -5230,11 +5365,11 @@ function! s:get_status_text_json(item)
 
     let urls = get(entities, 'urls', []) + get(entities, 'media', [])
     for url in urls
-	let fromurl = get(url, 'url', '')
-	let tourl = get(url, 'expanded_url', '')
-	if fromurl != '' && tourl != ''
-	    let text = s:str_replace_all(text, fromurl, tourl)
-	endif
+        let fromurl = get(url, 'url', '')
+        let tourl = get(url, 'expanded_url', '')
+        if fromurl != '' && tourl != ''
+            let text = s:str_replace_all(text, fromurl, tourl)
+        endif
     endfor
 
     return text
@@ -5248,39 +5383,39 @@ function! s:show_summize(searchres, page)
 
     let title = 'Twitter Search - '.s:url_decode(get(a:searchres, 'query', ''))
     if a:page > 1
-	let title .= ' (page '.a:page.')'
+        let title .= ' (page '.a:page.')'
     endif
 
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
-	" Index of first status will be 3 to match line numbers in timeline
-	" display.
-	let s:curbuffer.statuses = [0, 0, 0]
-	let s:curbuffer.inreplyto = [0, 0, 0]
+        " Index of first status will be 3 to match line numbers in timeline
+        " display.
+        let s:curbuffer.statuses = [0, 0, 0]
+        let s:curbuffer.inreplyto = [0, 0, 0]
 
-	" The extra stars at the end are for the syntax highlighter to
-	" recognize the title. Then the syntax highlighter hides the stars by
-	" coloring them the same as the background. It is a bad hack.
-	call add(text, title.'*')
-	call add(text, repeat('=', strlen(title)).'*')
+        " The extra stars at the end are for the syntax highlighter to
+        " recognize the title. Then the syntax highlighter hides the stars by
+        " coloring them the same as the background. It is a bad hack.
+        call add(text, title.'*')
+        call add(text, repeat('=', strlen(title)).'*')
     else
-	" Index of first status will be 1 to match line numbers in timeline
-	" display.
-	let s:curbuffer.statuses = [0]
-	let s:curbuffer.inreplyto = [0]
+        " Index of first status will be 1 to match line numbers in timeline
+        " display.
+        let s:curbuffer.statuses = [0]
+        let s:curbuffer.inreplyto = [0]
     endif
 
     for item in get(a:searchres, 'results', [])
-	let user = get(item, 'from_user', '')
+        let user = get(item, 'from_user', '')
 
-	let line = s:convert_entity(s:get_status_text_json(item))
-	let pubdate = s:time_filter(get(item, 'created_at', ''))
+        let line = s:convert_entity(s:get_status_text_json(item))
+        let pubdate = s:time_filter(get(item, 'created_at', ''))
 
-	let status = get(item, 'id_str', '')
-	call add(s:curbuffer.statuses, status)
-	call add(s:curbuffer.inreplyto, get(item, 'in_reply_to_status_id_str', ''))
+        let status = get(item, 'id_str', '')
+        call add(s:curbuffer.statuses, status)
+        call add(s:curbuffer.inreplyto, get(item, 'in_reply_to_status_id_str', ''))
 
-	call add(text, user.': '.line.' |'.pubdate.'|')
+        call add(text, user.': '.line.' |'.pubdate.'|')
     endfor
 
     call s:twitter_wintext(text, "timeline")
@@ -5296,13 +5431,13 @@ function! s:get_summize(query, page)
 
     " Support pagination.
     if a:page > 1
-	let param .= 'page='.a:page.'&'
+        let param .= 'page='.a:page.'&'
     endif
 
     " Support count parameter in search results.
     let tcount = s:get_count()
     if tcount > 0
-	let param .= 'rpp='.tcount.'&'
+        let param .= 'rpp='.tcount.'&'
     endif
 
     let url = 'http://search.twitter.com/search.json?'.param.'include_entities=true&q='.s:url_encode(a:query)
@@ -5311,14 +5446,14 @@ function! s:get_summize(query, page)
     let result = s:parse_json(output)
 
     if error != ''
-	let errormsg = get(result, 'error', '')
-	call s:errormsg("Error querying Twitter Search: ".(errormsg != '' ? errormsg : error))
-	return
+        let errormsg = get(result, 'error', '')
+        call s:errormsg("Error querying Twitter Search: ".(errormsg != '' ? errormsg : error))
+        return
     endif
 
     if type(result) != type({})
-	call s:errormsg("Invalid JSON result from ".url)
-	return
+        call s:errormsg("Invalid JSON result from ".url)
+        return
     endif
 
     call s:save_buffer(0)
@@ -5343,14 +5478,14 @@ function! s:Summize(query, page)
     " Prompt the user to enter a query if not provided on :SearchTwitter
     " command line.
     if query == ""
-	call inputsave()
-	let query = input("Search Twitter: ")
-	call inputrestore()
+        call inputsave()
+        let query = input("Search Twitter: ")
+        call inputrestore()
     endif
 
     if query == ""
-	call s:warnmsg("No query provided for Twitter Search.")
-	return
+        call s:warnmsg("No query provided for Twitter Search.")
+        return
     endif
 
     call s:get_summize(query, a:page)
@@ -5366,4 +5501,4 @@ endif
 let &cpo = s:save_cpo
 finish
 
-" vim:set tw=0:
+" vim:set tw=0 et:
