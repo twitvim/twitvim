@@ -710,17 +710,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	To use SSL via Tcl, you need to install the SSL libraries and Tcllib.
 	To be more specific, TwitVim needs the tls package from Tcllib.
 
-	All known versions of Vim (up to 7.3f beta, as of this writing) have a
-	bug that prevents the tls package from being loaded if you compile Vim
-	with Tcl 8.5. This discussion thread explains the problem:
+	Versions of Vim up to 7.3.450 have a bug that prevents the tls package
+	from being loaded if you compile Vim with Tcl 8.5. This discussion
+	thread explains the problem:
 >
 	http://objectmix.com/tcl/15892-tcl-interp-inside-vim-throws-error-w-clock-format.html
 <
 	If you need to use Twitter SSL with the Tcl interface, you can try one
 	of the following workarounds:
 
-	a. Downgrade to Tcl 8.4.
-	b. Edit if_tcl.c in the Vim source code to remove the redefinition of
+	a. Upgrade Vim to version 7.3.451 or later.
+	b. Downgrade to Tcl 8.4.
+	c. Edit if_tcl.c in the Vim source code to remove the redefinition of
 	catch. Then rebuild Vim.
 
 
