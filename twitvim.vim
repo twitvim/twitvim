@@ -1293,6 +1293,7 @@ try:
     import urllib
     import urllib.request
     import urllib.error
+    import urllib.parse
     import socket
     import base64
     import sys
@@ -1310,6 +1311,7 @@ function! s:python3_curl(url, login, proxy, proxylogin, parms)
 import urllib
 import urllib.request
 import urllib.error
+import urllib.parse
 import socket
 import base64
 import sys
@@ -1337,10 +1339,10 @@ try:
     parms = vim.eval("a:parms")
 
     if parms.get('__json') is not None:
-        req = urllib.request.Request(url, parms['__json'])
+        req = urllib.request.Request(url, str.encode(parms['__json']))
         req.add_header('Content-Type', 'application/json')
     else:
-        req = parms == {} and urllib.request.Request(url) or urllib.request.Request(url, urllib.urlencode(parms))
+        req = parms == {} and urllib.request.Request(url) or urllib.request.Request(url, str.encode(urllib.parse.urlencode(parms)))
 
     login = vim.eval("a:login")
     if login != "":
