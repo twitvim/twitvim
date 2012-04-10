@@ -1797,7 +1797,7 @@ endif
 " page: Keep track of pagination.
 " statuses: Tweet IDs. For use by in_reply_to_status_id
 " inreplyto: IDs of predecessor messages for @-replies.
-" dmids: Direct Message IDs.
+" dmids: Direct Message IDs. (for buftype dmrecv or dmsent)
 " buffer: The buffer text.
 " view: viewport saved with winsaveview()
 " showheader: 1 if header is shown in this buffer, 0 if header is hidden.
@@ -2553,7 +2553,7 @@ function! s:launch_url_cword(infobuf)
     " non-word character.
     let matchres = matchlist(s, '\w\@<!@\(\w\+\)')
     if matchres != []
-        call s:get_timeline("user", matchres[1], 1)
+        call s:get_timeline("user", matchres[1], 1, 0)
         return
     endif
 
@@ -2562,7 +2562,7 @@ function! s:launch_url_cword(infobuf)
         " false matches. Instead, parse a Name: line specially.
         let name = s:info_getname()
         if name != ''
-            call s:get_timeline("user", name, 1)
+            call s:get_timeline("user", name, 1, 0)
             return
         endif
 
@@ -2593,7 +2593,7 @@ function! s:launch_url_cword(infobuf)
             " word instead.
             let matchres = matchlist(getline('.'), '^+ \(\w\+\):')
             if matchres != []
-                call s:get_timeline("user", matchres[1], 1)
+                call s:get_timeline("user", matchres[1], 1, 0)
                 return
             endif
         endif
@@ -2602,7 +2602,7 @@ function! s:launch_url_cword(infobuf)
         " timeline.
         let matchres = matchlist(s, '^\(\w\+\):$')
         if matchres != []
-            call s:get_timeline("user", matchres[1], 1)
+            call s:get_timeline("user", matchres[1], 1, 0)
             return
         endif
     endif
@@ -3151,7 +3151,7 @@ function! s:add_to_url(url, parm)
 endfunction
 
 " Generic timeline retrieval function.
-function! s:get_timeline(tline_name, username, page)
+function! s:get_timeline(tline_name, username, page, max_id)
     if a:tline_name == "public"
         " No authentication is needed for public timeline.
         let login = ''
@@ -3162,8 +3162,13 @@ function! s:get_timeline(tline_name, username, page)
     let url_fname = (a:tline_name == "favorites" || a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".xml" : a:tline_name == "friends" ? "home_timeline.xml" : a:tline_name == "replies" ? "mentions.xml" : a:tline_name."_timeline.xml"
 
     " Support pagination.
-    if a:page > 1
-        let url_fname = s:add_to_url(url_fname, 'page='.a:page)
+"     if a:page > 1
+"         let url_fname = s:add_to_url(url_fname, 'page='.a:page)
+"     endif
+
+    " Support max_id parameter.
+    if a:max_id != 0
+        let url_fname = s:add_to_url(url_fname, 'max_id='.a:max_id)
     endif
 
     " Include retweets.
@@ -3218,7 +3223,7 @@ function! s:get_timeline(tline_name, username, page)
 endfunction
 
 " Retrieve a Twitter list timeline.
-function! s:get_list_timeline(username, listname, page)
+function! s:get_list_timeline(username, listname, page, max_id)
 
     let user = a:username
     if user == ''
@@ -3232,8 +3237,13 @@ function! s:get_list_timeline(username, listname, page)
     let url = s:get_api_root().'/lists/statuses.xml?slug='.a:listname.'&owner_screen_name='.user
 
     " Support pagination.
-    if a:page > 1
-        let url = s:add_to_url(url, 'page='.a:page)
+"     if a:page > 1
+"         let url = s:add_to_url(url, 'page='.a:page)
+"     endif
+
+    " Support max_id parameter.
+    if a:max_id != 0
+        let url = s:add_to_url(url, 'max_id='.a:max_id)
     endif
 
     " Support count parameter.
@@ -3633,11 +3643,13 @@ endif
 
 " Function to load a timeline from the given parameters. For use by refresh and
 " next/prev pagination commands.
-function! s:load_timeline(buftype, user, list, page)
+" max_id (maximum tweet ID to load) is for the Twitter API max_id parameter.
+" max_id = 0 if loading tweets from the start of timeline.
+function! s:load_timeline(buftype, user, list, page, max_id)
     if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me" || a:buftype == 'favorites'
-        call s:get_timeline(a:buftype, a:user, a:page)
+        call s:get_timeline(a:buftype, a:user, a:page, a:max_id)
     elseif a:buftype == "list"
-        call s:get_list_timeline(a:user, a:list, a:page)
+        call s:get_list_timeline(a:user, a:list, a:page, a:max_id)
     elseif a:buftype == "dmsent" || a:buftype == "dmrecv"
         call s:Direct_Messages(a:buftype, a:page)
     elseif a:buftype == "search"
@@ -3647,10 +3659,33 @@ function! s:load_timeline(buftype, user, list, page)
     endif
 endfunction
 
+" Returns the first (most recent) status in the current buffer.
+function! s:get_first_status()
+    let isdm = (s:curbuffer.buftype == "dmrecv" || s:curbuffer.buftype == "dmsent")
+    if s:curbuffer.page <= 1
+        " If we are on the first page, always return 0 to make it refresh from
+        " the top of the timeline.
+        return 0
+    endif
+    let statuses = isdm ? s:curbuffer.dmids : s:curbuffer.statuses
+    for status in statuses
+        if status != 0
+            return status
+        endif
+    endfor
+    return 0
+endfunction
+
+" Returns the last (least recent) status in the current buffer.
+function! s:get_last_status()
+    let isdm = (s:curbuffer.buftype == "dmrecv" || s:curbuffer.buftype == "dmsent")
+    return get(isdm ? s:curbuffer.dmids : s:curbuffer.statuses, -1)
+endfunction
+
 " Refresh the timeline buffer.
 function! s:RefreshTimeline()
     if s:curbuffer != {}
-        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page)
+        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page, s:get_first_status())
     else
         call s:warnmsg("No timeline buffer to refresh.")
     endif
@@ -3659,7 +3694,7 @@ endfunction
 " Go to next page in timeline.
 function! s:NextPageTimeline()
     if s:curbuffer != {}
-        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page + 1)
+        call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page + 1, s:get_last_status())
     else
         call s:warnmsg("No timeline buffer.")
     endif
@@ -3671,7 +3706,7 @@ function! s:PrevPageTimeline()
         if s:curbuffer.page <= 1
             call s:warnmsg("Timeline is already on first page.")
         else
-            call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, s:curbuffer.page - 1)
+            call s:load_timeline(s:curbuffer.buftype, s:curbuffer.user, s:curbuffer.list, 1, 0)
         endif
     else
         call s:warnmsg("No timeline buffer.")
@@ -3687,23 +3722,23 @@ function! s:DoList(page, arg1, ...)
         let user = a:arg1
         let list = a:1
     endif
-    call s:get_list_timeline(user, list, a:page)
+    call s:get_list_timeline(user, list, a:page, 0)
 endfunction
 
 if !exists(":PublicTwitter")
-    command PublicTwitter :call <SID>get_timeline("public", '', 1)
+    command PublicTwitter :call <SID>get_timeline("public", '', 1, 0)
 endif
 if !exists(":FriendsTwitter")
-    command -count=1 FriendsTwitter :call <SID>get_timeline("friends", '', <count>)
+    command FriendsTwitter :call <SID>get_timeline("friends", '', 1, 0)
 endif
 if !exists(":UserTwitter")
-    command -range=1 -nargs=? UserTwitter :call <SID>get_timeline("user", <q-args>, <count>)
+    command -nargs=? UserTwitter :call <SID>get_timeline("user", <q-args>, 1, 0)
 endif
 if !exists(":MentionsTwitter")
-    command -count=1 MentionsTwitter :call <SID>get_timeline("replies", '', <count>)
+    command MentionsTwitter :call <SID>get_timeline("replies", '', 1, 0)
 endif
 if !exists(":RepliesTwitter")
-    command -count=1 RepliesTwitter :call <SID>get_timeline("replies", '', <count>)
+    command RepliesTwitter :call <SID>get_timeline("replies", '', 1, 0)
 endif
 if !exists(":DMTwitter")
     command -count=1 DMTwitter :call <SID>Direct_Messages("dmrecv", <count>)
@@ -3712,29 +3747,29 @@ if !exists(":DMSentTwitter")
     command -count=1 DMSentTwitter :call <SID>Direct_Messages("dmsent", <count>)
 endif
 if !exists(":ListTwitter")
-    command -range=1 -nargs=+ ListTwitter :call <SID>DoList(<count>, <f-args>)
+    command -nargs=+ ListTwitter :call <SID>DoList(1, <f-args>)
 endif
 if !exists(":RetweetedByMeTwitter")
-    command -count=1 RetweetedByMeTwitter :call <SID>get_timeline("retweeted_by_me", '', <count>)
+    command RetweetedByMeTwitter :call <SID>get_timeline("retweeted_by_me", '', 1, 0)
 endif
 if !exists(":RetweetedToMeTwitter")
-    command -count=1 RetweetedToMeTwitter :call <SID>get_timeline("retweeted_to_me", '', <count>)
+    command RetweetedToMeTwitter :call <SID>get_timeline("retweeted_to_me", '', 1, 0)
 endif
 if !exists(":FavTwitter")
-    command -count=1 FavTwitter :call <SID>get_timeline('favorites', '', <count>)
+    command FavTwitter :call <SID>get_timeline('favorites', '', 1, 0)
 endif
 
 nnoremenu Plugin.TwitVim.-Sep1- :
-nnoremenu Plugin.TwitVim.&Friends\ Timeline :call <SID>get_timeline("friends", '', 1)<cr>
-nnoremenu Plugin.TwitVim.&User\ Timeline :call <SID>get_timeline("user", '', 1)<cr>
-nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call <SID>get_timeline("replies", '', 1)<cr>
+nnoremenu Plugin.TwitVim.&Friends\ Timeline :call <SID>get_timeline("friends", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.&User\ Timeline :call <SID>get_timeline("user", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call <SID>get_timeline("replies", '', 1, 0)<cr>
 nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 1)<cr>
 nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1)<cr>
-nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1)<cr>
+nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1, 0)<cr>
 
-nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1)<cr>
-nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call <SID>get_timeline("retweeted_to_me", '', 1)<cr>
-nnoremenu Plugin.TwitVim.Fa&vorites :call <SID>get_timeline("favorites", '', 1)<cr>
+nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call <SID>get_timeline("retweeted_to_me", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Fa&vorites :call <SID>get_timeline("favorites", '', 1, 0)<cr>
 
 if !exists(":RefreshTwitter")
     command RefreshTwitter :call <SID>RefreshTimeline()
