@@ -879,17 +879,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	list of highlighting groups it uses.
 
 
-	:[count]UserTwitter				*:UserTwitter*
-	:[count]UserTwitter {username}
+	:UserTwitter					*:UserTwitter*
+	:UserTwitter {username}
 
 	This command displays your Twitter timeline.
 
 	If you specify a {username}, this command displays the timeline for
 	that user.
-
-	If you specify [count], that number is used as the page number. For
-	example, :2UserTwitter displays the second page from your user
-	timeline.
 
 							*twitvim_count*
 	You can configure the number of tweets returned by :UserTwitter by
@@ -901,28 +897,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	You can set twitvim_count to any integer from 1 to 200.
 
 
-	:[count]FriendsTwitter				*:FriendsTwitter*
+	:FriendsTwitter					*:FriendsTwitter*
 
 	This command displays your Twitter timeline with updates from friends
 	merged in.
-
-	If you specify [count], that number is used as the page number. For
-	example, :2FriendsTwitter displays the second page from your friends
-	timeline.
 
 	You can configure the number of tweets returned by :FriendsTwitter by
 	setting |twitvim_count|.
 
 
-	:[count]MentionsTwitter				*:MentionsTwitter*
-	:[count]RepliesTwitter				*:RepliesTwitter*
+	:MentionsTwitter				*:MentionsTwitter*
+	:RepliesTwitter					*:RepliesTwitter*
 
 	This command displays a timeline of mentions (updates containing
 	@username) that you've received from other Twitter users.
-
-	If you specify [count], that number is used as the page number. For
-	example, :2MentionsTwitter displays the second page from your mentions
-	timeline.
 
 	:RepliesTwitter is the old name for :MentionsTwitter.
 
@@ -938,26 +926,18 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Twitter. This command will cease to function on May 14, 2012.
 
 
-	:[count]DMTwitter				*:DMTwitter*
+	:DMTwitter					*:DMTwitter*
 
 	This command displays direct messages that you've received.
 
-	If you specify [count], that number is used as the page number. For
-	example, :2DMTwitter displays the second page from your direct
-	messages timeline.
 
-
-	:[count]DMSentTwitter				*:DMSentTwitter*
+	:DMSentTwitter					*:DMSentTwitter*
 
 	This command displays direct messages that you've sent.
 
-	If you specify [count], that number is used as the page number. For
-	example, :2DMSentTwitter displays the second page from your direct
-	messages sent timeline.
 
-
-	:[count]ListTwitter {list}			*:ListTwitter*
-	:[count]ListTwitter {user} {list}
+	:ListTwitter {list}				*:ListTwitter*
+	:ListTwitter {user} {list}
 
 	This command displays a Twitter list timeline.
 
@@ -967,36 +947,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	In the second form, the command displays list {list} from user
 	{user}.
 
-	If you specify [count], that number is used as the page number. For
-	example, :2ListTwitter list1 displays the second page from the list1
-	list timeline.
 
-
-	:[count]RetweetedToMeTwitter			*:RetweetedToMeTwitter*
+	:RetweetedToMeTwitter				*:RetweetedToMeTwitter*
 
 	This command displays a timeline of retweets by others to you.
 
-	If you specify [count], that number is used as the page number. For
-	example, :2RetweetedToMeTwitter displays the second page from the
-	retweets timeline.
 
-
-	:[count]RetweetedByMeTwitter			*:RetweetedByMeTwitter*
+	:RetweetedByMeTwitter				*:RetweetedByMeTwitter*
 
 	This command displays a timeline of retweets by you.
 
-	If you specify [count], that number is used as the page number. For
-	example, :2RetweetedByMeTwitter displays the second page from the
-	retweets timeline.
 
-
-	:[count]FavTwitter				*:FavTwitter*
+	:FavTwitter					*:FavTwitter*
 
 	This command displays a timeline of your favorites.
-
-	If you specify [count], that number is used as the page number. For
-	example, :2FavTwitter displays the second page from the favorites
-	timeline.
 
 
 	:FollowingTwitter				*:FollowingTwitter*
@@ -1128,9 +1092,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	:PreviousTwitter				*:PreviousTwitter*
 
-	This command loads the previous (newer) page in the timeline. If the
-	timeline is on the first page, this command issues a warning and
-	doesn't do anything. See |TwitVim-C-PageUp|.
+	This command returns to the first (newest) page in the timeline. If
+	the timeline is already on the first page, this command issues a
+	warning and doesn't do anything. See |TwitVim-C-PageUp|.
 
 
 	:PreviousInfoTwitter				*:PreviousInfoTwitter*
@@ -1480,9 +1444,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 							*TwitVim-previous*
 	Ctrl-PageUp					*TwitVim-C-PageUp*
 
-	This command loads the previous (newer) page in the timeline. If the
-	timeline is on the first page, it issues a warning and doesn't do
-	anything. See |:PreviousTwitter|.
+	This mapping returns to the first (newest) page in the timeline. If
+	the timeline is already on the first page, it issues a warning and
+	doesn't do anything. See |:PreviousTwitter|.
 
 	This mapping also works in the info buffer but only if the list is
 	long enough to use more than one page. It does nothing in the user
@@ -1834,8 +1798,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	short URL already inserted.
 
 
-	:[count]SearchTwitter					*:SearchTwitter*
-	:[count]SearchTwitter {query}
+	:SearchTwitter					*:SearchTwitter*
+	:SearchTwitter {query}
 	
 	This command calls the Twitter Search API to search for {query}. If
 	{query} is not provided on the command line, the command will prompt
@@ -1844,10 +1808,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	All of the Twitter Search operators are supported implicitly. For a
 	list of search operators, see:
 	https://support.twitter.com/groups/31-twitter-basics/topics/110-search/articles/71577-how-to-use-advanced-twitter-search
-
-	If you specify [count], that number is used as the page number. For
-	example, :2SearchTwitter hello displays the second page of search
-	results for the word hello.
 
 	You can configure the number of tweets returned by :SearchTwitter by
 	setting |twitvim_count|.
@@ -2049,6 +2009,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     |twitvim_net_timeout|
 			   * Added Python 3 networking and OAuth code.
 			     |twitvim_enable_python3|
+			   * Switched from page-style pagination to
+			     max_id-style pagination because of Twitter API
+			     changes. As a result, all timeline commands will
+			     cease to accept [count] parameters and
+			     |:PreviousTwitter| will return to the top page
+			     regardless of current page number.
 	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
 			     TwitVim can support t.co URL expansion and
 			     in-reply-to in search results.
