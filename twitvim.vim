@@ -2583,7 +2583,7 @@ function! s:launch_url_cword(infobuf)
         " In a trending topics list, the whole line is a search term.
         if s:curbuffer.buftype == 'trends'
             if !s:curbuffer.showheader || line('.') > 2
-                call s:get_summize(getline('.'), 1)
+                call s:get_summize(getline('.'), 1, 0)
             endif
             return
         endif
@@ -2612,7 +2612,7 @@ function! s:launch_url_cword(infobuf)
     " non-word character.
     let matchres = matchlist(s, '\w\@<!\(#\w\+\)')
     if matchres != []
-        call s:get_summize(matchres[1], 1)
+        call s:get_summize(matchres[1], 1, 0)
         return
     endif
 
@@ -3330,7 +3330,7 @@ function! s:show_dm_xml(sent_or_recv, timeline, page)
 endfunction
 
 " Get direct messages sent to or received by user.
-function! s:Direct_Messages(mode, page)
+function! s:Direct_Messages(mode, page, max_id)
     let sent = (a:mode == "dmsent")
     let s_or_r = (sent ? "sent" : "received")
 
@@ -3340,11 +3340,15 @@ function! s:Direct_Messages(mode, page)
     let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".xml"
 
     " Support pagination.
-    let pagearg = ''
-    if a:page > 1
-        let url = s:add_to_url(url, 'page='.a:page)
-    endif
+"     if a:page > 1
+"         let url = s:add_to_url(url, 'page='.a:page)
+"     endif
     
+    " Support max_id parameter.
+    if a:max_id != 0
+        let url = s:add_to_url(url, 'max_id='.a:max_id)
+    endif
+
     " Include entities to get URL expansions for t.co.
     let url = s:add_to_url(url, 'include_entities=true')
 
@@ -3651,9 +3655,9 @@ function! s:load_timeline(buftype, user, list, page, max_id)
     elseif a:buftype == "list"
         call s:get_list_timeline(a:user, a:list, a:page, a:max_id)
     elseif a:buftype == "dmsent" || a:buftype == "dmrecv"
-        call s:Direct_Messages(a:buftype, a:page)
+        call s:Direct_Messages(a:buftype, a:page, a:max_id)
     elseif a:buftype == "search"
-        call s:get_summize(a:user, a:page)
+        call s:get_summize(a:user, a:page, a:max_id)
     elseif a:buftype == 'trends'
         call s:Local_Trends()
     endif
@@ -3741,10 +3745,10 @@ if !exists(":RepliesTwitter")
     command RepliesTwitter :call <SID>get_timeline("replies", '', 1, 0)
 endif
 if !exists(":DMTwitter")
-    command -count=1 DMTwitter :call <SID>Direct_Messages("dmrecv", <count>)
+    command DMTwitter :call <SID>Direct_Messages("dmrecv", 1, 0)
 endif
 if !exists(":DMSentTwitter")
-    command -count=1 DMSentTwitter :call <SID>Direct_Messages("dmsent", <count>)
+    command DMSentTwitter :call <SID>Direct_Messages("dmsent", 1, 0)
 endif
 if !exists(":ListTwitter")
     command -nargs=+ ListTwitter :call <SID>DoList(1, <f-args>)
@@ -3763,8 +3767,8 @@ nnoremenu Plugin.TwitVim.-Sep1- :
 nnoremenu Plugin.TwitVim.&Friends\ Timeline :call <SID>get_timeline("friends", '', 1, 0)<cr>
 nnoremenu Plugin.TwitVim.&User\ Timeline :call <SID>get_timeline("user", '', 1, 0)<cr>
 nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call <SID>get_timeline("replies", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 1)<cr>
-nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1)<cr>
+nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1, 0)<cr>
 nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1, 0)<cr>
 
 nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1, 0)<cr>
@@ -5460,24 +5464,31 @@ function! s:show_summize(searchres, page)
 endfunction
 
 " Query Twitter Search API and retrieve results
-function! s:get_summize(query, page)
+function! s:get_summize(query, page, max_id)
     redraw
     echo "Sending search request to Twitter Search..."
 
-    let param = ''
+    let url = 'http://search.twitter.com/search.json?q='.s:url_encode(a:query)
 
     " Support pagination.
-    if a:page > 1
-        let param .= 'page='.a:page.'&'
+"     if a:page > 1
+"         let param .= 'page='.a:page.'&'
+"     endif
+
+    " Support max_id parameter.
+    if a:max_id != 0
+        let url = s:add_to_url(url, 'max_id='.a:max_id)
     endif
 
     " Support count parameter in search results.
     let tcount = s:get_count()
     if tcount > 0
-        let param .= 'rpp='.tcount.'&'
+        let url = s:add_to_url(url, 'rpp='.tcount)
     endif
 
-    let url = 'http://search.twitter.com/search.json?'.param.'include_entities=true&q='.s:url_encode(a:query)
+    " Include entities to get URL expansions for t.co.
+    let url = s:add_to_url(url, 'include_entities=true')
+
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     let result = s:parse_json(output)
@@ -5525,14 +5536,14 @@ function! s:Summize(query, page)
         return
     endif
 
-    call s:get_summize(query, a:page)
+    call s:get_summize(query, a:page, 0)
 endfunction
 
 if !exists(":Summize")
-    command -range=1 -nargs=? Summize :call <SID>Summize(<q-args>, <count>)
+    command -nargs=? Summize :call <SID>Summize(<q-args>, 1)
 endif
 if !exists(":SearchTwitter")
-    command -range=1 -nargs=? SearchTwitter :call <SID>Summize(<q-args>, <count>)
+    command -nargs=? SearchTwitter :call <SID>Summize(<q-args>, 1)
 endif
 
 let &cpo = s:save_cpo
