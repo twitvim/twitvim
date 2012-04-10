@@ -278,6 +278,12 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	and hmac modules. All of these are in the Python standard library as
 	of Python 2.5.
 
+	If you compiled Vim with Python 3, add the following to your vimrc
+	instead:
+>
+		let twitvim_enable_python3 = 1
+<
+
 
 	If you compiled Vim with Ruby, add the following to your vimrc:
 >
@@ -567,6 +573,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 >
 		let twitvim_enable_perl = 1
 		let twitvim_enable_python = 1
+		let twitvim_enable_python3 = 1
 		let twitvim_enable_ruby = 1
 		let twitvim_enable_tcl = 1
 <
@@ -587,6 +594,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 	2. Python interface				*twitvim_enable_python*
+							*twitvim_enable_python3*
 
 	To enable TwitVim's Python networking code, add the following to your
 	vimrc:
@@ -595,6 +603,13 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 <
 	TwitVim requires the urllib, urllib2, and base64 modules. These
 	modules are in the Python standard library.
+
+	If Vim is using Python 3, add the following to your vimrc instead:
+>
+		let twitvim_enable_python3 = 1
+<
+	For Python 3, TwitVim requires the urllib, socket, and base64 modules.
+	These modules are in the Python 3 standard library.
 
 
 	3. Ruby interface				*twitvim_enable_ruby*
@@ -819,8 +834,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		let twitvim_timestamp_format = '%I:%M %p'
 <
 	TwitVim uses |strftime()| to format timestamps, so you will need to
-	check the manual page of the C function strftime() to find out what
-	you can use here.
+	check the manual page of the C function strftime() to see what
+	formatting codes you can use here.
 
 
 ------------------------------------------------------------------------------
@@ -2024,7 +2039,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.4 : 2012-04-05 * Allow users to customize timestamp format in
+	0.7.4 : 2012-04-10 * Allow users to customize timestamp format in
 			     timeline displays. |twitvim_timestamp_format|
 			   * Take Twitter's URL-wrapping into account when
 			     counting characters in tweets. You no longer have
@@ -2032,6 +2047,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			     t.co URL shortener.
 			   * Added network timeout option.
 			     |twitvim_net_timeout|
+			   * Added Python 3 networking and OAuth code.
+			     |twitvim_enable_python3|
 	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
 			     TwitVim can support t.co URL expansion and
 			     in-reply-to in search results.
