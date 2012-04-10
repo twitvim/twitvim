@@ -1365,7 +1365,7 @@ try:
     out = ''.join([bytes.decode(s) for s in f.readlines()])
 except urllib.error.HTTPError as httperr:
     vim.command("let error='%s'" % str(httperr).replace("'", "''"))
-    vim.command("let output='%s'" % httperr.read().replace("'", "''"))
+    vim.command("let output='%s'" % bytes.decode(httperr.read()).replace("'", "''"))
 except:
     exctype, value = sys.exc_info()[:2]
     errmsg = (exctype.__name__ + ': ' + str(value)).replace("'", "''")
