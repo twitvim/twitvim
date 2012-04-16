@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: April 10, 2012
+" Last updated: April 16, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.4 2012-04-10'
+let s:user_agent = 'TwitVim 0.7.4 2012-04-16'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -150,6 +150,12 @@ endfunction
 " Default is 0 for no timeout, which defers to the system socket timeout.
 function! s:get_net_timeout()
     return exists('g:twitvim_net_timeout') ? g:twitvim_net_timeout : 0
+endfunction
+
+" If nonzero, use old API for friends/followers.
+" Default is 0 to use the new friends/ids and followers/ids API.
+function! s:get_use_old_friends_api()
+    return exists('g:twitvim_use_old_friends_api') ? g:twitvim_use_old_friends_api : 0
 endfunction
 
 
@@ -4766,10 +4772,12 @@ endfunction
 " Go to next page in info buffer.
 function! s:NextPageInfo()
     if s:infobuffer != {}
-"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-"           call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
-"           return
-"       endif
+        if !s:get_use_old_friends_api()
+            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+                call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
+                return
+            endif
+        end
         if s:infobuffer.next_cursor == 0
             call s:warnmsg("No next page in info buffer.")
         else
@@ -4783,10 +4791,12 @@ endfunction
 " Go to previous page in info buffer.
 function! s:PrevPageInfo()
     if s:infobuffer != {}
-"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-"           call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
-"           return
-"       endif
+        if !s:get_use_old_friends_api()
+            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+                call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
+                return
+            endif
+        endif
         if s:infobuffer.prev_cursor == 0
             call s:warnmsg("No previous page in info buffer.")
         else
@@ -4800,10 +4810,12 @@ endfunction
 " Refresh info buffer.
 function! s:RefreshInfo()
     if s:infobuffer != {}
-"       if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-"           call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
-"           return
-"       endif
+        if !s:get_use_old_friends_api()
+            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+                call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
+                return
+            endif
+        endif
         call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
     else
         call s:warnmsg("No info buffer.")
@@ -4820,12 +4832,22 @@ if !exists(":PreviousInfoTwitter")
     command PreviousInfoTwitter :call <SID>PrevPageInfo()
 endif
 
+function! s:do_get_friends(user, followers)
+    if s:get_use_old_friends_api()
+        call s:get_friends(-1, a:user, a:followers)
+    else
+        call s:get_friends_2(-1, [], 0, 0, 0, a:user, a:followers)
+    endif
+endfunction
+
 if !exists(":FollowingTwitter")
-    command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
+    command -nargs=? FollowingTwitter :call <SID>do_get_friends(<q-args>, 0)
+"     command -nargs=? FollowingTwitter :call <SID>get_friends(-1, <q-args>, 0)
 "     command -nargs=? FollowingTwitter :call <SID>get_friends_2(-1, [], 0, 0, 0, <q-args>, 0)
 endif
 if !exists(":FollowersTwitter")
-    command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
+    command -nargs=? FollowersTwitter :call <SID>do_get_friends(<q-args>, 1)
+"     command -nargs=? FollowersTwitter :call <SID>get_friends(-1, <q-args>, 1)
 "     command -nargs=? FollowersTwitter :call <SID>get_friends_2(-1, [], 0, 0, 0, <q-args>, 1)
 endif
 if !exists(":MembersOfListTwitter")
