@@ -1999,22 +1999,32 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.7.4 : 2012-04-10 * Allow users to customize timestamp format in
+	0.7.4 : 2012-05-04 * Allow users to customize timestamp format in
 			     timeline displays. |twitvim_timestamp_format|
 			   * Take Twitter's URL-wrapping into account when
-			     counting characters in tweets. You no longer have
-			     to shorten URLs manually if you use Twitter's
-			     t.co URL shortener.
+			     counting characters in tweets. You do not have to
+			     shorten URLs manually any more. Just post to
+			     Twitter with the original URLs and TwitVim will
+			     ensure that the tweet fits the 140-character
+			     limit after Twitter's t.co link-wrapping.
 			   * Added network timeout option.
 			     |twitvim_net_timeout|
 			   * Added Python 3 networking and OAuth code.
 			     |twitvim_enable_python3|
 			   * Switched from page-style pagination to
-			     max_id-style pagination because of Twitter API
-			     changes. As a result, all timeline commands will
-			     cease to accept [count] parameters and
-			     |:PreviousTwitter| will return to the top page
-			     regardless of current page number.
+			     max_id-style pagination because of page-style
+			     pagination is deprecated. As a result, all
+			     timeline commands will cease to accept [count]
+			     parameters and |:PreviousTwitter| will return to
+			     the top page regardless of current page number.
+			   * Switched to new API for |:FollowingTwitter| and
+			     |:FollowersTwitter| because the old API was
+			     deprecated.
+			   * |:FollowTwitter| now stops you from following a
+			     user that you are already following. This is to
+			     avoid triggering a Twitter bug where the
+			     following flag reverts to 'follow request sent'
+			     if the subject's timeline is protected.
 	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
 			     TwitVim can support t.co URL expansion and
 			     in-reply-to in search results.
