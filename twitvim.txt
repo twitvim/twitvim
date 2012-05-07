@@ -2012,8 +2012,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Added Python 3 networking and OAuth code.
 			     |twitvim_enable_python3|
 			   * Switched from page-style pagination to
-			     max_id-style pagination because of page-style
-			     pagination is deprecated. As a result, all
+			     max_id-style pagination because page-style
+			     pagination has been deprecated. As a result, all
 			     timeline commands will cease to accept [count]
 			     parameters and |:PreviousTwitter| will return to
 			     the top page regardless of current page number.
