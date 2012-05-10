@@ -2786,7 +2786,6 @@ endfunction
 function! s:convert_entity(str)
     let s = a:str
     let s = substitute(s, '&amp;', '\&', 'g')
-    let s = substitute(s, '&amp;', '\&', 'g')
     let s = substitute(s, '&lt;', '<', 'g')
     let s = substitute(s, '&gt;', '>', 'g')
     let s = substitute(s, '&quot;', '"', 'g')
@@ -2794,6 +2793,7 @@ function! s:convert_entity(str)
     " let s = substitute(s, '&#\(\d\+\);','\=nr2char(submatch(1))', 'g')
     let s = substitute(s, '&#\(\d\+\);','\=s:nr2enc_char(submatch(1))', 'g')
     let s = substitute(s, '&#x\(\x\+\);','\=s:nr2enc_char("0x".submatch(1))', 'g')
+    let s = substitute(s, '&amp;', '\&', 'g')
     return s
 endfunction
 
