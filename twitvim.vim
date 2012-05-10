@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: May 4, 2012
+" Last updated: May 9, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2785,6 +2785,7 @@ endfunction
 " a '<' character comes to us as &amp;lt;
 function! s:convert_entity(str)
     let s = a:str
+    let s = substitute(s, '&amp;', '\&', 'g')
     let s = substitute(s, '&amp;', '\&', 'g')
     let s = substitute(s, '&lt;', '<', 'g')
     let s = substitute(s, '&gt;', '>', 'g')
