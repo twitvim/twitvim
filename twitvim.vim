@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.7.4
+" Version: 0.7.5
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: May 9, 2012
+" Last updated: August 6, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.7.4 2012-05-04'
+let s:user_agent = 'TwitVim 0.7.5 2012-08-06'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -5491,7 +5491,11 @@ function! s:get_summize(query, page, max_id)
     redraw
     echo "Sending search request to Twitter Search..."
 
-    let url = 'http://search.twitter.com/search.json?q='.s:url_encode(a:query)
+    if s:get_api_root() =~ 'identi\.ca'
+        let url = 'http://identi.ca/api/search.json?q='.s:url_encode(a:query)
+    else
+        let url = 'http://search.twitter.com/search.json?q='.s:url_encode(a:query)
+    endif
 
     " Support pagination.
 "     if a:page > 1

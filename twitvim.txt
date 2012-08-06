@@ -1999,6 +1999,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.7.5 : 2012-08-06 * Partial support for identi.ca search.
 	0.7.4 : 2012-05-04 * Allow users to customize timestamp format in
 			     timeline displays. |twitvim_timestamp_format|
 			   * Take Twitter's URL-wrapping into account when
