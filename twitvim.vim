@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: August 6, 2012
+" Last updated: August 10, 2012
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2622,7 +2622,7 @@ function! s:launch_url_cword(infobuf)
         return
     endif
 
-    let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
+    let s = substitute(s, '^.\{-}\('.s:URLMATCH.'\).\{-}$', '\1', "")
     call s:launch_browser(s)
 endfunction
 
