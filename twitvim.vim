@@ -1085,14 +1085,21 @@ function! s:do_oauth()
         return [-1, '', '', '']
     endif
 
+    let request_token = ''
     let matchres = matchlist(output, 'oauth_token=\([^&]\+\)&')
     if matchres != []
         let request_token = matchres[1]
     endif
 
+    let token_secret = ''
     let matchres = matchlist(output, 'oauth_token_secret=\([^&]\+\)&')
     if matchres != []
         let token_secret = matchres[1]
+    endif
+
+    if request_token == '' || token_secret == ''
+        call s:errormsg("Unable to parse result from oauth/request_token: ".output)
+        return [-1, '', '', '']
     endif
 
     " Launch web browser to let user allow or deny the authentication request.
