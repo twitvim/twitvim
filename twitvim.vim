@@ -375,7 +375,8 @@ function! s:switch_twitvim_login(user)
 
         let userrec = s:logins_menu(userlist, 'switch to')
         if userrec == {}
-            return " User canceled.
+            " User canceled.
+            return 
         endif
     else
         let [ name, service ] = split(a:user, ',')
