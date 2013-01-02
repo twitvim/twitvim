@@ -2059,6 +2059,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 			   * Add in-reply-to status to old-style retweets.
 			     (@mattn_jp)
 			   * Fix for old-style retweets with '&' characters.
+			   * Some fixes for https proxy support.
 	0.7.5 : 2012-08-10 * Partial support for identi.ca search.
 			   * Tightened up |TwitVim-Leader-g| URL matching to
 			     omit extraneous trailing characters.
