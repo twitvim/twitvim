@@ -1188,7 +1188,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	After using ResetLoginTwitter, you won't be able to switch to any
 	users using |:SwitchLoginTwitter| because ResetLoginTwitter discards
-	all saved access tokens.
+	all saved access tokens. Use |:DeleteLoginTwitter| instead if you only
+	wish to discard one saved token.
 
 	This command has no effect in StatusNet services that use Basic
 	authentication.
@@ -2050,7 +2051,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.8.0 : 2012-10-03 * Support for Twitter API 1.1.
+	0.8.0 : 2013-01-02 * Support for Twitter API 1.1.
 			   * Support for identi.ca OAuth and switching between
 			     Twitter OAuth and identi.ca OAuth logins.
 			   * Added |twitvim_force_ssl|.
