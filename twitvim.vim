@@ -2,12 +2,12 @@
 " TwitVim - Post to Twitter from Vim
 " Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
 "
-" Version: 0.8.0
+" Version: 0.8.1
 " License: Vim license. See :help license
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 2, 2013
+" Last updated: February 4, 2013
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -23,7 +23,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.8.0 2013-01-02'
+let s:user_agent = 'TwitVim 0.8.1 2013-02-04'
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -4682,20 +4682,20 @@ function! s:get_friends_info_2(ids, index)
     if idslice == []
         call s:errormsg('No friends/followers?')
         return []
-    else
-        let url = s:get_api_root().'/users/lookup.json'
-        let parms = {}
-        let parms.include_entities = 'true'
-        let parms.user_id = join(idslice, ',')
+    endif
 
-        let [error, output] = s:run_curl_oauth_get(url, parms)
-        let result = s:parse_json(output)
-        if error != ''
-            let errormsg = get(result, 'error', '')
-            call s:errormsg('Error getting friends/followers info: '.(errormsg != '' ? errormsg : error))
-            return []
-        endif
-    end
+    let url = s:get_api_root().'/users/lookup.json'
+    let parms = {}
+    let parms.include_entities = 'true'
+    let parms.user_id = join(idslice, ',')
+
+    let [error, output] = s:run_curl_oauth_get(url, parms)
+    let result = s:parse_json(output)
+    if error != ''
+        let errormsg = get(result, 'error', '')
+        call s:errormsg('Error getting friends/followers info: '.(errormsg != '' ? errormsg : error))
+        return []
+    endif
 
     " Reorder result according to ID list. Twitter loses the ordering when you call it on 100 user IDs.
     let idindex = {}
@@ -4703,7 +4703,9 @@ function! s:get_friends_info_2(ids, index)
         let idindex[get(user, 'id_str', '')] = user
     endfor
 
-    return map(copy(idslice), 'idindex[v:val]')
+    " users/lookup may skip some IDs that have been suspended. So we have to be
+    " careful and filter out any IDs for which there is no info.
+    return filter(map(copy(idslice), 'get(idindex, v:val, {})'), 'v:val != {}')
 endfunction
 
 " Call Twitter API to get friends or followers list.
