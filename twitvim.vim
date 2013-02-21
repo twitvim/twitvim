@@ -2710,7 +2710,9 @@ let s:URL_PATH_END = '\%('.s:URL_PATH_END_CHARS.'\|'.s:URL_PARENS.'\)'
 let s:URL_PATH = '\%('.s:URL_PATH_CHARS.'*\%('.s:URL_PARENS.s:URL_PATH_CHARS.'*\)*'.s:URL_PATH_END.'\)\|\%('.s:URL_PATH_CHARS.'\+\)'
 
 " Bring it all together. Use this regex to match a URL.
-let s:URLMATCH = s:URL_PROTOCOL.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
+let s:URLMATCH_DOMAIN_ONLY = s:URL_PROTOCOL.s:URL_DOMAIN.s:URL_PATH_END
+let s:URLMATCH_WITH_PATH = s:URL_PROTOCOL.s:URL_DOMAIN.'/\%('.s:URL_PATH.'\)\='
+let s:URLMATCH = '\%('.s:URLMATCH_WITH_PATH.'\)\|\%('.s:URLMATCH_DOMAIN_ONLY.'\)'
 let s:URLMATCH_HTTPS = s:URL_PROTOCOL_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
 let s:URLMATCH_NON_HTTPS = s:URL_PROTOCOL_NON_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
 
