@@ -2704,7 +2704,8 @@ let s:URL_PARENS = '('.s:URL_PATH_CHARS.'*)'
 
 " Avoid swallowing up certain punctuation characters after a URL but allow a
 " URL to end with a balanced parenthesis.
-let s:URL_PATH_END = '\%([^[:space:]\.,;:()]\|'.s:URL_PARENS.'\)'
+let s:URL_PATH_END_CHARS = '[a-zA-Z0-9!$&''*+/=?@_~%#-]'
+let s:URL_PATH_END = '\%('.s:URL_PATH_END_CHARS.'\|'.s:URL_PARENS.'\)'
 
 let s:URL_PATH = '\%('.s:URL_PATH_CHARS.'*\%('.s:URL_PARENS.s:URL_PATH_CHARS.'*\)*'.s:URL_PATH_END.'\)\|\%('.s:URL_PATH_CHARS.'\+\)'
 
