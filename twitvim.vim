@@ -2696,23 +2696,25 @@ let s:URL_PROTOCOL = '\%([Hh][Tt][Tt][Pp]\|[Hh][Tt][Tt][Pp][Ss]\|[Ff][Tt][Pp]\):
 let s:URL_PROTOCOL_HTTPS = '\%([Hh][Tt][Tt][Pp][Ss]\)://'
 let s:URL_PROTOCOL_NON_HTTPS = '\%([Hh][Tt][Tt][Pp]\|[Ff][Tt][Pp]\)://'
 
-let s:URL_DOMAIN = '[^[:space:])/]\+'
-let s:URL_PATH_CHARS = '[^[:space:]()]'
+" s:URL_DOMAIN_CHARS is s:URL_PATH_CHARS without /
+let s:URL_DOMAIN_CHARS = '[a-zA-Z0-9!$&''()*+,.:;=?@_~%#-]'
+let s:URL_DOMAIN = s:URL_DOMAIN_CHARS.'\+'
 
-" URL paths may contain balanced parentheses.
+let s:URL_PATH_CHARS = '[a-zA-Z0-9!$&''()*+,./:;=?@_~%#-]'
 let s:URL_PARENS = '('.s:URL_PATH_CHARS.'*)'
 
 " Avoid swallowing up certain punctuation characters after a URL but allow a
 " URL to end with a balanced parenthesis.
+" So s:URL_PATH_END_CHARS is s:URL_PATH_CHARS without .,:;()
 let s:URL_PATH_END_CHARS = '[a-zA-Z0-9!$&''*+/=?@_~%#-]'
 let s:URL_PATH_END = '\%('.s:URL_PATH_END_CHARS.'\|'.s:URL_PARENS.'\)'
 
 let s:URL_PATH = '\%('.s:URL_PATH_CHARS.'*\%('.s:URL_PARENS.s:URL_PATH_CHARS.'*\)*'.s:URL_PATH_END.'\)\|\%('.s:URL_PATH_CHARS.'\+\)'
 
 " Bring it all together. Use this regex to match a URL.
-let s:URLMATCH_DOMAIN_ONLY = s:URL_PROTOCOL.s:URL_DOMAIN.s:URL_PATH_END
-let s:URLMATCH_WITH_PATH = s:URL_PROTOCOL.s:URL_DOMAIN.'/\%('.s:URL_PATH.'\)\='
-let s:URLMATCH = '\%('.s:URLMATCH_WITH_PATH.'\)\|\%('.s:URLMATCH_DOMAIN_ONLY.'\)'
+let s:URLMATCH_DOMAIN_ONLY = '\%('.s:URL_PROTOCOL.s:URL_DOMAIN.s:URL_PATH_END_CHARS.'\)'
+let s:URLMATCH_WITH_PATH = '\%('.s:URL_PROTOCOL.s:URL_DOMAIN.'/\%('.s:URL_PATH.'\)\=\)'
+let s:URLMATCH = s:URLMATCH_WITH_PATH.'\|'.s:URLMATCH_DOMAIN_ONLY
 let s:URLMATCH_HTTPS = s:URL_PROTOCOL_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
 let s:URLMATCH_NON_HTTPS = s:URL_PROTOCOL_NON_HTTPS.s:URL_DOMAIN.'\%(/\%('.s:URL_PATH.'\)\=\)\='
 
