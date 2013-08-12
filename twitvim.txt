@@ -2051,7 +2051,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-	0.8.1 : 2013-02-04 * Fix for suspended users in followers list.
+	0.8.1 : 2013-08-12 * Fix for suspended users in followers list.
+			   * Rewrote URL regex for new regex engine in Vim 7.4.
 	0.8.0 : 2013-01-02 * Support for Twitter API 1.1.
 			   * Support for identi.ca OAuth and switching between
 			     Twitter OAuth and identi.ca OAuth logins.
