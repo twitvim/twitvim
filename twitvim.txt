@@ -2053,6 +2053,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	0.8.2 : 2014-01-14 * Change Twitter API URLs to https. Twitter no
 			     longer supports non-SSL.
+		2014-02-21 * Added support for highlighting $stocksymbol
+		             and jumping to searches for $stocksymbol.
 	0.8.1 : 2013-08-12 * Fix for suspended users in followers list.
 			   * Rewrote URL regex for new regex engine in Vim 7.4.
 	0.8.0 : 2013-01-02 * Support for Twitter API 1.1.

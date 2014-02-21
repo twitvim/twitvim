@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: January 14, 2014
+" Last updated: February 21, 2014
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2794,6 +2794,14 @@ function! s:launch_url_cword(infobuf)
         return
     endif
 
+    " $-stocksymbols are like $-hashtags but only alphabetic.
+    let matchres = matchlist(s, '\w\@<!\(\$\a\+\)')
+    if matchres != []
+        call s:get_summize(matchres[1], 1, 0)
+        return
+    endif
+
+
     let s = substitute(s, '^.\{-}\('.s:URLMATCH.'\).\{-}$', '\1', "")
     call s:launch_browser(s)
 endfunction
@@ -2995,6 +3003,9 @@ function! s:twitter_win_syntax(wintype)
         " A #-hashtag must be preceded by a non-word character and ends at a
         " non-word character.
         syntax match twitterLink "\w\@<!#\w\+"
+
+        " $-stocksymbols are like $-hashtags but only alphabetic.
+        syntax match twitterLink "\w\@<!$\a\+"
 
         " Use the extra star at the end to recognize the title but hide the
         " star.
