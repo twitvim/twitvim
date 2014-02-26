@@ -13,17 +13,25 @@
 " ==============================================================
 
 " Load this module only once.
-if exists('loaded_twitvim')
+if exists('g:loaded_twitvim')
     finish
 endif
-let loaded_twitvim = 1
+let g:loaded_twitvim = '0.8.2 2014-02-21'
+
+" Check Vim version.
+if v:version < 703
+    echohl WarningMsg
+    echomsg 'You need Vim 7.3 or later for this version of TwitVim'
+    echohl None
+    finish
+endif
 
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim 0.8.2 2014-01-14'
+let s:user_agent = 'TwitVim '.g:loaded_twitvim
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -268,7 +276,7 @@ endfunction
 function! s:warnmsg(msg)
     redraw
     echohl WarningMsg
-    echo a:msg
+    echomsg a:msg
     echohl None
 endfunction
 

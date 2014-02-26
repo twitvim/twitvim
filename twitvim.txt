@@ -818,6 +818,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	compensate, if necessary.
 
 
+------------------------------------------------------------------------------
+3.8. Preventing Loading					*TwitVim-noload*
+
+	If you have TwitVim installed but for some reason don't wish to run
+	it, then you can avoid loading the plugin by adding the following
+	to your vimrc:
+>
+		let loaded_twitvim = 1
+<
+
 ==============================================================================
 4. TwitVim Manual					*TwitVim-manual*
 
@@ -868,6 +878,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	:PosttoTwitter					*:PosttoTwitter*
 
 	This command will prompt you for a message and post it to Twitter.
+
+	Note: Since this command uses input(), command-line editing and
+	history features are available here. In particular, you can use
+	<Up> and <Down> to recall previous tweets. See |history|.
 
 	:CPosttoTwitter					*:CPosttoTwitter*
 
@@ -1275,6 +1289,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Under Cygwin, Alt-R is not recognized so you can use <Leader>r as an
 	alternative. The <Leader> character defaults to \ (backslash) but see
 	|mapleader| for information on customizing that.
+
+	Note: Since this command uses input(), command-line editing and
+	history features are available here. In particular, you can use
+	<Up> and <Down> to recall previous tweets. See |history|.
 
 
 							*TwitVim-reply-all*
