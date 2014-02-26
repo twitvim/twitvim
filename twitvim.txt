@@ -53,6 +53,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3.7. Timeline filtering...................: |TwitVim-filter|
 	     twitvim_filter_enable................: |twitvim_filter_enable|
 	     twitvim_filter_regex.................: |twitvim_filter_regex|
+	3.8. Preventing Loading...................: |TwitVim-noload|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
 	     twitvim_timestamp_format.............: |twitvim_timestamp_format|
