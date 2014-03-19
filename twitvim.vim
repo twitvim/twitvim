@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: February 21, 2014
+" Last updated: March 19, 2014
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -2283,6 +2283,13 @@ function! s:post_twitter(mesg, inreplyto)
     " Convert internal newlines to spaces.
     let mesg = substitute(mesg, '\n', ' ', "g")
 
+    let mesglen = s:mbstrlen(mesg)
+    " Check for zero-length tweets or user cancel at prompt.
+    if mesglen < 1
+        call s:warnmsg("Your tweet was empty. It was not sent.")
+        return
+    end
+
     " Only Twitter has a built-in URL wrapper thus far.
     if s:get_cur_service() == 'twitter'
         " Pretend to shorten URLs.
@@ -2300,8 +2307,6 @@ function! s:post_twitter(mesg, inreplyto)
     " string length.
     if mesglen > s:char_limit
         call s:warnmsg("Your tweet has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
-    elseif mesglen < 1
-        call s:warnmsg("Your tweet was empty. It was not sent.")
     else
         redraw
         echo "Posting update..."
