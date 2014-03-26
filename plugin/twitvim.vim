@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: March 19, 2014
+" Last updated: March 26, 2014
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -16,7 +16,7 @@
 if exists('g:loaded_twitvim')
     finish
 endif
-let g:loaded_twitvim = '0.8.2 2014-02-21'
+let g:loaded_twitvim = '0.8.2 2014-03-26'
 
 " Check Vim version.
 if v:version < 703
