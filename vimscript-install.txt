@@ -1,0 +1,18 @@
+Prerequisites
+
+TwitVim uses cURL (http://curl.haxx.se/) to communicate with Twitter. Alternatively, you can configure TwitVim to use Vim's Perl, Python, Ruby, or Tcl interfaces for faster network I/O. 
+
+Twitter OAuth requires either the OpenSSL (http://www.openssl.org/) software or a Vim binary compiled with Perl, Python, Ruby, or Tcl.
+
+Some platforms already have cURL and OpenSSL preinstalled or have installation packages for those, so that is the easier way to satisfy the prerequisites.
+
+*****
+
+Installation
+
+Open the vmb file and then source it.
+
+    vim twitvim-0.8.1.vmb
+    so %
+
+Then see :help TwitVim-install for further instructions.
