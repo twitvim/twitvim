@@ -19,7 +19,17 @@ TwitVim supports most of the features of a typical Twitter client, including:
 - Trending topics
 - Timeline filtering
 
-TwitVim uses cURL to communicate with Twitter. Alternatively, you can configure TwitVim to use Vim's Perl, Python, Ruby, or Tcl interfaces for faster network I/O. 
+## Prerequisites
+
+TwitVim uses [cURL](http://curl.haxx.se/) to communicate with Twitter.
+Alternatively, you can configure TwitVim to use Vim's Perl, Python, Ruby, or Tcl interfaces for faster network I/O. 
+
+Twitter OAuth requires either the [OpenSSL](http://www.openssl.org/)
+software or a Vim binary compiled with Perl, Python, Ruby, or Tcl.
+
+Some platforms already have cURL and OpenSSL preinstalled or have
+installation packages for those, so that is the easier way to satisfy the
+prerequisites.
 
 ## Installation
 
