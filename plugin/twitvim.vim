@@ -671,65 +671,31 @@ function! s:write_tokens(current_user)
     endif
 endfunction
 
-
 " Read the token file.
 function! s:read_tokens()
     let tokenfile = s:get_token_file()
     if !s:get_disable_token_file() && filereadable(tokenfile)
         let [hdr, current_user; tokens] = readfile(tokenfile, 't', 500)
-        if tokens == []
-            " Legacy token file only has token and secret.
-            let s:access_token = hdr
-            let s:access_token_secret = current_user
-            let s:cached_username = ''
-            let s:cur_service = s:default_service
-
-            let user = s:get_twitvim_username()
-            if user == ''
-                call s:errormsg('Invalid token in token file. Please relogin with :SetLoginTwitter.')
-                return
-            endif
-
-            let tokenrec = {}
-            let tokenrec.token = s:access_token
-            let tokenrec.secret = s:access_token_secret
-            let tokenrec.name = user
-            let tokenrec.service = s:cur_service
-
-            call s:save_token(tokenrec)
-            call s:write_tokens(user)
+        if tokens == [] || hdr == 'TwitVim 0.6'
+            call s:errormsg('Old token file format is not supported. Please remove "'.tokenfile.'" and try again.')
+            return
         else
-            if hdr == 'TwitVim 0.6'
-                let service = s:default_service
-                " New token file contains tokens, 3 lines per record.
-                for i in range(0, len(tokens) - 1, 3)
-                    let tokenrec = {}
-                    let tokenrec.name = tokens[i]
-                    let tokenrec.token = tokens[i + 1]
-                    let tokenrec.secret = tokens[i + 2]
-                    let tokenrec.service = s:default_service
-                    call s:save_token(tokenrec)
-                endfor
-            else
-                let json_obj = s:parse_json(tokens[0])
-                let current_user = json_obj['current_user']
-                let service = get(json_obj, 'current_service', s:default_service)
-                let json_tokens = json_obj['tokens']
-                for json_token in json_tokens
-                    let tokenrec = {}
-                    let tokenrec.name = json_token.name
-                    let tokenrec.token = json_token.token
-                    let tokenrec.secret = json_token.secret
-                    let tokenrec.service = get(json_token, 'service', s:default_service)
-                    call s:save_token(tokenrec)
-                endfor
-            endif
+            let json_obj = s:parse_json(tokens[0])
+            let current_user = json_obj['current_user']
+            let service = get(json_obj, 'current_service', s:default_service)
+            let json_tokens = json_obj['tokens']
+            for json_token in json_tokens
+                let tokenrec = {}
+                let tokenrec.name = json_token.name
+                let tokenrec.token = json_token.token
+                let tokenrec.secret = json_token.secret
+                let tokenrec.service = get(json_token, 'service', s:default_service)
+                call s:save_token(tokenrec)
+            endfor
             call s:switch_token(current_user, service)
         endif
     endif
 endfunction
-
-
 " === End of Token Management code ===
 
 " === OAuth code ===
