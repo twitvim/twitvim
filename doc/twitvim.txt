@@ -2070,6 +2070,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+	0.9.0 : 2014-05-01 *
 	0.8.2 : 2014-03-26 * Change Twitter API URLs to https. Twitter no
 			     longer supports non-SSL.
 			   * Added support for highlighting $stocksymbol
