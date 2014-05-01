@@ -20,7 +20,7 @@ let g:loaded_twitvim = '0.9.0 2014-05-01'
 
 " Check Vim version.
 if v:version < 703
-    echohl WarningMsg
+    echohl ErrorMsg
     echomsg 'You need Vim 7.3 or later for this version of TwitVim'
     echohl None
     finish
@@ -51,16 +51,6 @@ let s:service_info = {
             \ 'api_root'        : 'https://api.twitter.com/1.1',
             \ 'search_api'      : 'https://api.twitter.com/1.1/search/tweets.json',
             \ },
-            \ 'identica' : {
-            \ 'dispname'        : 'identi.ca',
-            \ 'consumer_key'    : '2ed2fd2bbd62f7c07ae6bb786b664680',
-            \ 'consumer_secret' : '75edf3d8a5e692d6afcccf7a51611e94',
-            \ 'req_url'         : 'https://identi.ca/api/oauth/request_token',
-            \ 'access_url'      : 'https://identi.ca/api/oauth/access_token',
-            \ 'authorize_url'   : 'https://identi.ca/api/oauth/authorize',
-            \ 'api_root'        : 'http://identi.ca/api',
-            \ 'search_api'      : 'http://identi.ca/api/search.json',
-            \ },
             \ }
 
 let s:default_service = 'twitter'
@@ -70,40 +60,27 @@ let s:cur_service = ''
 " Attempt to get the current service even on startup and even if user has not
 " logged in yet. Returns '' if cannot determine.
 function! s:get_cur_service()
-    if s:is_oauth()
-        " Get current service from token file or do OAuth login.
+    " Get current service from token file or do OAuth login.
+    if s:cur_service == ''
+        call s:read_tokens()
         if s:cur_service == ''
-            call s:read_tokens()
-            if s:cur_service == ''
-                let [ status, error ] = s:do_login()
-                if status < 0
-                    return ''
-                endif
+            let [ status, error ] = s:do_login()
+            if status < 0
+                return ''
             endif
         endif
-        return s:cur_service
-    else
-        return ''
     endif
+    return s:cur_service
 endfunction
 
 " Allow the user to override the API root for services other than Twitter and identi.ca.
 function! s:get_api_root()
-    if s:is_oauth()
-        let svc = s:get_cur_service()
-        if svc == ''
-            return s:default_api_root
-        else
-            return s:service_info[svc]['api_root']
-        endif
-    else
-        return g:twitvim_api_root
-    endif
+    return s:get_cur_service() == '' ? s:default_api_root : s:service_info[svc]['api_root']
 endfunction
 
 " Service display name.
 function! s:get_svc_disp_name()
-    return s:is_oauth() ? s:service_info[s:cur_service]['dispname'] : 'user-defined service'
+    return s:service_info[s:cur_service]['dispname']
 endfunction
 
 function! s:get_disp_name(service)
@@ -111,59 +88,50 @@ function! s:get_disp_name(service)
 endfunction
 
 " Are we using one of the OAuth services?
+" TODO: Remove this later.
 function! s:is_oauth()
-    " For backward compatibility. We used to enable OAuth by specifying the
-    " Twitter API root.
-    return !exists('g:twitvim_api_root') || g:twitvim_api_root =~? 'twitter\.com'
+    return 1
 endfunction
 
 " Allow user to set the format for retweets.
 function! s:get_retweet_fmt()
-    return exists('g:twitvim_retweet_format') ? g:twitvim_retweet_format : "RT %s: %t"
+    return get(g:, 'twitvim_retweet_format', 'RT %s: %t')
 endfunction
 
 " Allow user to enable Python networking code by setting twitvim_enable_python.
 function! s:get_enable_python()
-    return exists('g:twitvim_enable_python') ? g:twitvim_enable_python : 0
+    return get(g:, 'twitvim_enable_python', 0)
 endfunction
 
 " Allow user to enable Python 3 networking code by setting twitvim_enable_python3.
 function! s:get_enable_python3()
-    return exists('g:twitvim_enable_python3') ? g:twitvim_enable_python3 : 0
+    return get(g:, 'twitvim_enable_python3', 0)
 endfunction
 
 " Allow user to enable Perl networking code by setting twitvim_enable_perl.
 function! s:get_enable_perl()
-    return exists('g:twitvim_enable_perl') ? g:twitvim_enable_perl : 0
+    return get(g:, 'twitvim_enable_perl', 0)
 endfunction
 
 " Allow user to enable Ruby code by setting twitvim_enable_ruby.
 function! s:get_enable_ruby()
-    return exists('g:twitvim_enable_ruby') ? g:twitvim_enable_ruby : 0
+    return get(g:, 'twitvim_enable_ruby', 0)
 endfunction
 
 " Allow user to enable Tcl code by setting twitvim_enable_tcl.
 function! s:get_enable_tcl()
-    return exists('g:twitvim_enable_tcl') ? g:twitvim_enable_tcl : 0
+    return get(g:, 'twitvim_enable_tcl', 0)
 endfunction
 
 " Force SSL mode.
 function! s:get_force_ssl()
-    if exists('g:twitvim_force_ssl') 
-        return g:twitvim_force_ssl        
-    elseif exists('g:twitvim_api_root') && g:twitvim_api_root =~? '^https:'
-        " For backward compatibility. The old way to force SSL was to specify a
-        " https API root.
-        return 1
-    else
-        return 0
-    endif
+    return get(g:, 'twitvim_force_ssl') 
 endfunction
 
 " Get proxy setting from twitvim_proxy in .vimrc or _vimrc.
 " Format is proxysite:proxyport
 function! s:get_proxy()
-    return exists('g:twitvim_proxy') ? g:twitvim_proxy : ''
+    return get(g:, 'twitvim_proxy', '')
 endfunction
 
 " If twitvim_proxy_login exists, use that as the proxy login.
@@ -171,83 +139,71 @@ endfunction
 " If twitvim_proxy_login_b64 exists, use that instead. This is the proxy
 " user:password in base64 encoding.
 function! s:get_proxy_login()
-    if exists('g:twitvim_proxy_login_b64') && g:twitvim_proxy_login_b64 != ''
-        return g:twitvim_proxy_login_b64
-    else
-        return exists('g:twitvim_proxy_login') ? g:twitvim_proxy_login : ''
-    endif
+    return exists('g:twitvim_proxy_login_b64') && g:twitvim_proxy_login_b64 != '' ? g:twitvim_proxy_login_b64 : get(g:, 'twitvim_proxy_login', '')
 endfunction
 
 " Get twitvim_count, if it exists. This will be the number of tweets returned
 " by :FriendsTwitter, :UserTwitter, and :SearchTwitter.
 function! s:get_count()
-    if exists('g:twitvim_count')
-        if g:twitvim_count < 1
-            return 1
-        elseif g:twitvim_count > 200
-            return 200
-        else
-            return g:twitvim_count
-        endif
-    endif
-    return 0
+    return exists('g:twitvim_count') ? min([200, max([1, g:twitvim_count])]) : 0
 endfunction
 
 " User setting to show/hide header in the buffer. Default: show header.
 function! s:get_show_header()
-    return exists('g:twitvim_show_header') ? g:twitvim_show_header : 1
+    return get(g:, 'twitvim_show_header', 1)
 endfunction
 
 " User config for name of OAuth access token file.
 function! s:get_token_file()
-    return exists('g:twitvim_token_file') ? g:twitvim_token_file : $HOME . "/.twitvim.token"
+    return get(g:, 'twitvim_token_file', $HOME.'/.twitvim.token')
 endfunction
 
 " User config to disable the OAuth access token file.
 function! s:get_disable_token_file()
-    return exists('g:twitvim_disable_token_file') ? g:twitvim_disable_token_file : 0
+    return get(g:, 'twitvim_disable_token_file', 0)
 endfunction
 
 " User config to enable the filter.
 function! s:get_filter_enable()
-    return exists('g:twitvim_filter_enable') ? g:twitvim_filter_enable : 0
+    return get(g:, 'twitvim_filter_enable', 0)
 endfunction
 
 " User config for filter.
 function! s:get_filter_regex()
-    return exists('g:twitvim_filter_regex') ? g:twitvim_filter_regex : ''
+    return get(g:, 'twitvim_filter_regex', '')
 endfunction
 
 " User config for Trends WOEID.
 " Default to 1 for worldwide.
 function! s:get_twitvim_woeid()
-    return exists('g:twitvim_woeid') ? g:twitvim_woeid : 1
+    return get(g:, 'twitvim_woeid', 1)
 endfunction
 
 " Allow user to override consumer key.
 function! s:get_consumer_key()
-    return exists('g:twitvim_consumer_key') ? g:twitvim_consumer_key : s:service_info[s:cur_service]['consumer_key']
+    return get(g:, 'twitvim_consumer_key', s:service_info[s:cur_service]['consumer_key'])
 endfunction
 
 " Allow user to override consumer secret.
 function! s:get_consumer_secret()
-    return exists('g:twitvim_consumer_secret') ? g:twitvim_consumer_secret : s:service_info[s:cur_service]['consumer_secret']
+    return get(g:, 'twitvim_consumer_secret', s:service_info[s:cur_service]['consumer_secret'])
 endfunction
 
 " Allow user to customize timestamp format in timeline display.
 " Default is HH:MM AM/PM Mon DD, YYYY
 function! s:get_timestamp_format()
-    return exists('g:twitvim_timestamp_format') ? g:twitvim_timestamp_format : '%I:%M %p %b %d, %Y'
+    return get(g:, 'twitvim_timestamp_format', '%I:%M %p %b %d, %Y')
 endfunction
 
 " Allow user to customize network timeout in seconds.
 " Default is 0 for no timeout, which defers to the system socket timeout.
 function! s:get_net_timeout()
-    return exists('g:twitvim_net_timeout') ? g:twitvim_net_timeout : 0
+    return get(g:, 'twitvim_net_timeout', 0)
 endfunction
 
 " If nonzero, use old API for friends/followers.
 " Default is 0 for Twitter and 1 for all other services.
+" TODO: Remove this later.
 function! s:get_use_old_friends_api()
     if exists('g:twitvim_use_old_friends_api')
         return g:twitvim_use_old_friends_api
@@ -287,6 +243,7 @@ endfunction
 "
 " This function is for services with Twitter-compatible APIs that use Basic
 " authentication, e.g. identi.ca
+" TODO: Remove this later.
 function! s:get_twitvim_login_noerror()
     if exists('g:twitvim_login_b64') && g:twitvim_login_b64 != ''
         return g:twitvim_login_b64
@@ -321,6 +278,7 @@ function! s:prompt_twitvim_login()
     call s:do_login()
 endfunction
 
+" Display a menu of user logins.
 function! s:logins_menu(userlist, what)
     let menu = []
     call add(menu, 'Choose a login to '.a:what)
@@ -367,7 +325,6 @@ function! s:delete_twitvim_login(user)
     call s:write_tokens(s:cached_username)
 endfunction
 
-
 " Switch to a different Twitter user.
 function! s:switch_twitvim_login(user)
     if s:tokens == {}
@@ -394,24 +351,11 @@ function! s:switch_twitvim_login(user)
     call s:write_tokens(s:cached_username)
 endfunction
 
-let s:cached_login = ''
+let s:cached_login = ''  " TODO: Remove this later.
 let s:cached_username = ''
 
 " See if we can save time by using the cached username.
 function! s:get_twitvim_cached_username()
-    if s:is_oauth()
-        if s:cached_username == ''
-            return ''
-        endif
-    else
-        " In Twitter-compatible services that use Basic authentication, the
-        " user may have changed the login info on the fly. So we have to watch
-        " out for that.
-        let login = s:get_twitvim_login_noerror()
-        if login == '' || login != s:cached_login
-            return ''
-        endif
-    endif
     return s:cached_username
 endfunction
 
@@ -424,34 +368,32 @@ function! s:get_twitvim_username()
     endif
 
     redraw
-    echo "Verifying login credentials..."
+    echo 'Verifying login credentials...'
 
-    let url = s:get_api_root()."/account/verify_credentials.json"
+    let url = s:get_api_root().'/account/verify_credentials.json'
     let [error, output] = s:run_curl_oauth_get(url, {})
     let result = s:parse_json(output)
     if error != ''
         let errormsg = get(result, 'error', '')
-        call s:errormsg("Error verifying login credentials: ".(errormsg != '' ? errormsg : error))
+        call s:errormsg('Error verifying login credentials: '.(errormsg != '' ? errormsg : error))
         return ''
     endif
 
     redraw
-    echo "Login credentials verified."
+    echo 'Login credentials verified.'
 
     let username = get(result, 'screen_name', '')
 
     " Save it so we don't have to do it again unless the user switches to
     " a different login.
     let s:cached_username = username
-    let s:cached_login = s:get_twitvim_login_noerror()
-
     return username
 endfunction
 
 " If set, twitvim_cert_insecure turns off certificate verification if using
 " https Twitter API over cURL or Ruby.
 function! s:get_twitvim_cert_insecure()
-    return exists('g:twitvim_cert_insecure') ? g:twitvim_cert_insecure : 0
+    return get(g:, 'twitvim_cert_insecure', 0)
 endfunction
 
 " === JSON parser ===
@@ -471,11 +413,12 @@ function! s:parse_json(str)
 endfunction
 
 " === XML helper functions ===
+" TODO: May be able to get rid of all these.
 
 " Get the content of the n'th element in a series of elements.
 function! s:xml_get_nth(xmlstr, elem, n)
     let matchres = matchlist(a:xmlstr, '<'.a:elem.'\%( [^>]*\)\?>\(.\{-}\)</'.a:elem.'>', -1, a:n)
-    return matchres == [] ? "" : matchres[1]
+    return matchres == [] ? '' : matchres[1]
 endfunction
 
 " Get all elements in a series of elements.
