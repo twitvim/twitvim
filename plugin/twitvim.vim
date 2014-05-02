@@ -4946,78 +4946,6 @@ if !exists(":UnfollowListTwitter")
     command -nargs=+ UnfollowListTwitter :call <SID>follow_list(1, <f-args>)
 endif
 
-" Call Tweetburner API to shorten a URL.
-function! s:call_tweetburner(url)
-    redraw
-    echo "Sending request to Tweetburner..."
-
-    let [error, output] = s:run_curl('http://tweetburner.com/links', '', s:get_proxy(), s:get_proxy_login(), {'link[url]' : a:url})
-
-    if error != ''
-        call s:errormsg("Error calling Tweetburner API: ".error)
-        return ""
-    else
-        redraw
-        echo "Received response from Tweetburner."
-        return output
-    endif
-endfunction
-
-" Call SnipURL API to shorten a URL.
-function! s:call_snipurl(url)
-    redraw
-    echo "Sending request to SnipURL..."
-
-    let url = 'http://snipr.com/site/snip?r=simple&link='.s:url_encode(a:url)
-
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-        call s:errormsg("Error calling SnipURL API: ".error)
-        return ""
-    else
-        redraw
-        echo "Received response from SnipURL."
-        " Get rid of extraneous newline at the beginning of SnipURL's output.
-        return substitute(output, '^\n', '', '')
-    endif
-endfunction
-
-" Call Metamark API to shorten a URL.
-function! s:call_metamark(url)
-    redraw
-    echo "Sending request to Metamark..."
-
-    let [error, output] = s:run_curl('http://metamark.net/api/rest/simple', '', s:get_proxy(), s:get_proxy_login(), {'long_url' : a:url})
-
-    if error != ''
-        call s:errormsg("Error calling Metamark API: ".error)
-        return ""
-    else
-        redraw
-        echo "Received response from Metamark."
-        return output
-    endif
-endfunction
-
-" Call TinyURL API to shorten a URL.
-function! s:call_tinyurl(url)
-    redraw
-    echo "Sending request to TinyURL..."
-
-    let url = 'http://tinyurl.com/api-create.php?url='.a:url
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-        call s:errormsg("Error calling TinyURL API: ".error)
-        return ""
-    else
-        redraw
-        echo "Received response from TinyURL."
-        return output
-    endif
-endfunction
-
 " Get bit.ly username and api key if configured by the user. Otherwise, use a
 " default username and api key.
 function! s:get_bitly_key()
@@ -5081,126 +5009,6 @@ function! s:call_isgd(url)
         echo "Received response from is.gd."
         return output
     endif
-endfunction
-
-
-" Get urlBorg API key if configured by the user. Otherwise, use a default API
-" key.
-function! s:get_urlborg_key()
-    return exists('g:twitvim_urlborg_key') ? g:twitvim_urlborg_key : '26361-80ab'
-endfunction
-
-" Call urlBorg API to shorten a URL.
-function! s:call_urlborg(url)
-    let key = s:get_urlborg_key()
-    redraw
-    echo "Sending request to urlBorg..."
-
-    let url = 'http://urlborg.com/api/'.key.'/create_or_reuse/'.s:url_encode(a:url)
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-        call s:errormsg("Error calling urlBorg API: ".error)
-        return ""
-    else
-        if output !~ '\c^http'
-            call s:errormsg("urlBorg error: ".output)
-            return ""
-        endif
-
-        redraw
-        echo "Received response from urlBorg."
-        return output
-    endif
-endfunction
-
-
-" Get tr.im login info if configured by the user.
-function! s:get_trim_login()
-    return exists('g:twitvim_trim_login') ? g:twitvim_trim_login : ''
-endfunction
-
-" Call tr.im API to shorten a URL.
-function! s:call_trim(url)
-    let login = s:get_trim_login()
-
-    redraw
-    echo "Sending request to tr.im..."
-
-    let url = 'http://tr.im/api/trim_url.xml?url='.s:url_encode(a:url)
-
-    let [error, output] = s:run_curl(url, login, s:get_proxy(), s:get_proxy_login(), {})
-
-    if error != ''
-        call s:errormsg("Error calling tr.im API: ".error)
-        return ""
-    endif
-
-    let statusattr = s:xml_get_attr(output, 'status')
-
-    let trimmsg = statusattr['code'].' '.statusattr['message']
-
-    if statusattr['result'] == "OK"
-        return s:xml_get_element(output, 'url')
-    elseif statusattr['result'] == "ERROR"
-        call s:errormsg("tr.im error: ".trimmsg)
-        return ""
-    else
-        call s:errormsg("Unknown result from tr.im: ".trimmsg)
-        return ""
-    endif
-endfunction
-
-" Get Cligs API key if configured by the user.
-function! s:get_cligs_key()
-    return exists('g:twitvim_cligs_key') ? g:twitvim_cligs_key : ''
-endfunction
-
-" Call Cligs API to shorten a URL.
-function! s:call_cligs(url)
-    let url = 'http://cli.gs/api/v1/cligs/create?appid=twitvim&url='.s:url_encode(a:url)
-
-    let key = s:get_cligs_key()
-    if key != ''
-        let url .= '&key='.key
-    endif
-
-    redraw
-    echo "Sending request to Cligs..."
-
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-        call s:errormsg("Error calling Cligs API: ".error)
-        return ""
-    endif
-
-    redraw
-    echo "Received response from Cligs."
-    return output
-endfunction
-
-" Call Zi.ma API to shorten a URL.
-function! s:call_zima(url)
-    let url = "http://zi.ma/?module=ShortURL&file=Add&mode=API&url=".s:url_encode(a:url)
-
-    redraw
-    echo "Sending request to Zi.ma..."
-
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-        call s:errormsg("Error calling Zi.ma API: ".error)
-        return ""
-    endif
-
-    let error = s:xml_get_element(output, 'h3')
-    if error != ''
-        call s:errormsg("Error from Zi.ma: ".error)
-        return ""
-    endif
-
-    redraw
-    echo "Received response from Zi.ma."
-    return output
 endfunction
 
 let s:googl_api_key = 'AIzaSyDvAhCUJppsPnPHgazgKktMoYap-QXCy5c'
@@ -5273,29 +5081,12 @@ function! s:_call_googl(url)
     return ""
 endfunction
 
-" Call Rga.la API to shorten a URL.
-function! s:call_rgala(url)
-    let url = 'http://rga.la/?url='.s:url_encode(a:url).'&format=plain'
-    redraw
-    echo "Sending request to Rga.la..."
-
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-        call s:errormsg("Error calling Rga.la API: ".error)
-        return ""
-    endif
-
-    redraw
-    echo "Received response from Rga.la."
-    return output
-endfunction
-
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
     let url = a:url
 
-    " Prompt the user to enter a URL if not provided on :Tweetburner command
+    " Prompt the user to enter a URL if not provided on :IsGd command
     " line.
     if url == ""
         call inputsave()
@@ -5320,46 +5111,6 @@ function! s:GetShortURL(tweetmode, url, shortfn)
     endif
 endfunction
 
-if !exists(":Tweetburner")
-    command -nargs=? Tweetburner :call <SID>GetShortURL("insert", <q-args>, "call_tweetburner")
-endif
-if !exists(":ATweetburner")
-    command -nargs=? ATweetburner :call <SID>GetShortURL("append", <q-args>, "call_tweetburner")
-endif
-if !exists(":PTweetburner")
-    command -nargs=? PTweetburner :call <SID>GetShortURL("cmdline", <q-args>, "call_tweetburner")
-endif
-
-if !exists(":Snipurl")
-    command -nargs=? Snipurl :call <SID>GetShortURL("insert", <q-args>, "call_snipurl")
-endif
-if !exists(":ASnipurl")
-    command -nargs=? ASnipurl :call <SID>GetShortURL("append", <q-args>, "call_snipurl")
-endif
-if !exists(":PSnipurl")
-    command -nargs=? PSnipurl :call <SID>GetShortURL("cmdline", <q-args>, "call_snipurl")
-endif
-
-if !exists(":Metamark")
-    command -nargs=? Metamark :call <SID>GetShortURL("insert", <q-args>, "call_metamark")
-endif
-if !exists(":AMetamark")
-    command -nargs=? AMetamark :call <SID>GetShortURL("append", <q-args>, "call_metamark")
-endif
-if !exists(":PMetamark")
-    command -nargs=? PMetamark :call <SID>GetShortURL("cmdline", <q-args>, "call_metamark")
-endif
-
-if !exists(":TinyURL")
-    command -nargs=? TinyURL :call <SID>GetShortURL("insert", <q-args>, "call_tinyurl")
-endif
-if !exists(":ATinyURL")
-    command -nargs=? ATinyURL :call <SID>GetShortURL("append", <q-args>, "call_tinyurl")
-endif
-if !exists(":PTinyURL")
-    command -nargs=? PTinyURL :call <SID>GetShortURL("cmdline", <q-args>, "call_tinyurl")
-endif
-
 if !exists(":BitLy")
     command -nargs=? BitLy :call <SID>GetShortURL("insert", <q-args>, "call_bitly")
 endif
@@ -5378,46 +5129,6 @@ if !exists(":AIsGd")
 endif
 if !exists(":PIsGd")
     command -nargs=? PIsGd :call <SID>GetShortURL("cmdline", <q-args>, "call_isgd")
-endif
-
-if !exists(":UrlBorg")
-    command -nargs=? UrlBorg :call <SID>GetShortURL("insert", <q-args>, "call_urlborg")
-endif
-if !exists(":AUrlBorg")
-    command -nargs=? AUrlBorg :call <SID>GetShortURL("append", <q-args>, "call_urlborg")
-endif
-if !exists(":PUrlBorg")
-    command -nargs=? PUrlBorg :call <SID>GetShortURL("cmdline", <q-args>, "call_urlborg")
-endif
-
-if !exists(":Trim")
-    command -nargs=? Trim :call <SID>GetShortURL("insert", <q-args>, "call_trim")
-endif
-if !exists(":ATrim")
-    command -nargs=? ATrim :call <SID>GetShortURL("append", <q-args>, "call_trim")
-endif
-if !exists(":PTrim")
-    command -nargs=? PTrim :call <SID>GetShortURL("cmdline", <q-args>, "call_trim")
-endif
-
-if !exists(":Cligs")
-    command -nargs=? Cligs :call <SID>GetShortURL("insert", <q-args>, "call_cligs")
-endif
-if !exists(":ACligs")
-    command -nargs=? ACligs :call <SID>GetShortURL("append", <q-args>, "call_cligs")
-endif
-if !exists(":PCligs")
-    command -nargs=? PCligs :call <SID>GetShortURL("cmdline", <q-args>, "call_cligs")
-endif
-
-if !exists(":Zima")
-    command -nargs=? Zima :call <SID>GetShortURL("insert", <q-args>, "call_zima")
-endif
-if !exists(":AZima")
-    command -nargs=? AZima :call <SID>GetShortURL("append", <q-args>, "call_zima")
-endif
-if !exists(":PZima")
-    command -nargs=? PZima :call <SID>GetShortURL("cmdline", <q-args>, "call_zima")
 endif
 
 if !exists(":Googl")
@@ -5439,17 +5150,6 @@ endif
 if !exists(":POldGoogl")
     command -nargs=? POldGoogl :call <SID>GetShortURL("cmdline", <q-args>, "_call_googl")
 endif
-
-if !exists(":Rgala")
-    command -nargs=? Rgala :call <SID>GetShortURL("insert", <q-args>, "call_rgala")
-endif
-if !exists(":ARgala")
-    command -nargs=? ARgala :call <SID>GetShortURL("append", <q-args>, "call_rgala")
-endif
-if !exists(":PRgala")
-    command -nargs=? PRgala :call <SID>GetShortURL("cmdline", <q-args>, "call_rgala")
-endif
-
 
 " Get status text with t.co URL expansion. (JSON version)
 function! s:get_status_text_json(item)
