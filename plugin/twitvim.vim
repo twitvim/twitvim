@@ -364,7 +364,6 @@ function! s:parse_json(str)
 endfunction
 
 " === XML helper functions ===
-" TODO: May be able to get rid of all these.
 
 " Get the content of the n'th element in a series of elements.
 function! s:xml_get_nth(xmlstr, elem, n)
@@ -3013,60 +3012,9 @@ function! s:str_replace_all(str, findstr, replstr)
     return s
 endfunction
 
-" Get status text with t.co URL expansion.
-function! s:get_status_text(item)
-    let text = s:xml_get_element(a:item, 'text')
-
-    " Remove nul characters.
-    let text = substitute(text, '[\x0]', ' ', 'g')
-
-    let entities = s:xml_get_element(s:xml_remove_elements(a:item, 'user'), 'entities')
-    let urls = s:xml_get_element(entities, 'urls')
-
-    " Twitter entities output currently has a url element inside each url
-    " element, so we handle that by only getting every other url element.
-    let matchcount = 1
-    while 1
-        let url = s:xml_get_nth(urls, 'url', matchcount * 2)
-        let expanded_url = s:xml_get_nth(urls, 'expanded_url', matchcount)
-
-        if url == '' || expanded_url == ''
-            break
-        endif
-
-        " echomsg "Replacing ".url." with ".expanded_url." in ".text
-        let text = s:str_replace_all(text, url, expanded_url)
-
-        let matchcount += 1
-    endwhile
-
-    " Expand media URLs too.
-    let media = s:xml_get_element(entities, 'media')
-    let matchcount = 1
-    while 1
-        let url = s:xml_get_nth(media, 'url', matchcount)
-        let expanded_url = s:xml_get_nth(media, 'expanded_url', matchcount)
-
-        if url == '' || expanded_url == ''
-            break
-        endif
-
-        " echomsg "Replacing ".url." with ".expanded_url." in ".text
-        let text = s:str_replace_all(text, url, expanded_url)
-
-        let matchcount += 1
-    endwhile
-
-    return text
-endfunction
-
 " Format JSON status as a display line.
 function! s:format_status_json(item)
     let item = a:item
-
-    " Quick hack. Even though we're getting new-style retweets in the timeline
-    " XML, we'll still use the old-style retweet text from it.
-    " let item = s:xml_remove_elements(item, 'retweeted_status')
 
     let user = get(get(item, 'user', {}), 'screen_name', '')
     let text = s:format_retweeted_status_json(item)
@@ -4396,54 +4344,6 @@ function! s:format_user_list_json(result, title, show_following)
         if statusnode != {}
             let status = s:get_status_text_json(statusnode)
             let pubdate = s:time_filter(get(statusnode, 'created_at', ''))
-            call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
-        endif
-
-        call add(text, '')
-    endfor
-    return text
-endfunction
-
-" Format a list of users, e.g. friends/followers list.
-function! s:format_user_list(output, title, show_following)
-    let text = []
-
-    let showheader = s:get_show_header()
-    if showheader
-        " The extra stars at the end are for the syntax highlighter to
-        " recognize the title. Then the syntax highlighter hides the stars by
-        " coloring them the same as the background. It is a bad hack.
-        call add(text, a:title.'*')
-        call add(text, repeat('=', s:mbstrlen(a:title)).'*')
-    endif
-
-    for user in s:xml_get_all(a:output, 'user')
-        let following_str = ''
-        if a:show_following
-            let following = s:xml_get_element(user, 'following')
-            if following == 'true'
-                let following_str = ' Following'
-            else
-                let follow_req = s:xml_get_element(user, 'follow_request_sent')
-                let following_str = follow_req == 'true' ? ' Follow request sent' : ' Not following'
-            endif
-        endif
-
-        let name = s:convert_entity(s:xml_get_element(user, 'name'))
-        let screen = s:xml_get_element(user, 'screen_name')
-        let location = s:convert_entity(s:xml_get_element(user, 'location'))
-        let slocation = location == '' ? '' : '|'.location
-        call add(text, 'Name: '.screen.' ('.name.slocation.')'.following_str)
-
-        let desc = s:xml_get_element(user, 'description')
-        if desc != ''
-            call add(text, 'Bio: '.s:convert_entity(desc))
-        endif
-
-        let statusnode = s:xml_get_element(user, 'status')
-        if statusnode != ""
-            let status = s:get_status_text(statusnode)
-            let pubdate = s:time_filter(s:xml_get_element(statusnode, 'created_at'))
             call add(text, 'Status: '.s:convert_entity(status).' |'.pubdate.'|')
         endif
 
