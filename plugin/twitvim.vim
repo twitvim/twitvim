@@ -1036,24 +1036,27 @@ endfunction
 
 " Perform an OAuth login.
 function! s:do_login()
-    let keys = [ '' ]
-    let menu = [ 'Pick a service to login to:' ]
-    let i = 0
-    for [key, svc] in items(s:service_info)
-        let i += 1
-        call add(keys, key)
-        call add(menu, printf('%2d. %s', i, svc['dispname']))
-    endfor
+    " let keys = [ '' ]
+    " let menu = [ 'Pick a service to login to:' ]
+    " let i = 0
+    " for [key, svc] in items(s:service_info)
+    "     let i += 1
+    "     call add(keys, key)
+    "     call add(menu, printf('%2d. %s', i, svc['dispname']))
+    " endfor
 
-    call inputsave()
-    let input = inputlist(menu)
-    call inputrestore()
+    " call inputsave()
+    " let input = inputlist(menu)
+    " call inputrestore()
 
-    if input < 1 || input >= len(menu)
-        return [ -1, 'Login canceled.' ]
-    endif
+    " if input < 1 || input >= len(menu)
+    "     return [ -1, 'Login canceled.' ]
+    " endif
 
-    let s:cur_service = keys[input]
+    " let s:cur_service = keys[input]
+
+    " Only support Twitter for now. Reenable the menu if we ever have more Twitter-like services.
+    let s:cur_service = 'twitter'
 
     let [ retval, s:access_token, s:access_token_secret, s:cached_username ] = s:do_oauth()
     if retval < 0
