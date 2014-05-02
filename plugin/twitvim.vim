@@ -75,7 +75,8 @@ endfunction
 
 " Allow the user to override the API root for services other than Twitter and identi.ca.
 function! s:get_api_root()
-    return s:get_cur_service() == '' ? s:default_api_root : s:service_info[svc]['api_root']
+    let svc = s:get_cur_service()
+    return svc == '' ? s:default_api_root : s:service_info[svc]['api_root']
 endfunction
 
 " Service display name.
