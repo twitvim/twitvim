@@ -5519,53 +5519,6 @@ function! s:show_summize_new(searchres, page)
     let s:curbuffer.buffer = text
 endfunction
 
-" Parse and format search results from Twitter Search API.
-function! s:show_summize(searchres, page)
-    let text = []
-
-    let s:curbuffer.dmids = []
-
-    let title = 'Search - '.s:url_decode(get(a:searchres, 'query', ''))
-    if a:page > 1
-        let title .= ' (page '.a:page.')'
-    endif
-
-    let s:curbuffer.showheader = s:get_show_header()
-    if s:curbuffer.showheader
-        " Index of first status will be 3 to match line numbers in timeline
-        " display.
-        let s:curbuffer.statuses = [0, 0, 0]
-        let s:curbuffer.inreplyto = [0, 0, 0]
-
-        " The extra stars at the end are for the syntax highlighter to
-        " recognize the title. Then the syntax highlighter hides the stars by
-        " coloring them the same as the background. It is a bad hack.
-        call add(text, title.'*')
-        call add(text, repeat('=', strlen(title)).'*')
-    else
-        " Index of first status will be 1 to match line numbers in timeline
-        " display.
-        let s:curbuffer.statuses = [0]
-        let s:curbuffer.inreplyto = [0]
-    endif
-
-    for item in get(a:searchres, 'results', [])
-        let user = get(item, 'from_user', '')
-
-        let line = s:convert_entity(s:get_status_text_json(item))
-        let pubdate = s:time_filter(get(item, 'created_at', ''))
-
-        let status = get(item, 'id_str', get(item, 'id', ''))
-        call add(s:curbuffer.statuses, status)
-        call add(s:curbuffer.inreplyto, get(item, 'in_reply_to_status_id_str', get(item, 'in_reply_to_status_id', '')))
-
-        call add(text, user.': '.line.' |'.pubdate.'|')
-    endfor
-
-    call s:twitter_wintext(text, "timeline")
-    let s:curbuffer.buffer = text
-endfunction
-
 " Query Search API and retrieve results.
 " History: Summize was the original name of a third-party Twitter search
 " service before it was acquired by Twitter.
@@ -5578,11 +5531,6 @@ function! s:get_summize(query, page, max_id)
 
     let parms = {}
     let parms.q = a:query
-
-    " Support pagination.
-"     if a:page > 1
-"         let param .= 'page='.a:page.'&'
-"     endif
 
     " Support max_id parameter.
     if a:max_id != 0
@@ -5617,12 +5565,7 @@ function! s:get_summize(query, page, max_id)
     call s:save_buffer(0)
     let s:curbuffer = {}
 
-    " Twitter API 1.1 is different from identi.ca for now.
-    if s:get_cur_service() == 'twitter'
-        call s:show_summize_new(result, a:page)
-    else
-        call s:show_summize(result, a:page)
-    endif
+    call s:show_summize_new(result, a:page)
 
     let s:curbuffer.buftype = "search"
 
