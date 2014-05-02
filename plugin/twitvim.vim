@@ -4949,39 +4949,6 @@ function! s:call_googl(url)
     return ""
 endfunction
 
-
-" Call Goo.gl API (old version) to shorten a URL.
-function! s:_call_googl(url)
-    let url = "http://goo.gl/api/url"
-    let parms = { "url": a:url }
-
-    redraw
-    echo "Sending request to goo.gl..."
-
-    let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), parms)
-
-    let result = s:parse_json(output)
-
-    if has_key(result, 'error_message')
-        call s:errormsg("Error calling goo.gl API: ".result.error_message)
-        return ""
-    endif
-
-    if has_key(result, 'short_url')
-        redraw
-        echo "Received response from goo.gl."
-        return result.short_url
-    endif
-
-    if error != ''
-        call s:errormsg("Error calling goo.gl API: ".error)
-        return ""
-    endif
-
-    call s:errormsg("No result returned by goo.gl API.")
-    return ""
-endfunction
-
 " Invoke URL shortening service to shorten a URL and insert it at the current
 " position in the current buffer.
 function! s:GetShortURL(tweetmode, url, shortfn)
@@ -5040,16 +5007,6 @@ if !exists(":AGoogl")
 endif
 if !exists(":PGoogl")
     command -nargs=? PGoogl :call <SID>GetShortURL("cmdline", <q-args>, "call_googl")
-endif
-
-if !exists(":OldGoogl")
-    command -nargs=? OldGoogl :call <SID>GetShortURL("insert", <q-args>, "_call_googl")
-endif
-if !exists(":AOldGoogl")
-    command -nargs=? AOldGoogl :call <SID>GetShortURL("append", <q-args>, "_call_googl")
-endif
-if !exists(":POldGoogl")
-    command -nargs=? POldGoogl :call <SID>GetShortURL("cmdline", <q-args>, "_call_googl")
 endif
 
 " Get status text with t.co URL expansion. (JSON version)
