@@ -87,12 +87,6 @@ function! s:get_disp_name(service)
     return get(s:service_info, a:service, { 'dispname' : a:service })['dispname']
 endfunction
 
-" Are we using one of the OAuth services?
-" TODO: Remove this later.
-function! s:is_oauth()
-    return 1
-endfunction
-
 " Allow user to set the format for retweets.
 function! s:get_retweet_fmt()
     return get(g:, 'twitvim_retweet_format', 'RT %s: %t')
@@ -121,11 +115,6 @@ endfunction
 " Allow user to enable Tcl code by setting twitvim_enable_tcl.
 function! s:get_enable_tcl()
     return get(g:, 'twitvim_enable_tcl', 0)
-endfunction
-
-" Force SSL mode.
-function! s:get_force_ssl()
-    return get(g:, 'twitvim_force_ssl') 
 endfunction
 
 " Get proxy setting from twitvim_proxy in .vimrc or _vimrc.
@@ -201,25 +190,6 @@ function! s:get_net_timeout()
     return get(g:, 'twitvim_net_timeout', 0)
 endfunction
 
-" If nonzero, use old API for friends/followers.
-" Default is 0 for Twitter and 1 for all other services.
-" TODO: Remove this later.
-function! s:get_use_old_friends_api()
-    if exists('g:twitvim_use_old_friends_api')
-        return g:twitvim_use_old_friends_api
-    else
-        let svc = s:get_cur_service()
-        if svc == ''
-            " Assume that all unknown services have to use the old API.
-            return 1
-        else
-            " Only Twitter supports the new friends/followers API for now.
-            return svc != 'twitter'
-        endif
-    endif
-endfunction
-
-
 " Display an error message in the message area.
 function! s:errormsg(msg)
     redraw
@@ -234,24 +204,6 @@ function! s:warnmsg(msg)
     echohl WarningMsg
     echomsg a:msg
     echohl None
-endfunction
-
-" Get Twitter login info from twitvim_login in vimrc.
-" Format is username:password
-" If twitvim_login_b64 exists, use that instead. This is the user:password
-" in base64 encoding.
-"
-" This function is for services with Twitter-compatible APIs that use Basic
-" authentication, e.g. identi.ca
-" TODO: Remove this later.
-function! s:get_twitvim_login_noerror()
-    if exists('g:twitvim_login_b64') && g:twitvim_login_b64 != ''
-        return g:twitvim_login_b64
-    elseif exists('g:twitvim_login') && g:twitvim_login != ''
-        return g:twitvim_login
-    else
-        return ''
-    endif
 endfunction
 
 " Throw away saved login tokens and reset login info.
@@ -351,7 +303,6 @@ function! s:switch_twitvim_login(user)
     call s:write_tokens(s:cached_username)
 endfunction
 
-let s:cached_login = ''  " TODO: Remove this later.
 let s:cached_username = ''
 
 " See if we can save time by using the cached username.
@@ -522,6 +473,7 @@ function! s:timegm2(matchres, indxlist)
 endfunction
 
 " Parse a Twitter time string.
+" TODO: Not all of these may be needed any more.
 function! s:parse_time(str)
     " This timestamp format is used by Twitter in timelines.
     let matchres = matchlist(a:str, '^\w\+,\s\+\(\d\+\)\s\+\(\w\+\)\s\+\(\d\+\)\s\+\(\d\+\):\(\d\+\):\(\d\+\)\s\++0000$')
@@ -983,17 +935,12 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     return content
 endfunction
 
-" Convert an OAuth endpoint to https if user sets twitvim_force_ssl.
-function! s:to_https(url)
-    return s:get_force_ssl() ? substitute(a:url, '^\chttp:', 'https:', '') : a:url
-endfunction
-
 " Perform the OAuth dance to authorize this client with Twitter.
 function! s:do_oauth()
     " Call oauth/request_token to get request token from Twitter.
 
     let parms = { "oauth_callback": "oob", "dummy" : "1" }
-    let req_url = s:to_https(s:service_info[s:cur_service]['req_url'])
+    let req_url = s:service_info[s:cur_service]['req_url']
     let oauth_hdr = s:getOauthResponse(req_url, "POST", parms, "")
 
     let [error, output] = s:run_curl(req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
@@ -1021,7 +968,7 @@ function! s:do_oauth()
     endif
 
     " Launch web browser to let user allow or deny the authentication request.
-    let auth_url = s:to_https(s:service_info[s:cur_service]['authorize_url'] . "?oauth_token=" . request_token)
+    let auth_url = s:service_info[s:cur_service]['authorize_url'] . "?oauth_token=" . request_token
 
     " If user has not set up twitvim_browser_cmd, just display the
     " authentication URL and ask the user to visit that URL.
@@ -1058,7 +1005,7 @@ function! s:do_oauth()
     " Call oauth/access_token to swap request token for access token.
     
     let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
-    let access_url = s:to_https(s:service_info[s:cur_service]['access_url'])
+    let access_url = s:service_info[s:cur_service]['access_url']
     let oauth_hdr = s:getOauthResponse(access_url, "POST", parms, token_secret)
 
     let [error, output] = s:run_curl(access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
@@ -1153,7 +1100,7 @@ function! s:run_curl_oauth(method, url, parms)
         let a:parms.dummy = 'dummy1'
     endif
 
-    let runurl = s:to_https(a:url)
+    let runurl = a:url
     let runparms = a:parms
     if a:method == 'GET'
         let runparms = {}
@@ -1162,34 +1109,24 @@ function! s:run_curl_oauth(method, url, parms)
         endfor
     endif
 
-    if s:is_oauth()
-
-        " Get access tokens from token file or do OAuth login.
+    " Get access tokens from token file or do OAuth login.
+    if !exists('s:access_token') || s:access_token == ''
+        call s:read_tokens()
         if !exists('s:access_token') || s:access_token == ''
-            call s:read_tokens()
-            if !exists('s:access_token') || s:access_token == ''
-                let [ status, error ] = s:do_login()
-                if status < 0
-                    return [ error, '' ]
-                endif
+            let [ status, error ] = s:do_login()
+            if status < 0
+                return [ error, '' ]
             endif
         endif
-
-        let url = s:to_https(a:url)
-
-        let parms = copy(a:parms)
-        let parms.oauth_token = s:access_token
-        let oauth_hdr = s:getOauthResponse(url, a:method, parms, s:access_token_secret)
-
-        return s:run_curl(runurl, oauth_hdr, s:get_proxy(), s:get_proxy_login(), runparms)
-    else
-        let login = s:get_twitvim_login_noerror()
-        if login == ''
-            return [ 'Login info not set. Please add to vimrc: let twitvim_login="USER:PASS"', '' ]
-        endif
-
-        return s:run_curl(runurl, login, s:get_proxy(), s:get_proxy_login(), runparms)
     endif
+
+    let url = a:url
+
+    let parms = copy(a:parms)
+    let parms.oauth_token = s:access_token
+    let oauth_hdr = s:getOauthResponse(url, a:method, parms, s:access_token_secret)
+
+    return s:run_curl(runurl, oauth_hdr, s:get_proxy(), s:get_proxy_login(), runparms)
 endfunction
 
 " === End of OAuth code ===
@@ -2204,8 +2141,8 @@ function! s:post_twitter(mesg, inreplyto)
         " Pretend to shorten URLs.
         let sim_mesg = s:sim_shorten_urls(mesg)
     else
-        " Assume that identi.ca and other non-Twitter services don't do this
-        " URL-shortening madness.
+        " Assume that non-Twitter services don't do this URL-shortening
+        " madness.
         let sim_mesg = mesg
     endif
 
@@ -2326,7 +2263,7 @@ endfunction
 
 " Allow user to switch to old-style retweets by setting twitvim_old_retweet.
 function! s:get_old_retweet()
-    return exists('g:twitvim_old_retweet') ? g:twitvim_old_retweet : 0
+    return get(g:, 'twitvim_old_retweet', 0)
 endfunction
 
 " Extract the tweet text from a timeline buffer line.
@@ -2723,7 +2660,6 @@ function! s:launch_url_cword(infobuf)
         return
     endif
 
-
     let s = substitute(s, '^.\{-}\('.s:URLMATCH.'\).\{-}$', '\1', "")
     call s:launch_browser(s)
 endfunction
@@ -2736,29 +2672,6 @@ function! s:info_getname()
     else
         return ''
     endif
-endfunction
-
-" Attempt to scrape deck.ly HTML to get the long tweet.
-function! s:get_deckly(url)
-    let [error, output] = s:run_curl(a:url, '', s:get_proxy(), s:get_proxy_login(), {})
-    if error != ''
-        call s:errormsg('Error getting deck.ly page: '.error)
-        return ''
-    endif
-    let matchres = matchlist(output, '<div\s\+id="deckly-post"[^>]\+>\(\_.*\)</div>')
-    if matchres == []
-        call s:errormsg('Could not find long post in deck.ly page.')
-        return ''
-    endif
-    let matchres = matchlist(matchres[1], '<p>\(\_.\{-}\)</p>')
-    if matchres == []
-        call s:errormsg('Could not find long post in deckly-post div.')
-        return ''
-    endif
-    let s = matchres[1]
-    let s = substitute(s, '<a\>[^>]\+>', '', 'g')
-    let s = substitute(s, '</a>', '', 'g')
-    return s
 endfunction
 
 " Call LongURL API on a shorturl to expand it.
@@ -2778,15 +2691,6 @@ function! s:call_longurl(url)
         let longurl = s:xml_get_element(output, 'long_url')
         if longurl != ""
             let longurl = substitute(longurl, '<!\[CDATA\[\(.*\)]]>', '\1', '')
-
-            " If it is a deck.ly URL, attempt to get the long tweet.
-            if a:url =~? 'deck\.ly' && longurl =~? 'tweetdeck\.com/twitter'
-                let longpost = s:get_deckly(longurl)
-                if longpost != ''
-                    return longpost
-                endif
-            endif
-
             return longurl
         endif
 
@@ -2807,8 +2711,7 @@ endfunction
 function! s:do_longurl(s)
     let s = a:s
     if s == ""
-        let s = expand("<cWORD>")
-        let s = substitute(s, '.*\<\('.s:URLMATCH.'\)', '\1', "")
+        let s = substitute(expand("<cWORD>"), '.*\<\('.s:URLMATCH.'\)', '\1', "")
     endif
     let result = s:call_longurl(s)
     if result != ""
@@ -2892,7 +2795,6 @@ function! s:convert_entity(str)
     let s = substitute(s, '&gt;', '>', 'g')
     let s = substitute(s, '&quot;', '"', 'g')
     let s = substitute(s, '&apos;', "'", 'g')
-    " let s = substitute(s, '&#\(\d\+\);','\=nr2char(submatch(1))', 'g')
     let s = substitute(s, '&#\(\d\+\);','\=s:nr2enc_char(submatch(1))', 'g')
     let s = substitute(s, '&#x\(\x\+\);','\=s:nr2enc_char("0x".submatch(1))', 'g')
     let s = substitute(s, '&amp;', '\&', 'g')
@@ -3265,17 +3167,7 @@ endfunction
 " Generic timeline retrieval function.
 function! s:get_timeline(tline_name, username, page, max_id)
 
-    if s:get_cur_service() == 'twitter'
-        let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".json" : a:tline_name == "friends" ? "home_timeline.json" : a:tline_name == "replies" ? "mentions_timeline.json" : a:tline_name == "favorites" ? "favorites/list.json" : a:tline_name."_timeline.json"
-    else
-        " identi.ca still uses old endpoints.
-        let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".json" : a:tline_name == "friends" ? "home_timeline.json" : a:tline_name == "replies" ? "mentions.json" : a:tline_name == "favorites" ? "favorites.json" : a:tline_name."_timeline.json"
-    endif
-
-    " Support pagination.
-"     if a:page > 1
-"         let url_fname = s:add_to_url(url_fname, 'page='.a:page)
-"     endif
+    let url_fname = (a:tline_name == "retweeted_to_me" || a:tline_name == "retweeted_by_me") ? a:tline_name.".json" : a:tline_name == "friends" ? "home_timeline.json" : a:tline_name == "replies" ? "mentions_timeline.json" : a:tline_name == "favorites" ? "favorites/list.json" : a:tline_name."_timeline.json"
 
     let parms = {}
 
@@ -3353,11 +3245,6 @@ function! s:get_list_timeline(username, listname, page, max_id)
     let parms = {}
     let parms.slug = a:listname
     let parms.owner_screen_name = user
-
-    " Support pagination.
-"     if a:page > 1
-"         let url = s:add_to_url(url, 'page='.a:page)
-"     endif
 
     " Support max_id parameter.
     if a:max_id != 0
@@ -3457,11 +3344,6 @@ function! s:Direct_Messages(mode, page, max_id)
     echo "Sending direct messages ".s_or_r." timeline request..."
 
     let url = s:get_api_root()."/direct_messages".(sent ? "/sent" : "").".json"
-
-    " Support pagination.
-"     if a:page > 1
-"         let url = s:add_to_url(url, 'page='.a:page)
-"     endif
 
     let parms = {}
     
@@ -4703,67 +4585,6 @@ function! s:get_friends_2(cursor, ids, next_cursor, prev_cursor, index, user, fo
     echo title.' retrieved.'
 endfunction
 
-" Call Twitter API to get friends or followers list.
-function! s:get_friends(cursor, user, followers)
-    if a:followers
-        let buftype = 'followers'
-        let query = '/statuses/followers.xml'
-        if a:user != ''
-            let what = 'followers list of '.a:user
-            let title = 'People following '.a:user
-        else
-            let what = 'followers list'
-            let title = 'People following you'
-        endif
-    else
-        let buftype = 'friends'
-        let query = '/statuses/friends.xml'
-        if a:user != ''
-            let what = 'friends list of '.a:user
-            let title = 'People '.a:user.' is following'
-        else
-            let what = 'friends list'
-            let title = "People you're following"
-        endif
-    endif
-
-    redraw
-    echo "Querying for ".what."..."
-
-    let url = s:get_api_root().query
-    let parms = {}
-    let parms.cursor = a:cursor
-    if a:user != ''
-        let parms.screen_name = a:user
-    endif
-    " Include entities to get URL expansions for t.co.
-    let parms.include_entities = 'true'
-
-    let [error, output] = s:run_curl_oauth_get(url, parms)
-    if error != ''
-        let errormsg = s:xml_get_element(output, 'error')
-        call s:errormsg("Error getting ".what.": ".(errormsg != '' ? errormsg : error))
-        return
-    endif
-
-    call s:save_buffer(1)
-    let s:infobuffer = {}
-    call s:twitter_wintext(s:format_user_list(output, title, a:followers || a:user != ''), "userinfo")
-    let s:infobuffer.buftype = buftype
-    let s:infobuffer.next_cursor = s:xml_get_element(output, 'next_cursor')
-    let s:infobuffer.prev_cursor = s:xml_get_element(output, 'previous_cursor')
-    let s:infobuffer.cursor = a:cursor
-    let s:infobuffer.user = a:user
-    let s:infobuffer.list = ''
-
-    let s:infobuffer.flist = []
-    let s:infobuffer.findex = 0
-
-    redraw
-    call s:save_buffer(1)
-    echo substitute(what,'^.','\u&','') 'retrieved.'
-endfunction
-
 " Call Twitter API to get members or subscribers of list.
 function! s:get_list_members(cursor, user, list, subscribers)
     let user = a:user
@@ -4976,12 +4797,9 @@ endfunction
 
 " Function to load an info buffer from the given parameters.
 " For use by next/prev pagination commands.
+" Note: friends and followers buffer types need special handling.
 function! s:load_info(buftype, cursor, user, list)
-    if a:buftype == "friends"
-        call s:get_friends(a:cursor, a:user, 0)
-    elseif a:buftype == "followers"
-        call s:get_friends(a:cursor, a:user, 1)
-    elseif a:buftype == "listmembers"
+    if a:buftype == "listmembers"
         call s:get_list_members(a:cursor, a:user, a:list, 0)
     elseif a:buftype == "listsubs"
         call s:get_list_members(a:cursor, a:user, a:list, 1)
@@ -5001,12 +4819,10 @@ endfunction
 " Go to next page in info buffer.
 function! s:NextPageInfo()
     if s:infobuffer != {}
-        if !s:get_use_old_friends_api()
-            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-                call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
-                return
-            endif
-        end
+        if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+            call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 0)
+            return
+        endif
         if s:infobuffer.next_cursor == 0
             call s:warnmsg("No next page in info buffer.")
         else
@@ -5020,11 +4836,9 @@ endfunction
 " Go to previous page in info buffer.
 function! s:PrevPageInfo()
     if s:infobuffer != {}
-        if !s:get_use_old_friends_api()
-            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-                call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
-                return
-            endif
+        if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+            call s:load_prevnext_friends_info_2(s:infobuffer.buftype, s:infobuffer, 1)
+            return
         endif
         if s:infobuffer.prev_cursor == 0
             call s:warnmsg("No previous page in info buffer.")
@@ -5039,11 +4853,9 @@ endfunction
 " Refresh info buffer.
 function! s:RefreshInfo()
     if s:infobuffer != {}
-        if !s:get_use_old_friends_api()
-            if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
-                call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
-                return
-            endif
+        if s:infobuffer.buftype == 'friends' || s:infobuffer.buftype == 'followers'
+            call s:get_friends_2(s:infobuffer.cursor, s:infobuffer.flist, s:infobuffer.next_cursor, s:infobuffer.prev_cursor, s:infobuffer.findex, s:infobuffer.user, s:infobuffer.buftype == 'followers')
+            return
         endif
         call s:load_info(s:infobuffer.buftype, s:infobuffer.cursor, s:infobuffer.user, s:infobuffer.list)
     else
@@ -5062,11 +4874,7 @@ if !exists(":PreviousInfoTwitter")
 endif
 
 function! s:do_get_friends(user, followers)
-    if s:get_use_old_friends_api()
-        call s:get_friends(-1, a:user, a:followers)
-    else
-        call s:get_friends_2(-1, [], 0, 0, 0, a:user, a:followers)
-    endif
+    call s:get_friends_2(-1, [], 0, 0, 0, a:user, a:followers)
 endfunction
 
 if !exists(":FollowingTwitter")
