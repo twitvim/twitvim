@@ -1831,7 +1831,7 @@ endif
 
 " Each buffer record holds the following fields:
 "
-" buftype: Buffer type = dmrecv, dmsent, search, public, friends, user, 
+" buftype: Buffer type = dmrecv, dmsent, search, friends, user, 
 "   replies, list, retweeted_by_me, retweeted_to_me, favorites, trends
 " user: For user buffers if other than current user
 " list: List slug if displaying a Twitter list.
@@ -2045,9 +2045,9 @@ endif
 
 " === End of buffer stack code ===
 
-" Add update to Twitter buffer if public, friends, or user timeline.
+" Add update to Twitter buffer if friends, replies, or user timeline.
 function! s:add_update(result)
-    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "public" || s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list" || s:curbuffer.buftype == "retweeted_by_me" || s:curbuffer.buftype == "retweeted_to_me")
+    if has_key(s:curbuffer, 'buftype') && (s:curbuffer.buftype == "friends" || s:curbuffer.buftype == "user" || s:curbuffer.buftype == "replies" || s:curbuffer.buftype == "list" || s:curbuffer.buftype == "retweeted_by_me" || s:curbuffer.buftype == "retweeted_to_me")
 
         " Parse the output from the Twitter update call.
         let line = s:format_status_json(a:result)
@@ -3606,7 +3606,7 @@ endif
 " max_id (maximum tweet ID to load) is for the Twitter API max_id parameter.
 " max_id = 0 if loading tweets from the start of timeline.
 function! s:load_timeline(buftype, user, list, page, max_id)
-    if a:buftype == "public" || a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me" || a:buftype == 'favorites'
+    if a:buftype == "friends" || a:buftype == "user" || a:buftype == "replies" || a:buftype == "retweeted_by_me" || a:buftype == "retweeted_to_me" || a:buftype == 'favorites'
         call s:get_timeline(a:buftype, a:user, a:page, a:max_id)
     elseif a:buftype == "list"
         call s:get_list_timeline(a:user, a:list, a:page, a:max_id)
@@ -3685,9 +3685,6 @@ function! s:DoList(page, arg1, ...)
     call s:get_list_timeline(user, list, a:page, 0)
 endfunction
 
-if !exists(":PublicTwitter")
-    command PublicTwitter :call <SID>get_timeline("public", '', 1, 0)
-endif
 if !exists(":FriendsTwitter")
     command FriendsTwitter :call <SID>get_timeline("friends", '', 1, 0)
 endif
@@ -3725,7 +3722,6 @@ nnoremenu Plugin.TwitVim.&User\ Timeline :call <SID>get_timeline("user", '', 1, 
 nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call <SID>get_timeline("replies", '', 1, 0)<cr>
 nnoremenu Plugin.TwitVim.&Direct\ Messages :call <SID>Direct_Messages("dmrecv", 1, 0)<cr>
 nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call <SID>Direct_Messages("dmsent", 1, 0)<cr>
-nnoremenu Plugin.TwitVim.&Public\ Timeline :call <SID>get_timeline("public", '', 1, 0)<cr>
 
 nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call <SID>get_timeline("retweeted_by_me", '', 1, 0)<cr>
 nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call <SID>get_timeline("retweeted_to_me", '', 1, 0)<cr>

@@ -68,7 +68,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     :FriendsTwitter......................: |:FriendsTwitter|
 	     :MentionsTwitter.....................: |:MentionsTwitter|
 	     :RepliesTwitter......................: |:RepliesTwitter|
-	     :PublicTwitter.......................: |:PublicTwitter|
 	     :DMTwitter...........................: |:DMTwitter|
 	     :DMSentTwitter.......................: |:DMSentTwitter|
 	     :ListTwitter.........................: |:ListTwitter|
@@ -917,14 +916,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	You can configure the number of tweets returned by :MentionsTwitter by
 	setting |twitvim_count|.
-
-
-	:PublicTwitter					*:PublicTwitter*
-
-	This command displays the public timeline.
-
-	Note: The REST API call supporting this command has been deprecated by
-	Twitter. This command will cease to function on May 14, 2012.
 
 
 	:DMTwitter					*:DMTwitter*
