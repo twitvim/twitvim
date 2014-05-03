@@ -20,7 +20,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3. Installation...........................: |TwitVim-install|
 	   OpenSSL................................: |TwitVim-OpenSSL|
 	   cURL...................................: |TwitVim-cURL|
-	   twitvim.vim............................: |TwitVim-add|
 	   twitvim_proxy..........................: |twitvim_proxy|
 	   twitvim_proxy_login....................: |twitvim_proxy_login|
 	3.1. TwitVim and OAuth....................: |TwitVim-OAuth|
@@ -29,31 +28,26 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	3.1.1. OAuth Consumer Key.................: |TwitVim-OAuth-Consumer|
 	       twitvim_consumer_key...............: |twitvim_consumer_key|
 	       twitvim_consumer_secret............: |twitvim_consumer_secret|
-	3.2. StatusNet............................: |TwitVim-StatusNet|
-	     twitvim_login........................: |twitvim_login|
-	     twitvim_api_root.....................: |twitvim_api_root|
-	3.3. Base64-Encoded Login.................: |TwitVim-login-base64|
-	     twitvim_login_b64....................: |twitvim_login_b64|
+	3.2. Base64-Encoded Login.................: |TwitVim-login-base64|
 	     twitvim_proxy_login_b64..............: |twitvim_proxy_login_b64|
-	3.4. Alternatives to cURL.................: |TwitVim-non-cURL|
+	3.3. Alternatives to cURL.................: |TwitVim-non-cURL|
 	     twitvim_enable_perl..................: |twitvim_enable_perl|
 	     twitvim_enable_python................: |twitvim_enable_python|
 	     twitvim_enable_ruby..................: |twitvim_enable_ruby|
 	     twitvim_enable_tcl...................: |twitvim_enable_tcl|
-	3.5. Using Twitter SSL API................: |TwitVim-ssl|
-	     twitvim_force_ssl....................: |twitvim_force_ssl|
+	3.4. Using Twitter SSL API................: |TwitVim-ssl|
 	     Twitter SSL via cURL.................: |TwitVim-ssl-curl|
 	     twitvim_cert_insecure................: |twitvim_cert_insecure|
 	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
 	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
 	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
 	     Twitter SSL via Tcl interface........: |TwitVim-ssl-tcl|
-	3.6. Hide the header in timeline buffer...: |TwitVim-hide-header|
+	3.5. Hide the header in timeline buffer...: |TwitVim-hide-header|
 	     twitvim_show_header..................: |twitvim_show_header|
-	3.7. Timeline filtering...................: |TwitVim-filter|
+	3.6. Timeline filtering...................: |TwitVim-filter|
 	     twitvim_filter_enable................: |twitvim_filter_enable|
 	     twitvim_filter_regex.................: |twitvim_filter_regex|
-	3.8. Preventing Loading...................: |TwitVim-noload|
+	3.7. Preventing Loading...................: |TwitVim-noload|
 	4. Manual.................................: |TwitVim-manual|
 	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
 	     twitvim_timestamp_format.............: |twitvim_timestamp_format|
@@ -171,8 +165,8 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	   twitterReply...........................: |hl-twitterReply|
 	6. Tips and Tricks........................: |TwitVim-tips|
 	6.1. Timeline Hotkeys.....................: |TwitVim-hotkeys|
-	6.2. Switching between identi.ca users....: |TwitVim-switch|
-	6.3. Line length in status line...........: |TwitVim-line-length|
+	6.2. Line length in status line...........: |TwitVim-line-length|
+	6.3. Network timeout......................: |TwitVim-network-timeout|
 	7. History................................: |TwitVim-history|
 	8. Credits................................: |TwitVim-credits|
 
@@ -183,27 +177,16 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	TwitVim is a plugin that allows you to post to Twitter, a
 	microblogging service at http://www.twitter.com.
 
-	Since version 0.8, TwitVim supports identi.ca via OAuth. Setup for
-	identi.ca is the same as for Twitter. TwitVim also supports StatusNet
-	services via their Twitter-compatible APIs but not through OAuth. See
-	|TwitVim-StatusNet| for information on configuring TwitVim for those
-	services.
-
 
 ==============================================================================
 3. Installation						*TwitVim-install*
 
 	
-	Note: These instructions are for configuring TwitVim for use with
-	Twitter and identi.ca. If you intend to use TwitVim with a StatusNet
-	service other than identi.ca, see |TwitVim-StatusNet|.
-
-
 	1. Install OpenSSL or compile Vim with |Python|, |Perl|, |Ruby|, or |Tcl|.
 
 	In order to compute HMAC-SHA1 digests and sign Twitter OAuth requests,
 	TwitVim needs to either run the openssl command line tool from the
-	OpenSSL toolkit or call a HMAC-SHA1 digest function from one of the
+	OpenSSL toolkit or call a HMAC-SHA1 digest function via one of the
 	above scripting interfaces.
 
 	
@@ -296,16 +279,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	avoids the overhead of running an external program.
 
 
-	3. twitvim.vim					*TwitVim-add*
-
-	Add twitvim.vim to your plugins directory. The location depends on
-	your operating system. See |add-global-plugin| for details.
-
-	If you installed from the Vimball (.vba or .vmb) file, twitvim.vim should
-	already be in its correct place.
-
-
-	4. twitvim_proxy				*twitvim_proxy*
+	3. twitvim_proxy				*twitvim_proxy*
 
 	This step is only needed if you access the web through a HTTP proxy.
 	If you use a HTTP proxy, add the following to your vimrc:
@@ -316,7 +290,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	with the port number of the HTTP proxy.
 
 
-	5. twitvim_proxy_login				*twitvim_proxy_login*
+	4. twitvim_proxy_login				*twitvim_proxy_login*
 
 	If the HTTP proxy requires authentication, add the following to your
 	vimrc:
@@ -330,11 +304,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	your vimrc. See |TwitVim-login-base64| for details.
 
 
-	6. Set twitvim_browser_cmd.
+	5. Set twitvim_browser_cmd.
 
-	In order to log in with Twitter/identi.ca OAuth, TwitVim needs to
-	launch your web browser and bring up the Twitter authentication web
-	page.
+	In order to log in with Twitter OAuth, TwitVim needs to launch your
+	web browser and bring up the Twitter authentication web page.
 
 	See |twitvim_browser_cmd| for details. For example, if you use Firefox
 	under Windows, add the following to your vimrc:
@@ -351,44 +324,40 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	will be shortened with is.gd or Bit.ly for ease of entry.
 
 
-	7. Enable SSL.
+	6. SSL prerequisites
 
-	For added security, you can make TwitVim use SSL when calling the
-	Twitter/identi.ca API. See |TwitVim-ssl| for instructions and
+	The Twitter API requires SSL. On most system setups, this should
+	not be a problem but if you are having trouble connecting to
+	Twitter with TwitVim, see |TwitVim-ssl| for instructions and
 	prerequisites.
 
-	Note: SSL is currently optional for Twitter but compulsory for
-	identi.ca's OAuth handshake.
 
-
-	8. Sign into Twitter with OAuth.
+	7. Sign into Twitter with OAuth.
 
 	Use any TwitVim command that requires authentication. For example,
 	run |:FriendsTwitter|. |:SetLoginTwitter| is the normal way to
 	initiate authentication without running a timeline command.
 
 	Since TwitVim does not yet have an OAuth access token, it will
-	initiate the Twitter/identi.ca OAuth handshake. Then it'll launch your
-	web browser to a Twitter or identi.ca web page that asks you to
-	authorize TwitVim to use your account. On this page, sign in, if
-	necessary, and then click on "Authorize app" to allow TwitVim access
-	to your account.
+	initiate the Twitter OAuth handshake. Then it'll launch your web
+	browser to a special Twitter web page that asks you to authorize
+	TwitVim to use your account. On this page, sign in, if necessary,
+	and then click on "Authorize app" to allow TwitVim access to your
+	account.
 
-	Twitter/identi.ca will then report that you have granted access to
-	TwitVim and display a numeric PIN. Copy the PIN and paste it to the
-	TwitVim input prompt "Enter OAuth PIN:".
+	Twitter will then report that you have granted access to TwitVim
+	and display a numeric PIN. Copy the PIN and paste it to the TwitVim
+	input prompt "Enter OAuth PIN:".
 
-	
-	And now you are ready to use TwitVim.
+	And now, you are ready to use TwitVim.
 
 
 ------------------------------------------------------------------------------
 3.1. TwitVim and OAuth					*TwitVim-OAuth*
 
-	After you log into Twitter/identi.ca with OAuth, TwitVim stores the
-	OAuth access token in a file so that you won't have to log in again
-	when you restart TwitVim. By default, this file is
-	$HOME/.twitvim.token
+	After you log into Twitter with OAuth, TwitVim stores the OAuth
+	access token in a file so that you won't have to log in again when
+	you restart TwitVim. By default, this file is $HOME/.twitvim.token
 
 						*twitvim_token_file*
 	You can change the name and location of this token file by setting
@@ -396,9 +365,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 >
 		let twitvim_token_file = "/etc/.twitvim.token"
 <
-	Since the access token grants full access to your Twitter/identi.ca
-	account, it is recommended that you place the token file in a
-	directory that is not readable or accessible by other users.
+	Since the access token grants full access to your Twitter account,
+	it is recommended that you place the token file in a directory that
+	is not readable or accessible by other users.
 
 
 						*twitvim_disable_token_file*
@@ -412,10 +381,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	handshake every time you restart it.
 
 
-	If TwitVim is logged in and you need to log in as a
-	different Twitter/identi.ca user, visit Twitter/identi.ca, sign out
-	and then sign in as the other user. Then use |:SetLoginTwitter| to
-	authenticate as that user.
+	If TwitVim is logged in and you need to log in as a different
+	Twitter user:
+	 - Visit the Twitter website in a web browser
+	 - Sign out and then sign in as the other user.
+	 - Then use |:SetLoginTwitter| to authenticate as that user.
 
 
 ------------------------------------------------------------------------------
@@ -450,101 +420,43 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.2. StatusNet						*TwitVim-StatusNet*
+3.2. Base64-Encoded Login				*TwitVim-login-base64*
 
-	Note: This section is for StatusNet services other than identi.ca. If
-	you are connecting to identi.ca, you can do so via OAuth using
-	|:SetLoginTwitter|.
-
-	StatusNet offers a Twitter-compatible API so you can use TwitVim with
-	StatusNet. Setting up TwitVim for StatusNet is a bit different from
-	setting up TwitVim for Twitter because StatusNet uses Basic
-	authentication instead of OAuth.
-
-	1. Install cURL
-
-	See |TwitVim-cURL|.
-
-
-	2. twitvim_login				*twitvim_login*
-
-	Add the following to your vimrc:
->
-		let twitvim_login = "USER:PASS"
-<
-	Replace USER with your user name and PASS with your password.
-
-	It is possible to avoid having your Twitter password in plaintext in
-	your vimrc. See |TwitVim-login-base64| for details.
-
-
-	3. Set up proxy info, if necessary.
-
-	See |twitvim_proxy| and |twitvim_proxy_login|.
-
-
-	4. Set twitvim_api_root				*twitvim_api_root*
-
-	This setting allows you to configure TwitVim to communicate with
-	servers other than Twitter and identi.ca that implement a
-	Twitter-compatible API.
-
-	For example, add the following to your vimrc:
->
-		let twitvim_api_root = "https://statusnet-server.com/api"
-<
-	You'll have to obtain the actual API root from the service's
-	documentation.
-
-	And now you are ready to use TwitVim with StatusNet.
-
-
-------------------------------------------------------------------------------
-3.3. Base64-Encoded Login				*TwitVim-login-base64*
-
-	For safety purposes, TwitVim allows you to configure your login and
-	proxy login information preencoded in base64. This is not truly secure
-	as it is not encryption but it can stop casual onlookers from reading
+	For safety purposes, TwitVim allows you to configure your proxy
+	login information preencoded in Base64. This is not truly secure as
+	it is not encryption but it can stop casual onlookers from reading
 	off your password when you edit your vimrc.
 
-						*twitvim_login_b64*
-	To do that, set the following in your vimrc:
->
-		let twitvim_login_b64 = "base64string"
-<
-	Note: This is only for StatusNet services that use Basic
-	authentication. TwitVim connects to Twitter and identi.ca using OAuth,
-	so you do not need to add login info to your vimrc.
-
-	
 						*twitvim_proxy_login_b64*
-	If your HTTP proxy needs authentication, set the following:
+	To configure the proxy login in base64, add the following to your
+	vimrc:
 >
 		let twitvim_proxy_login_b64 = "base64string"
 <
-	Where base64string is your username:password encoded in base64.
+	Where base64string is your username:password encoded in Base64.
 
 
 	An example:
 
-	Let's say Joe User has a Twitter login of "joeuser" and a password of
-	"joepassword". His first step is to encode "joeuser:joepassword" in
-	Base64. He can either use a standalone utility to do that or, in a
-	pinch, he can do the encoding at websites such as the following:
-	http://makcoder.sourceforge.net/demo/base64.php
-	http://www.opinionatedgeek.com/dotnet/tools/Base64Encode/
+	Let's say your HTTP proxy requires a login user name of "proxyuser"
+	and a password of "proxypassword". So you need to encode
+	"proxyuser:proxypassword" in Base64. You can either use a
+	standalone utility or websites like the following:
+	http://www.motobit.com/util/base64-decoder-encoder.asp
+	http://www.opinionatedgeek.com/DotNet/Tools/Base64Encode/default.aspx
+	http://www.base64encode.org/
 
-	The result is: am9ldXNlcjpqb2VwYXNzd29yZA==
+	The result is: cHJveHl1c2VyOnByb3h5cGFzc3dvcmQ=
 
-	Then he adds the following to his vimrc:
+	Then you can add the following to your vimrc:
 >
-		let twitvim_login_b64 = "am9ldXNlcjpqb2VwYXNzd29yZA=="
+		let twitvim_login_b64 = "cHJveHl1c2VyOnByb3h5cGFzc3dvcmQ="
 <
-	And his setup is ready.
+	And your setup is ready.
 
 
 ------------------------------------------------------------------------------
-3.4. Alternatives to cURL				*TwitVim-non-cURL*
+3.3. Alternatives to cURL				*TwitVim-non-cURL*
 
 	TwitVim supports http networking through Vim's |Perl|, |Python|,
 	|Ruby|, and |Tcl| interfaces, so if you have any of those interfaces
@@ -641,16 +553,11 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 <
 
 ------------------------------------------------------------------------------
-3.5. Using Twitter/identi.ca SSL API			*TwitVim-ssl*
+3.4. Using Twitter SSL API				*TwitVim-ssl*
 
-							*twitvim_force_ssl*
-	For added security, you can make TwitVim use SSL when calling the
-	Twitter/identi.ca API by adding the following to your vimrc:
->
-		let twitvim_force_ssl = 1
-<
-
-	There are certain pre-requisites, as explained below.
+	On most up-to-date systems, you should be able to use SSL with no
+	problems. In case you do run into problems, I review the
+	prerequisites below.
 
 
 	1. SSL via cURL					*TwitVim-ssl-curl*
@@ -727,7 +634,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.6. Hide the header in timeline and info buffers	*TwitVim-hide-header*
+3.5. Hide the header in timeline and info buffers	*TwitVim-hide-header*
 
 	In the timeline and info buffers, the first two lines are header
 	lines. The first line tells you the type of buffer it is (e.g.
@@ -754,7 +661,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.7. Timeline filtering					*TwitVim-filter*
+3.6. Timeline filtering					*TwitVim-filter*
 
 	TwitVim allows you to filter your timeline buffer to hide tweets
 	containing a pattern.
@@ -789,7 +696,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 
 ------------------------------------------------------------------------------
-3.8. Preventing Loading					*TwitVim-noload*
+3.7. Preventing Loading					*TwitVim-noload*
 
 	If you have TwitVim installed but for some reason don't wish to run
 	it, then you can avoid loading the plugin by adding the following
@@ -1100,20 +1007,14 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	This command initiates an OAuth login handshake. 
 
-	Use this command if you need to log in as another Twitter or identi.ca
-	user. When the authentication web page comes up, use the "Sign Out"
-	link to log in as a different user and grant TwitVim access to that
+	Use this command if you need to log in as another Twitter user.
+	When the authentication web page comes up, use the "Sign Out" link
+	to log in as a different user and grant TwitVim access to that
 	user.
 	
-	Note: On identi.ca, you may have to sign out at their website prior to
-	initiating :SetLoginTwitter in order to switch users.
-
 	When you use SetLoginTwitter, TwitVim does not discard the previous
 	access token. So you can switch back to the previous user using
 	|:SwitchLoginTwitter|.
-
-	This command has no effect in identi.ca and other Twitter-compatible
-	services that use Basic authentication.
 
 
 	:SwitchLoginTwitter				*:SwitchLoginTwitter*
@@ -1130,9 +1031,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	SwitchLoginTwitter knows only about user accounts to which you have
 	logged in previously. To switch to a new user account, use
 	|:SetLoginTwitter| instead.
-
-	This command has no effect in StatusNet services that use Basic
-	authentication.
 
 
 	:DeleteLoginTwitter				*:DeleteLoginTwitter*
@@ -1152,9 +1050,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Note: You cannot delete the currently active user. If you need to do
 	so, use :SwitchLoginTwitter to switch to another user first.
 
-	This command has no effect in StatusNet services that use Basic
-	authentication.
-
 
 	:ResetLoginTwitter				*:ResetLoginTwitter*
 
@@ -1166,9 +1061,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	users using |:SwitchLoginTwitter| because ResetLoginTwitter discards
 	all saved access tokens. Use |:DeleteLoginTwitter| instead if you only
 	wish to discard one saved token.
-
-	This command has no effect in StatusNet services that use Basic
-	authentication.
 
 
 	:FollowTwitter {username}			*:FollowTwitter*
@@ -1236,8 +1128,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 
 	In visual mode, Alt-T posts the highlighted text to Twitter.
 
-	Ctrl-T is an alternative to the Alt-T mapping. If the menu bar is
-	enabled, Alt-T pulls down the Tools menu. So use Ctrl-T instead.
+	Ctrl-T is an alternative to the Alt-T mapping. In GUI Vim on
+	certain platforms like Windows, if the menu bar is enabled, Alt-T
+	pulls down the Tools menu. So use Ctrl-T instead.
 
 
 							*TwitVim-reply*
@@ -1594,8 +1487,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command retrieves rate limit information. It shows the current
 	limit, how many API calls you have remaining, and when your quota will
 	be reset. You can use it to check if you have been temporarily locked
-	out of Twitter for hitting the rate limit. This command does not work
-	on identi.ca.
+	out of Twitter for hitting the rate limit.
 
 	As of Twitter API 1.1, rate limits are per API endpoint. This
 	command displays one line per API endpoint and is very verbose.
@@ -1708,42 +1600,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 <
 
 ------------------------------------------------------------------------------
-6.2. Switching between StatusNet users			*TwitVim-switch*
-
-	If you have multiple user accounts on StatusNet, you can add something
-	like to following to your vimrc to make it easy to switch between
-	those accounts:
->
-		function! Switch_to_statusnet_user1()
-		    let g:twitvim_api_root = "https://statusnet-server.com/api"
-
-		    let g:twitvim_login = "logininfo1"
-
-		    FriendsTwitter
-		endfunction
-
-		function! Switch_to_statusnet_user2()
-		    let g:twitvim_api_root = "https://statusnet-server.com/api"
-
-		    let g:twitvim_login = "logininfo2"
-
-		    FriendsTwitter
-		endfunction
-
-		command! ToStatusNet1 :call Switch_to_statusnet_user1()
-		command! ToStatusNet2 :call Switch_to_statusnet_user2()
-<	
-	With that in place, you can use :ToStatusNet1 and :ToStatusNet2 to
-	switch between user accounts. There is a call to |:FriendsTwitter| at
-	the end of each function to refresh the timeline view after switching.
-
-	Note: This is not needed on Twitter and identi.ca because login
-	sessions are managed via OAuth. Use |:SwitchLoginTwitter| instead to
-	switch to a different user account.
-
-
-------------------------------------------------------------------------------
-6.3. Line length in status line				*TwitVim-line-length*
+6.2. Line length in status line				*TwitVim-line-length*
 
 	Add the following to your |'statusline'| to display the length of the
 	current line:
@@ -1754,8 +1611,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	them with |:CPosttoTwitter|. With the line length in your status line,
 	you will know when you've reached the 140-character boundary.
 
+
 ------------------------------------------------------------------------------
-6.4. Network timeout				*TwitVim-network-timeout*
+6.3. Network timeout				*TwitVim-network-timeout*
 
 	TwitVim may have problems connecting to Twitter sometimes. The system
 	default for socket timeouts may be as long as a few minutes, so
