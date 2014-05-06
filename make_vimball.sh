@@ -6,4 +6,5 @@ exit 0
 
 FILES:
 plugin/twitvim.vim
+autoload/twitvim.vim
 doc/twitvim.txt
