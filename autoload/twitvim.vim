@@ -4631,50 +4631,44 @@ function! twitvim#follow_list(unfollow, arg1, ...)
     endif
 endfunction
 
-" Get bit.ly username and api key if configured by the user. Otherwise, use a
-" default username and api key.
+" Get bit.ly access token if configured by the user. Otherwise, use a default
+" access token.
 function! s:get_bitly_key()
-    if exists('g:twitvim_bitly_user') && exists('g:twitvim_bitly_key')
-        return [ g:twitvim_bitly_user, g:twitvim_bitly_key ]
-    endif
-    return [ 'twitvim', 'R_a53414d2f36a90c3e189299c967e6efc' ]
+    return get(g:, 'twitvim_bitly_key', 'da11381ea442aa466a301a28bb3dcd334448f83a')
 endfunction
 
 " Call bit.ly API to shorten a URL.
 function! s:call_bitly(url)
-    let [ user, key ] = s:get_bitly_key()
+    let key = s:get_bitly_key()
 
     redraw
     echo "Sending request to bit.ly..."
 
-    let url = 'http://api.bit.ly/shorten?version=2.0.1'
-    let url .= '&longUrl='.s:url_encode(a:url)
-    let url .= '&login='.user
-    let url .= '&apiKey='.key.'&format=xml&history=1'
+    let url = 'https://api-ssl.bitly.com/v3/shorten'
+    let url = s:add_to_url(url, 'access_token='.key)
+    let url = s:add_to_url(url, 'longUrl='.s:url_encode(a:url))
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
+    " Remove trailing newlines.
+    let output = substitute(output, '\n\+$', '', '')
+    let result = s:parse_json(output)
 
-    if error != ''
-        call s:errormsg("Error calling bit.ly API: ".error)
-        return ""
+    let status_txt = get(result, 'status_txt', 'Error parsing result from bit.ly')
+    let status_code = get(result, 'status_code', -1)
+
+    if error != '' || status_code != 200
+        call s:errormsg('Error calling bit.ly API: '.(status_txt != '' ? status_code.' '.status_txt : error))
+        return ''
     endif
 
-    let status = s:xml_get_element(output, 'statusCode')
-    if status != 'OK'
-        let errorcode = s:xml_get_element(output, 'errorCode')
-        let errormsg = s:xml_get_element(output, 'errorMessage')
-        if errorcode == 0
-            " For reasons unknown, bit.ly sometimes return two error codes and
-            " the first one is 0.
-            let errorcode = s:xml_get_nth(output, 'errorCode', 2)
-            let errormsg = s:xml_get_nth(output, 'errorMessage', 2)
-        endif
-        call s:errormsg("Error from bit.ly: ".errorcode." ".errormsg)
-        return ""
+    let shorturl = get(get(result, 'data', {}), 'url', '')
+
+    if shorturl == ''
+        call s:errormsg("Bit.ly didn't return a shortened URL??")
+        return ''
     endif
 
-    let shorturl = s:xml_get_element(output, 'shortUrl')
     redraw
-    echo "Received response from bit.ly."
+    echo 'Received response from bit.ly.'
     return shorturl
 endfunction
 

@@ -140,7 +140,6 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
 	4.5. Utility Commands.....................: |TwitVim-utility|
 	     :BitLy...............................: |:BitLy|
-	     twitvim_bitly_user...................: |twitvim_bitly_user|
 	     twitvim_bitly_key....................: |twitvim_bitly_key|
 	     :ABitLy..............................: |:ABitLy|
 	     :PBitLy..............................: |:PBitLy|
@@ -1378,33 +1377,43 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ------------------------------------------------------------------------------
 4.5. Utility Commands					*TwitVim-utility*
 
+	Note: You do not need these URL shortening services to post to
+	Twitter. Simply add the full URL to your tweet and Twitter will use
+	its own URL wrapper.
+
+
 	:BitLy						*:BitLy*
 	:BitLy {url}
 
 	bit.ly is a URL forwarding and shortening service. See
-	http://bit.ly/
+	https://bitly.com/
 
 	This command calls the bit.ly API to get a short URL in place of
-	<url>. If {url} is not provided on the command line, the command will
+	{url}. If {url} is not provided on the command line, the command will
 	prompt you to enter a URL. The short URL is then inserted into the
 	current buffer at the current position.
 
-	The bit.ly API requires a bit.ly login and a bit.ly API key. A default
-	login and key pair is provided with TwitVim and no configuration is
-	needed. However, if you wish to supply your own login and key to track
-	your bit.ly history and stats, visit
-	http://bit.ly/account/your_api_key to retrieve your API info and add
-	the following to your vimrc:
+	The bit.ly API requires bit.ly access token. A default
+	access token is provided with TwitVim and no configuration is
+	needed.
+	
+	However, if you wish to supply your own access token to track
+	your bit.ly history and stats:
+	- Go to https://bitly.com/a/oauth_apps
+	- Enter your password and click on "Generate Token".
+	- Copy the string below "Generic Access Token" and then add the
+	  following to your vimrc:
 
-							*twitvim_bitly_user*
 							*twitvim_bitly_key*
 >
-		let twitvim_bitly_user = "username"
-		let twitvim_bitly_key = "R_123456789"
+		let twitvim_bitly_key = "accesstoken"
 <
+	Where accesstoken is the string you obtained from bit.ly.
 
-	Replace username with your bit.ly login and R_123456789 with your
-	bit.ly API key.
+	Note: The bit.ly access token is not the same as the bit.ly API key
+	used in TwitVim 0.8 and earlier. If you are upgrading TwitVim and
+	have a bit.ly API key in your vimrc, you'll need to replace it with
+	a bit.ly access token.
 
 	:ABitLy						*:ABitLy*
 	:ABitLy {url}
