@@ -33,12 +33,31 @@ prerequisites.
 
 ## Installation
 
+Use one of the methods below, depending on which plugin manager (or not)
+you have. After installation, see ```:help TwitVim-install``` for
+further instructions.
+
+### Pathogen
+
+Use the following commands:
+
+    cd ~/.vim/bundle
+    git clone https://code.google.com/p/twitvim
+
+### Vundle
+
+Add the following to your vimrc:
+
+    Plugin 'https://code.google.com/p/twitvim'
+
+Install with ```:PluginInstall```.
+
+### Vimball file
+
 Open the vmb file and then source it.
 
-    vim twitvim-0.8.1.vmb
-    so %
-
-Then see ```:help TwitVim-install``` for further instructions.
+    vim twitvim-0.9.0.vmb
+    :so %
 
 # Usage
 
