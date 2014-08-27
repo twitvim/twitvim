@@ -2021,7 +2021,10 @@ endfunction
 " Count number of characters in a multibyte string. Use technique from
 " :help strlen().
 function! s:mbstrlen(s)
-    " return strlen(substitute(a:s, ".", "x", "g"))
+    return strlen(substitute(a:s, '.', 'x', 'g'))
+endfunction
+
+function! s:mbdisplen(s)
     return strdisplaywidth(a:s)
 endfunction
 
@@ -2332,7 +2335,7 @@ endfunction
 " Truncate a string. Add '...' to the end of string was longer than
 " the specified number of characters.
 function! s:strtrunc(s, len)
-    let slen = strlen(substitute(a:s, ".", "x", "g"))
+    let slen = s:mbstrlen(a:s)
     let s = substitute(a:s, '^\(.\{,'.a:len.'}\).*$', '\1', '')
     if slen > a:len
         let s .= '...'
@@ -3008,7 +3011,7 @@ function! s:show_timeline_json(timeline, tline_name, username, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
@@ -3189,7 +3192,7 @@ function! s:show_dm_json(sent_or_recv, timeline, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first dmid will be 1 to match line numbers in timeline
         " display.
@@ -3475,7 +3478,7 @@ function! s:show_trends_json(timeline)
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     endif
 
     for item in get(get(a:timeline, 0, {}), 'trends', {})
@@ -4124,7 +4127,7 @@ function! s:format_user_list_json(result, title, show_following)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, a:title.'*')
-        call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+        call add(text, repeat('=', s:mbdisplen(a:title)).'*')
     endif
 
     for user in a:result
@@ -4375,7 +4378,7 @@ function! s:format_list_list(result, title)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, a:title.'*')
-        call add(text, repeat('=', s:mbstrlen(a:title)).'*')
+        call add(text, repeat('=', s:mbdisplen(a:title)).'*')
     endif
 
     for list in a:result
@@ -4802,7 +4805,7 @@ function! s:show_summize_new(searchres, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
