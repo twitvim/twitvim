@@ -7,7 +7,7 @@
 " Language: Vim script
 " Maintainer: Po Shan Cheah <morton@mortonfox.com>
 " Created: March 28, 2008
-" Last updated: March 26, 2014
+" Last updated: August 27, 2014
 "
 " GetLatestVimScripts: 2204 1 twitvim.vim
 " ==============================================================
@@ -16,7 +16,7 @@
 if exists('g:loaded_twitvim')
     finish
 endif
-let g:loaded_twitvim = '0.8.2 2014-03-26'
+let g:loaded_twitvim = '0.8.2 2014-08-27'
 
 " Check Vim version.
 if v:version < 703
@@ -1307,7 +1307,8 @@ endfunction
 " URL-decode a string.
 function! s:url_decode(str)
     let s = substitute(a:str, '+', ' ', 'g')
-    let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
+    " let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
+    let s = substitute(s, '%\(\x\x\)', '\=printf("%c", str2nr(submatch(1), 16))', 'g')
     let encoded = iconv(s, 'utf-8', &encoding)
     if encoded != ''
         let s = encoded
@@ -2231,6 +2232,10 @@ endfunction
 " :help strlen().
 function! s:mbstrlen(s)
     return strlen(substitute(a:s, ".", "x", "g"))
+endfunction
+
+function! s:mbdisplen(s)
+    return strdisplaywidth(a:s)
 endfunction
 
 let s:short_url_length = 0
@@ -3326,7 +3331,7 @@ function! s:show_timeline_json(timeline, tline_name, username, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
@@ -3518,7 +3523,7 @@ function! s:show_dm_json(sent_or_recv, timeline, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first dmid will be 1 to match line numbers in timeline
         " display.
@@ -3809,7 +3814,7 @@ function! s:show_trends_json(timeline)
     let s:curbuffer.showheader = s:get_show_header()
     if s:curbuffer.showheader
         call add(text, title.'*')
-        call add(text, repeat('=', s:mbstrlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     endif
 
     for item in get(get(a:timeline, 0, {}), 'trends', {})
@@ -5777,7 +5782,7 @@ function! s:show_summize_new(searchres, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', strlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
@@ -5824,7 +5829,7 @@ function! s:show_summize(searchres, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', strlen(title)).'*')
+        call add(text, repeat('=', s:mbdisplen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
