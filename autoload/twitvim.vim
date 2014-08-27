@@ -1124,7 +1124,8 @@ endfunction
 " URL-decode a string.
 function! s:url_decode(str)
     let s = substitute(a:str, '+', ' ', 'g')
-    let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
+    " let s = substitute(s, '%\([a-zA-Z0-9]\{1,2}\)', '\=nr2char("0x".submatch(1))', 'g')
+    let s = substitute(s, '%\(\x\x\)', '\=printf("%c", str2nr(submatch(1), 16))', 'g')
     let encoded = iconv(s, 'utf-8', &encoding)
     if encoded != ''
         let s = encoded
@@ -2020,7 +2021,8 @@ endfunction
 " Count number of characters in a multibyte string. Use technique from
 " :help strlen().
 function! s:mbstrlen(s)
-    return strlen(substitute(a:s, ".", "x", "g"))
+    " return strlen(substitute(a:s, ".", "x", "g"))
+    return strdisplaywidth(a:s)
 endfunction
 
 let s:short_url_length = 0
@@ -4800,7 +4802,7 @@ function! s:show_summize_new(searchres, page)
         " recognize the title. Then the syntax highlighter hides the stars by
         " coloring them the same as the background. It is a bad hack.
         call add(text, title.'*')
-        call add(text, repeat('=', strlen(title)).'*')
+        call add(text, repeat('=', s:mbstrlen(title)).'*')
     else
         " Index of first status will be 1 to match line numbers in timeline
         " display.
