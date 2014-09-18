@@ -2,14 +2,14 @@
 if exists('g:loaded_twitvim_autoload')
     finish
 endif
-let g:loaded_twitvim_autoload = 1
+let g:loaded_twitvim_autoload = '0.9.0 2014-09-18'
 
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
 set cpo&vim
 
 " User agent header string.
-let s:user_agent = 'TwitVim '.g:loaded_twitvim
+let s:user_agent = 'TwitVim '.g:loaded_twitvim_autoload
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
@@ -1147,7 +1147,14 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let curlcmd .= '-m '.s:get_net_timeout().' '
 
     if a:proxy != ""
-        let curlcmd .= '-p -x "'.a:proxy.'" '
+        " The cURL man page implies that -p only applies to non-HTTP but that
+        " seems to be untrue because a bit of experimentation shows that it
+        " attempts to tunnel HTTP too. Proxy servers forbid tunneling HTTP so
+        " we have to omit -p if the protocol is HTTP.
+        if a:url !~? '^http:'
+            let curlcmd .= '-p '
+        endif
+        let curlcmd .= '-x "'.a:proxy.'" '
     endif
 
     if a:proxylogin != ""
