@@ -328,12 +328,58 @@ endfunction
 
 " === JSON parser ===
 
+" === Surrogate Pair code by @mattn_jp ===
+function! s:dec2bin(v)
+  let v = a:v
+  if v == 0 | return 0 | endif
+  let ret = ""
+  while v > 0
+    let i = v % 2
+    let ret = i . ret
+    let v = v / 2
+  endwhile
+  return ret
+endfunction
+
+function! s:bin2dec(v)
+  let v = a:v
+  if len(v) == 0 | return 0 | endif
+  let i = 1
+  let ret = ""
+  for n in reverse(split(v, '\zs'))
+    if n == 1
+      let ret = ret + i
+    endif
+    let i = i * 2
+  endfor
+  return ret
+endfunction
+
+function! s:bshift(a,b)
+  let a = s:dec2bin(a:a)
+  let a = repeat('0', 32-len(a)) . a
+  if a:b < 0
+    let a = (repeat('0', -a:b) . a[: a:b-1])[-32:]
+  elseif a:b > 0
+    let a = (a . repeat('0', a:b))[-32:]
+  endif
+  return s:bin2dec(a)
+endfunction
+
+function! s:surrogate_pair(n1, n2)
+  return nr2char(or(s:bshift((a:n1 - 0xd800), 10), and((a:n2 - 0xdc00), 0x3ff)) + 0x10000)
+endfunction
+" === Surrogate Pair code by @mattn_jp ===
+
 function! s:parse_json(str)
     try
         let true = 1
         let false = 0
         let null = ''
-        let str = substitute(a:str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
+        let str = a:str
+        " handle surrogate pair
+        let str = substitute(str, '\\u\(d[8-f]\x\x\)\\u\(d[c-f]\x\x\)', '\=s:surrogate_pair("0x".submatch(1), "0x".submatch(2))', 'g')
+        let str = substitute(str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
         sandbox let result = eval(str)
         return result
     catch
