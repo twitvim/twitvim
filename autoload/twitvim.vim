@@ -378,7 +378,9 @@ function! s:parse_json(str)
         let null = ''
         let str = a:str
         " handle surrogate pair
-        let str = substitute(str, '\\u\(d[8-f]\x\x\)\\u\(d[c-f]\x\x\)', '\=s:surrogate_pair("0x".submatch(1), "0x".submatch(2))', 'g')
+        if exists('*or') && exists('*and')
+            let str = substitute(str, '\\u\(d[8-f]\x\x\)\\u\(d[c-f]\x\x\)', '\=s:surrogate_pair("0x".submatch(1), "0x".submatch(2))', 'g')
+        endif
         let str = substitute(str, '\\u\(\x\{4}\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
         sandbox let result = eval(str)
         return result
