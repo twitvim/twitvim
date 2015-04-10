@@ -2,7 +2,7 @@
 if exists('g:loaded_twitvim_autoload')
     finish
 endif
-let g:loaded_twitvim_autoload = '0.9.0 2014-09-18'
+let g:loaded_twitvim_autoload = '0.9.0 2015-04-10'
 
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
@@ -328,11 +328,10 @@ endfunction
 
 " === JSON parser ===
 
-" === Surrogate Pair code by @mattn_jp ===
+" Surrogate Pair code (@mattn_jp)
 function! s:surrogate_pair(n1, n2)
     return nr2char(or((a:n1 - 0xd800) * 1024, and((a:n2 - 0xdc00), 0x3ff)) + 0x10000)
 endfunction
-" === Surrogate Pair code by @mattn_jp ===
 
 function! s:parse_json(str)
     try
