@@ -1,3 +1,339 @@
+" Vimball Archiver by Charles E. Campbell, Jr., Ph.D.
+UseVimball
+finish
+plugin/twitvim.vim	[[[1
+329
+" ==============================================================
+" TwitVim - Post to Twitter from Vim
+" Based on Twitter Vim script by Travis Jeffery <eatsleepgolf@gmail.com>
+"
+" Version: 0.9.0
+" License: Vim license. See :help license
+" Language: Vim script
+" Maintainer: Po Shan Cheah <morton@mortonfox.com>
+" Created: March 28, 2008
+" Last updated: April 10, 2015
+"
+" GetLatestVimScripts: 2204 1 twitvim.vim
+" ==============================================================
+
+" Load this module only once.
+if exists('g:loaded_twitvim')
+    finish
+endif
+let g:loaded_twitvim = '0.9.0 2015-04-10'
+
+" Check Vim version.
+if v:version < 703
+    echohl ErrorMsg
+    echomsg 'You need Vim 7.3 or later for this version of TwitVim'
+    echohl None
+    finish
+endif
+
+" Avoid side-effects from cpoptions setting.
+let s:save_cpo = &cpo
+set cpo&vim
+
+" For debugging. Reset Hmac method.
+if !exists(":TwitVimResetHmacMethod")
+    command TwitVimResetHmacMethod :call twitvim#reset_hmac_method()
+endif
+
+" For debugging. Show current Hmac method.
+if !exists(":TwitVimShowHmacMethod")
+    command TwitVimShowHmacMethod :call twitvim#show_hmac_method()
+endif
+
+" For debugging. Reset networking method.
+if !exists(":TwitVimResetMethod")
+    command TwitVimResetMethod :call twitvim#reset_curl_method()
+endif
+
+" For debugging. Show current networking method.
+if !exists(":TwitVimShowMethod")
+    command TwitVimShowMethod :call twitvim#show_curl_method()
+endif
+
+if !exists(":BackTwitter")
+    command BackTwitter :call twitvim#back_buffer(0)
+endif
+if !exists(":ForwardTwitter")
+    command ForwardTwitter :call twitvim#fwd_buffer(0)
+endif
+if !exists(":BackInfoTwitter")
+    command BackInfoTwitter :call twitvim#back_buffer(1)
+endif
+if !exists(":ForwardInfoTwitter")
+    command ForwardInfoTwitter :call twitvim#fwd_buffer(1)
+endif
+
+if !exists(":TwitVimShowBufstack")
+    command TwitVimShowBufstack :call twitvim#show_bufstack(0)
+endif
+if !exists(":TwitVimShowInfoBufstack")
+    command TwitVimShowInfoBufstack :call twitvim#show_bufstack(1)
+endif
+
+" For debugging. Show curbuffer variable.
+if !exists(":TwitVimShowCurbuffer")
+    command TwitVimShowCurbuffer :call twitvim#show_bufvar(0)
+endif
+" For debugging. Show infobuffer variable.
+if !exists(":TwitVimShowInfobuffer")
+    command TwitVimShowInfobuffer :call twitvim#show_bufvar(1)
+endif
+
+" Prompt user for tweet.
+if !exists(":PosttoTwitter")
+    command PosttoTwitter :call twitvim#CmdLine_Twitter('', 0)
+endif
+
+nnoremenu Plugin.TwitVim.Post\ from\ cmdline :call twitvim#CmdLine_Twitter('', 0)<cr>
+
+" Post current line to Twitter.
+if !exists(":CPosttoTwitter")
+    command CPosttoTwitter :call twitvim#post_twitter(getline('.'), 0)
+endif
+
+nnoremenu Plugin.TwitVim.Post\ current\ line :call twitvim#post_twitter(getline('.'), 0)<cr>
+
+" Post entire buffer to Twitter.
+if !exists(":BPosttoTwitter")
+    command BPosttoTwitter :call twitvim#post_twitter(join(getline(1, "$")), 0)
+endif
+
+" Post visual selection to Twitter.
+noremap <SID>Visual y:call twitvim#post_twitter(@", 0)<cr>
+noremap <unique> <script> <Plug>TwitvimVisual <SID>Visual
+if !hasmapto('<Plug>TwitvimVisual')
+    vmap <unique> <A-t> <Plug>TwitvimVisual
+
+    " Allow Ctrl-T as an alternative to Alt-T.
+    " Alt-T pulls down the Tools menu if the menu bar is enabled.
+    vmap <unique> <C-t> <Plug>TwitvimVisual
+endif
+
+vmenu Plugin.TwitVim.Post\ selection <Plug>TwitvimVisual
+
+if !exists(":SetTrendLocationTwitter")
+    command SetTrendLocationTwitter :call twitvim#pick_woeid()
+endif
+
+if !exists(":TrendTwitter")
+    command TrendTwitter :call twitvim#Local_Trends()
+endif
+
+if !exists(":FriendsTwitter")
+    command FriendsTwitter :call twitvim#get_timeline("friends", '', 1, 0)
+endif
+if !exists(":UserTwitter")
+    command -nargs=? UserTwitter :call twitvim#get_timeline("user", <q-args>, 1, 0)
+endif
+if !exists(":MentionsTwitter")
+    command MentionsTwitter :call twitvim#get_timeline("replies", '', 1, 0)
+endif
+if !exists(":RepliesTwitter")
+    command RepliesTwitter :call twitvim#get_timeline("replies", '', 1, 0)
+endif
+if !exists(":DMTwitter")
+    command DMTwitter :call twitvim#Direct_Messages("dmrecv", 1, 0)
+endif
+if !exists(":DMSentTwitter")
+    command DMSentTwitter :call twitvim#Direct_Messages("dmsent", 1, 0)
+endif
+if !exists(":ListTwitter")
+    command -nargs=+ ListTwitter :call twitvim#DoList(1, <f-args>)
+endif
+if !exists(":RetweetedByMeTwitter")
+    command RetweetedByMeTwitter :call twitvim#get_timeline("retweeted_by_me", '', 1, 0)
+endif
+if !exists(":RetweetedToMeTwitter")
+    command RetweetedToMeTwitter :call twitvim#get_timeline("retweeted_to_me", '', 1, 0)
+endif
+if !exists(":FavTwitter")
+    command FavTwitter :call twitvim#get_timeline('favorites', '', 1, 0)
+endif
+
+nnoremenu Plugin.TwitVim.-Sep1- :
+nnoremenu Plugin.TwitVim.&Friends\ Timeline :call twitvim#get_timeline("friends", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.&User\ Timeline :call twitvim#get_timeline("user", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call twitvim#get_timeline("replies", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.&Direct\ Messages :call twitvim#Direct_Messages("dmrecv", 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call twitvim#Direct_Messages("dmsent", 1, 0)<cr>
+
+nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call twitvim#get_timeline("retweeted_by_me", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call twitvim#get_timeline("retweeted_to_me", '', 1, 0)<cr>
+nnoremenu Plugin.TwitVim.Fa&vorites :call twitvim#get_timeline("favorites", '', 1, 0)<cr>
+
+if !exists(":RefreshTwitter")
+    command RefreshTwitter :call twitvim#RefreshTimeline()
+endif
+if !exists(":NextTwitter")
+    command NextTwitter :call twitvim#NextPageTimeline()
+endif
+if !exists(":PreviousTwitter")
+    command PreviousTwitter :call twitvim#PrevPageTimeline()
+endif
+
+if !exists(":SetLoginTwitter")
+    command SetLoginTwitter :call twitvim#prompt_twitvim_login()
+endif
+if !exists(":ResetLoginTwitter")
+    command ResetLoginTwitter :call twitvim#reset_twitvim_login()
+endif
+if !exists(':SwitchLoginTwitter')
+    command -nargs=? -complete=custom,twitvim#name_list_tokens SwitchLoginTwitter :call twitvim#switch_twitvim_login(<q-args>)
+endif
+if !exists(':DeleteLoginTwitter')
+    command -nargs=? -complete=custom,twitvim#name_list_tokens_for_del DeleteLoginTwitter :call twitvim#delete_twitvim_login(<q-args>)
+endif
+
+nnoremenu Plugin.TwitVim.-Sep2- :
+nnoremenu Plugin.TwitVim.Set\ Twitter\ Login :call twitvim#prompt_twitvim_login()<cr>
+nnoremenu Plugin.TwitVim.Reset\ Twitter\ Login :call twitvim#reset_twitvim_login()<cr>
+
+if !exists(":SendDMTwitter")
+    command -nargs=1 SendDMTwitter :call twitvim#send_dm(<q-args>, '')
+endif
+
+if !exists(":RateLimitTwitter")
+    command RateLimitTwitter :call twitvim#get_rate_limit()
+endif
+
+" Show TwitVim version.
+if !exists(":TwitVimVersion")
+    command TwitVimVersion :call twitvim#show_user_agent()
+endif
+
+if !exists(":LocationTwitter")
+    command -nargs=+ LocationTwitter :call twitvim#set_location(<q-args>)
+endif
+
+if !exists(":FollowTwitter")
+    command -nargs=1 FollowTwitter :call twitvim#follow_user(<q-args>)
+endif
+
+if !exists(":UnfollowTwitter")
+    command -nargs=1 UnfollowTwitter :call twitvim#unfollow_user(<q-args>)
+endif
+
+if !exists(":BlockTwitter")
+    command -nargs=1 BlockTwitter :call twitvim#block_user(<q-args>, 0)
+endif
+if !exists(":UnblockTwitter")
+    command -nargs=1 UnblockTwitter :call twitvim#block_user(<q-args>, 1)
+endif
+
+if !exists(":ReportSpamTwitter")
+    command -nargs=1 ReportSpamTwitter :call twitvim#report_spam(<q-args>)
+endif
+
+if !exists(":EnableRetweetsTwitter")
+    command -nargs=1 EnableRetweetsTwitter :call twitvim#enable_retweets(<q-args>, 1)
+endif
+if !exists(":DisableRetweetsTwitter")
+    command -nargs=1 DisableRetweetsTwitter :call twitvim#enable_retweets(<q-args>, 0)
+endif
+
+if !exists(":AddToListTwitter")
+    command -nargs=+ AddToListTwitter :call twitvim#do_add_to_list(<f-args>)
+endif
+
+if !exists(":RemoveFromListTwitter")
+    command -nargs=+ RemoveFromListTwitter :call twitvim#do_remove_from_list(<f-args>)
+endif
+
+if !exists(":ProfileTwitter")
+    command -nargs=? ProfileTwitter :call twitvim#get_user_info(<q-args>)
+endif
+
+if !exists(":ListInfoTwitter")
+    command -nargs=+ ListInfoTwitter :call twitvim#DoListInfo(<f-args>)
+endif
+
+if !exists(":RefreshInfoTwitter")
+    command RefreshInfoTwitter :call twitvim#RefreshInfo()
+endif
+if !exists(":NextInfoTwitter")
+    command NextInfoTwitter :call twitvim#NextPageInfo()
+endif
+if !exists(":PreviousInfoTwitter")
+    command PreviousInfoTwitter :call twitvim#PrevPageInfo()
+endif
+
+if !exists(":FollowingTwitter")
+    command -nargs=? FollowingTwitter :call twitvim#do_get_friends(<q-args>, 0)
+endif
+if !exists(":FollowersTwitter")
+    command -nargs=? FollowersTwitter :call twitvim#do_get_friends(<q-args>, 1)
+endif
+if !exists(":MembersOfListTwitter")
+    command -nargs=+ MembersOfListTwitter :call twitvim#DoListMembers(0, <f-args>)
+endif
+if !exists(":SubsOfListTwitter")
+    command -nargs=+ SubsOfListTwitter :call twitvim#DoListMembers(1, <f-args>)
+endif
+if !exists(":OwnedListsTwitter")
+    command -nargs=? OwnedListsTwitter :call twitvim#get_user_lists(-1, <q-args>, "owned")
+endif
+if !exists(":MemberListsTwitter")
+    command -nargs=? MemberListsTwitter :call twitvim#get_user_lists(-1, <q-args>, "memberships")
+endif
+if !exists(":SubsListsTwitter")
+    command -nargs=? SubsListsTwitter :call twitvim#get_user_lists(-1, <q-args>, "subscriptions")
+endif
+
+if !exists(":FollowListTwitter")
+    command -nargs=+ FollowListTwitter :call twitvim#follow_list(0, <f-args>)
+endif
+if !exists(":UnfollowListTwitter")
+    command -nargs=+ UnfollowListTwitter :call twitvim#follow_list(1, <f-args>)
+endif
+
+if !exists(":BitLy")
+    command -nargs=? BitLy :call twitvim#GetShortURL("insert", <q-args>, "call_bitly")
+endif
+if !exists(":ABitLy")
+    command -nargs=? ABitLy :call twitvim#GetShortURL("append", <q-args>, "call_bitly")
+endif
+if !exists(":PBitLy")
+    command -nargs=? PBitLy :call twitvim#GetShortURL("cmdline", <q-args>, "call_bitly")
+endif
+
+if !exists(":IsGd")
+    command -nargs=? IsGd :call twitvim#GetShortURL("insert", <q-args>, "call_isgd")
+endif
+if !exists(":AIsGd")
+    command -nargs=? AIsGd :call twitvim#GetShortURL("append", <q-args>, "call_isgd")
+endif
+if !exists(":PIsGd")
+    command -nargs=? PIsGd :call twitvim#GetShortURL("cmdline", <q-args>, "call_isgd")
+endif
+
+if !exists(":Googl")
+    command -nargs=? Googl :call twitvim#GetShortURL("insert", <q-args>, "call_googl")
+endif
+if !exists(":AGoogl")
+    command -nargs=? AGoogl :call twitvim#GetShortURL("append", <q-args>, "call_googl")
+endif
+if !exists(":PGoogl")
+    command -nargs=? PGoogl :call twitvim#GetShortURL("cmdline", <q-args>, "call_googl")
+endif
+
+if !exists(":Summize")
+    command -nargs=? Summize :call twitvim#Summize(<q-args>, 1)
+endif
+if !exists(":SearchTwitter")
+    command -nargs=? SearchTwitter :call twitvim#Summize(<q-args>, 1)
+endif
+
+let &cpo = s:save_cpo
+finish
+
+" vim:set tw=0 et:
+autoload/twitvim.vim	[[[1
+4933
 " Load this module only once.
 if exists('g:loaded_twitvim_autoload')
     finish
@@ -2143,7 +2479,7 @@ function! s:post_twitter(mesg, inreplyto)
 endfunction
 
 function! twitvim#post_twitter(mesg, inreplyto)
-    call s:post_twitter(a:mesg, a:inreplyto)
+    call post_twitter(a:mesg, a:inreplyto)
 endfunction
 
 " Prompt user for tweet and then post it.
@@ -4931,3 +5267,2016 @@ let &cpo = s:save_cpo
 finish
 
 " vim:set tw=0 et:
+doc/twitvim.txt	[[[1
+2011
+*twitvim.txt*  Twitter client for Vim
+
+		      ---------------------------------
+		      TwitVim: A Twitter client for Vim
+		      ---------------------------------
+
+Author: Po Shan Cheah <morton@mortonfox.com> 
+	http://twitter.com/mortonfox
+
+License: The Vim License applies to twitvim.vim and twitvim.txt (see
+	|copyright|) except use "TwitVim" instead of "Vim". No warranty,
+	express or implied. Use at your own risk.
+
+
+==============================================================================
+1. Contents					*TwitVim* *TwitVim-contents*
+
+	1. Contents...............................: |TwitVim-contents|
+	2. Introduction...........................: |TwitVim-intro|
+	3. Installation...........................: |TwitVim-install|
+	   OpenSSL................................: |TwitVim-OpenSSL|
+	   cURL...................................: |TwitVim-cURL|
+	   twitvim_proxy..........................: |twitvim_proxy|
+	   twitvim_proxy_login....................: |twitvim_proxy_login|
+	3.1. TwitVim and OAuth....................: |TwitVim-OAuth|
+	     twitvim_token_file...................: |twitvim_token_file|
+	     twitvim_disable_token_file...........: |twitvim_disable_token_file|
+	3.1.1. OAuth Consumer Key.................: |TwitVim-OAuth-Consumer|
+	       twitvim_consumer_key...............: |twitvim_consumer_key|
+	       twitvim_consumer_secret............: |twitvim_consumer_secret|
+	3.2. Base64-Encoded Login.................: |TwitVim-login-base64|
+	     twitvim_proxy_login_b64..............: |twitvim_proxy_login_b64|
+	3.3. Alternatives to cURL.................: |TwitVim-non-cURL|
+	     twitvim_enable_perl..................: |twitvim_enable_perl|
+	     twitvim_enable_python................: |twitvim_enable_python|
+	     twitvim_enable_ruby..................: |twitvim_enable_ruby|
+	     twitvim_enable_tcl...................: |twitvim_enable_tcl|
+	3.4. Using Twitter SSL API................: |TwitVim-ssl|
+	     Twitter SSL via cURL.................: |TwitVim-ssl-curl|
+	     twitvim_cert_insecure................: |twitvim_cert_insecure|
+	     Twitter SSL via Perl interface.......: |TwitVim-ssl-perl|
+	     Twitter SSL via Ruby interface.......: |TwitVim-ssl-ruby|
+	     Twitter SSL via Python interface.....: |TwitVim-ssl-python|
+	     Twitter SSL via Tcl interface........: |TwitVim-ssl-tcl|
+	3.5. Hide the header in timeline buffer...: |TwitVim-hide-header|
+	     twitvim_show_header..................: |twitvim_show_header|
+	3.6. Timeline filtering...................: |TwitVim-filter|
+	     twitvim_filter_enable................: |twitvim_filter_enable|
+	     twitvim_filter_regex.................: |twitvim_filter_regex|
+	3.7. Preventing Loading...................: |TwitVim-noload|
+	4. Manual.................................: |TwitVim-manual|
+	4.1. TwitVim's Buffers....................: |TwitVim-buffers|
+	     twitvim_timestamp_format.............: |twitvim_timestamp_format|
+	4.2. Update Commands......................: |TwitVim-update-commands|
+	     :PosttoTwitter.......................: |:PosttoTwitter|
+	     :CPosttoTwitter......................: |:CPosttoTwitter|
+	     :BPosttoTwitter......................: |:BPosttoTwitter|
+	     :SendDMTwitter.......................: |:SendDMTwitter|
+	4.3. Timeline Commands....................: |TwitVim-timeline-commands|
+	     :UserTwitter.........................: |:UserTwitter|
+	     twitvim_count........................: |twitvim_count|
+	     :FriendsTwitter......................: |:FriendsTwitter|
+	     :MentionsTwitter.....................: |:MentionsTwitter|
+	     :RepliesTwitter......................: |:RepliesTwitter|
+	     :DMTwitter...........................: |:DMTwitter|
+	     :DMSentTwitter.......................: |:DMSentTwitter|
+	     :ListTwitter.........................: |:ListTwitter|
+	     :RetweetedToMeTwitter................: |:RetweetedToMeTwitter|
+	     :RetweetedByMeTwitter................: |:RetweetedByMeTwitter|
+	     :FavTwitter..........................: |:FavTwitter|
+	     :FollowingTwitter....................: |:FollowingTwitter|
+	     :FollowersTwitter....................: |:FollowersTwitter|
+	     :ListInfoTwitter.....................: |:ListInfoTwitter|
+	     :MembersOfListTwitter................: |:MembersOfListTwitter|
+	     :SubsOfListTwitter...................: |:SubsOfListTwitter|
+	     :OwnedListsTwitter...................: |:OwnedListsTwitter|
+	     :MemberListsTwitter..................: |:MemberListsTwitter|
+	     :SubsListsTwitter....................: |:SubsListsTwitter|
+	     :FollowListTwitter...................: |:FollowListTwitter|
+	     :UnfollowListTwitter.................: |:UnfollowListTwitter|
+	     :BackTwitter.........................: |:BackTwitter|
+	     :BackInfoTwitter.....................: |:BackInfoTwitter|
+	     :ForwardTwitter......................: |:ForwardTwitter|
+	     :ForwardInfoTwitter..................: |:ForwardInfoTwitter|
+	     :RefreshTwitter......................: |:RefreshTwitter|
+	     :RefreshInfoTwitter..................: |:RefreshInfoTwitter|
+	     :NextTwitter.........................: |:NextTwitter|
+	     :NextInfoTwitter.....................: |:NextInfoTwitter|
+	     :PreviousTwitter.....................: |:PreviousTwitter|
+	     :PreviousInfoTwitter.................: |:PreviousInfoTwitter|
+	     :SetLoginTwitter.....................: |:SetLoginTwitter|
+	     :SwitchLoginTwitter..................: |:SwitchLoginTwitter|
+	     :DeleteLoginTwitter..................: |:DeleteLoginTwitter|
+	     :ResetLoginTwitter...................: |:ResetLoginTwitter|
+	     :FollowTwitter.......................: |:FollowTwitter|
+	     :UnfollowTwitter.....................: |:UnfollowTwitter|
+	     :BlockTwitter........................: |:BlockTwitter|
+	     :UnblockTwitter......................: |:UnblockTwitter|
+	     :EnableRetweetsTwitter...............: |:EnableRetweetsTwitter|
+	     :DisableRetweetsTwitter..............: |:DisableRetweetsTwitter|
+	     :ReportSpamTwitter...................: |:ReportSpamTwitter|
+	     :AddToListTwitter....................: |:AddToListTwitter|
+	     :RemoveFromListTwitter...............: |:RemoveFromListTwitter|
+	4.4. Mappings.............................: |TwitVim-mappings|
+	     Alt-T................................: |TwitVim-A-t|
+	     Ctrl-T...............................: |TwitVim-C-t|
+	     Reply Feature........................: |TwitVim-reply|
+	     Alt-R................................: |TwitVim-A-r|
+	     <Leader>r............................: |TwitVim-Leader-r|
+	     Reply to all Feature.................: |TwitVim-reply-all|
+	     <Leader>Ctrl-R.......................: |TwitVim-Leader-C-r|
+	     Retweet Feature......................: |TwitVim-retweet|
+	     <Leader>R............................: |TwitVim-Leader-S-r|
+	     Old-style retweets...................: |twitvim_old_retweet|
+	     twitvim_retweet_format...............: |twitvim_retweet_format|
+	     Direct Message Feature...............: |TwitVim-direct-message|
+	     Alt-D................................: |TwitVim-A-d|
+	     <Leader>d............................: |TwitVim-Leader-d|
+	     Goto Feature.........................: |TwitVim-goto|
+	     Alt-G................................: |TwitVim-A-g|
+	     <Leader>g............................: |TwitVim-Leader-g|
+	     twitvim_browser_cmd..................: |twitvim_browser_cmd|
+	     LongURL Feature......................: |TwitVim-LongURL|
+	     <Leader>e............................: |TwitVim-Leader-e|
+	     User Profiles........................: |TwitVim-profile|
+	     <Leader>p............................: |TwitVim-Leader-p|
+	     In-reply-to..........................: |TwitVim-inreplyto|
+	     <Leader>@............................: |TwitVim-Leader-@|
+	     Delete...............................: |TwitVim-delete|
+	     <Leader>X............................: |TwitVim-Leader-X|
+	     <Leader>f............................: |TwitVim-Leader-f|
+	     <Leader>Ctrl-F.......................: |TwitVim-Leader-C-f|
+	     Ctrl-O...............................: |TwitVim-C-o|
+	     Ctrl-I...............................: |TwitVim-C-i|
+	     Refresh..............................: |TwitVim-refresh|
+	     <Leader><Leader>.....................: |TwitVim-Leader-Leader|
+	     Next page............................: |TwitVim-next|
+	     Ctrl-PageDown........................: |TwitVim-C-PageDown|
+	     Previous page........................: |TwitVim-previous|
+	     Ctrl-PageUp..........................: |TwitVim-C-PageUp|
+	4.5. Utility Commands.....................: |TwitVim-utility|
+	     :BitLy...............................: |:BitLy|
+	     twitvim_bitly_key....................: |twitvim_bitly_key|
+	     :ABitLy..............................: |:ABitLy|
+	     :PBitLy..............................: |:PBitLy|
+	     :IsGd................................: |:IsGd|
+	     :AIsGd...............................: |:AIsGd|
+	     :PIsGd...............................: |:PIsGd|
+	     :Googl...............................: |:Googl|
+	     :AGoogl..............................: |:AGoogl|
+	     :PGoogl..............................: |:PGoogl|
+	     :SearchTwitter.......................: |:SearchTwitter|
+	     :RateLimitTwitter....................: |:RateLimitTwitter|
+	     :ProfileTwitter......................: |:ProfileTwitter|
+	     :LocationTwitter.....................: |:LocationTwitter|
+	     :TrendTwitter........................: |:TrendTwitter|
+	     :SetTrendLocationTwitter.............: |:SetTrendLocationTwitter|
+	     twitvim_woeid........................: |twitvim_woeid|
+	5. Timeline Highlighting..................: |TwitVim-highlight|
+	   twitterUser............................: |hl-twitterUser|
+	   twitterTime............................: |hl-twitterTime|
+	   twitterTitle...........................: |hl-twitterTitle|
+	   twitterLink............................: |hl-twitterLink|
+	   twitterReply...........................: |hl-twitterReply|
+	6. Tips and Tricks........................: |TwitVim-tips|
+	6.1. Timeline Hotkeys.....................: |TwitVim-hotkeys|
+	6.2. Line length in status line...........: |TwitVim-line-length|
+	6.3. Network timeout......................: |TwitVim-network-timeout|
+	7. History................................: |TwitVim-history|
+	8. Credits................................: |TwitVim-credits|
+
+
+==============================================================================
+2. Introduction						*TwitVim-intro*
+
+	TwitVim is a plugin that allows you to post to Twitter, a
+	microblogging service at http://www.twitter.com.
+
+
+==============================================================================
+3. Installation						*TwitVim-install*
+
+	
+	1. Install OpenSSL or compile Vim with |Python|, |Perl|, |Ruby|, or |Tcl|.
+
+	In order to compute HMAC-SHA1 digests and sign Twitter OAuth requests,
+	TwitVim needs to either run the openssl command line tool from the
+	OpenSSL toolkit or call a HMAC-SHA1 digest function via one of the
+	above scripting interfaces.
+
+	
+							*TwitVim-OpenSSL*
+	If you are using a precompiled Vim executable and do not wish to
+	recompile Vim to add a scripting interface, then the OpenSSL approach
+	is the simplest.
+
+	If OpenSSL is not already on your system, you can download it from
+	http://openssl.org/  If you are using Windows, check the OpenSSL FAQ
+	for a link to a precompiled OpenSSL for Windows.
+
+	After installing OpenSSL, make sure that the directory where the
+	openssl executable resides is listed in your PATH environment
+	variable so that TwitVim can find it.
+
+	Note: TwitVim uses the openssl -hmac option, which is not available in
+	old versions of OpenSSL. I recommend updating to OpenSSL 0.9.8o,
+	1.0.0a, or later to get the -hmac option and the latest security
+	fixes.
+
+
+	Instead of using the openssl command line tool, you can also have
+	TwitVim compute HMAC-SHA1 digests via a Vim scripting interface. This
+	approach is significantly faster because it does not need to run an
+	external program. You can use Perl, Python, Python 3, Ruby, or Tcl.
+
+	Note: Additional setup may be needed on some systems to enable SSL,
+	which we now require for security during the OAuth handshake. See
+	|TwitVim-ssl|.
+
+
+	If you compiled Vim with Perl, add the following to your vimrc:
+>
+		let twitvim_enable_perl = 1
+<
+	Also, verify that your Perl installation has the Digest::HMAC_SHA1
+	module. This module comes standard in some Perl distributions, e.g.
+	ActivePerl. In other Perl setups, you'll need to download and install
+	Digest::HMAC_SHA1 from CPAN. The Perl Package Manager PPM may be
+	helpful here.
+
+
+	If you compiled Vim with Python, add the following to your vimrc:
+>
+		let twitvim_enable_python = 1
+<
+	Also, verify that your Python installation has the base64, hashlib,
+	and hmac modules. All of these are in the Python standard library as
+	of Python 2.5.
+
+	If you compiled Vim with Python 3, add the following to your vimrc
+	instead:
+>
+		let twitvim_enable_python3 = 1
+<
+
+
+	If you compiled Vim with Ruby, add the following to your vimrc:
+>
+		let twitvim_enable_ruby = 1
+<
+	TwitVim requires the openssl and base64 modules, both of which are
+	in the Ruby standard library. However, you may need to install the
+	OpenSSL library from http://www.openssl.org if it is not already on
+	your system.
+
+
+	If you compiled Vim with Tcl, add the following to your vimrc:
+>
+		let twitvim_enable_tcl = 1
+<
+	Also, verify that your Tcl installation has the base64 and sha1
+	packages. These packages are in the Tcllib library. See
+	|twitvim_enable_tcl| for help on obtaining and installing this
+	library.
+
+
+	2. Install cURL.				*TwitVim-cURL*
+
+	If you don't already have cURL on your system, download it from
+	http://curl.haxx.se/. Make sure that the curl executable is in a
+	directory listed in your PATH environment variable, or the equivalent
+	for your system.
+
+	If you have already compiled Vim with Perl, Python, Python 3, Ruby, or
+	Tcl for Step 1, I recommend that you use the scripting interface
+	instead of installing cURL. See |TwitVim-non-cURL| for setup details.
+	Using a scripting interface for network I/O is faster because it
+	avoids the overhead of running an external program.
+
+
+	3. twitvim_proxy				*twitvim_proxy*
+
+	This step is only needed if you access the web through a HTTP proxy.
+	If you use a HTTP proxy, add the following to your vimrc:
+>
+		let twitvim_proxy = "proxyserver:proxyport"
+<
+	Replace proxyserver with the address of the HTTP proxy and proxyport
+	with the port number of the HTTP proxy.
+
+
+	4. twitvim_proxy_login				*twitvim_proxy_login*
+
+	If the HTTP proxy requires authentication, add the following to your
+	vimrc:
+>
+		let twitvim_proxy_login = "proxyuser:proxypassword"
+<
+	Where proxyuser is your proxy user and proxypassword is your proxy
+	password.
+
+	It is possible to avoid having your proxy password in plaintext in
+	your vimrc. See |TwitVim-login-base64| for details.
+
+
+	5. Set twitvim_browser_cmd.
+
+	In order to log in with Twitter OAuth, TwitVim needs to launch your
+	web browser and bring up the Twitter authentication web page.
+
+	See |twitvim_browser_cmd| for details. For example, if you use Firefox
+	under Windows, add the following to your vimrc:
+>
+		let twitvim_browser_cmd = 'firefox.exe'
+<
+	Under Mac OS X, the following will use the default browser:
+>
+		let twitvim_browser_cmd = 'open'
+<
+	Note: If you do not set up twitvim_browser_cmd, TwitVim will display
+	the authentication URL and wait for you to visit it in your browser
+	manually and approve the application. If possible, this auth URL
+	will be shortened with is.gd or Bit.ly for ease of entry.
+
+
+	6. SSL prerequisites
+
+	The Twitter API requires SSL. On most system setups, this should
+	not be a problem but if you are having trouble connecting to
+	Twitter with TwitVim, see |TwitVim-ssl| for instructions and
+	prerequisites.
+
+
+	7. Sign into Twitter with OAuth.
+
+	Use any TwitVim command that requires authentication. For example,
+	run |:FriendsTwitter|. |:SetLoginTwitter| is the normal way to
+	initiate authentication without running a timeline command.
+
+	Since TwitVim does not yet have an OAuth access token, it will
+	initiate the Twitter OAuth handshake. Then it'll launch your web
+	browser to a special Twitter web page that asks you to authorize
+	TwitVim to use your account. On this page, sign in, if necessary,
+	and then click on "Authorize app" to allow TwitVim access to your
+	account.
+
+	Twitter will then report that you have granted access to TwitVim
+	and display a numeric PIN. Copy the PIN and paste it to the TwitVim
+	input prompt "Enter OAuth PIN:".
+
+	And now, you are ready to use TwitVim.
+
+
+------------------------------------------------------------------------------
+3.1. TwitVim and OAuth					*TwitVim-OAuth*
+
+	After you log into Twitter with OAuth, TwitVim stores the OAuth
+	access token in a file so that you won't have to log in again when
+	you restart TwitVim. By default, this file is $HOME/.twitvim.token
+
+						*twitvim_token_file*
+	You can change the name and location of this token file by setting
+	twitvim_token_file in your vimrc. For example:
+>
+		let twitvim_token_file = "/etc/.twitvim.token"
+<
+	Since the access token grants full access to your Twitter account,
+	it is recommended that you place the token file in a directory that
+	is not readable or accessible by other users.
+
+
+						*twitvim_disable_token_file*
+	If you are using TwitVim on an insecure system, you may prefer to 
+	not save access tokens at all. To turn off the token file, add
+	the following to your vimrc:
+>
+		let twitvim_disable_token_file = 1
+<
+	If the token file is disabled, TwitVim will initiate an OAuth
+	handshake every time you restart it.
+
+
+	If TwitVim is logged in and you need to log in as a different
+	Twitter user:
+	 - Visit the Twitter website in a web browser
+	 - Sign out and then sign in as the other user.
+	 - Then use |:SetLoginTwitter| to authenticate as that user.
+
+
+------------------------------------------------------------------------------
+3.1.1. OAuth Consumer Key			*TwitVim-OAuth-Consumer*
+
+						*twitvim_consumer_key*
+						*twitvim_consumer_secret*
+	TwitVim comes with a default consumer key and secret pair. If you wish
+	to use your own, add the following to your vimrc:
+>
+		let twitvim_consumer_key = "key"
+		let twitvim_consumer_secret = "secret"
+<
+	where "key" and "secret" are consumer key and secret strings from the
+	"My applications" section of the Twitter developers website after you
+	have registered a Twitter application.
+
+	The process of registering a Twitter application has changed from time
+	to time. Currently, the steps are as follows:
+
+	1. Go to https://dev.twitter.com/apps/new and fill in the details. Use
+	anything you like for name, description, and website. Read and agree
+	to the developer rules. No callback URL is needed.
+
+	2. The Consumer key and secret are on the next screen under "OAuth
+	settings". Add these strings to your vimrc.
+
+	3. Go to the Settings tab. Select "Read, Write and Access direct
+	messages" under Application Type / Access. Then click on "Update this
+	Twitter application's settings". These permissions are required by
+	TwitVim.
+
+
+------------------------------------------------------------------------------
+3.2. Base64-Encoded Login				*TwitVim-login-base64*
+
+	For safety purposes, TwitVim allows you to configure your proxy
+	login information preencoded in Base64. This is not truly secure as
+	it is not encryption but it can stop casual onlookers from reading
+	off your password when you edit your vimrc.
+
+						*twitvim_proxy_login_b64*
+	To configure the proxy login in base64, add the following to your
+	vimrc:
+>
+		let twitvim_proxy_login_b64 = "base64string"
+<
+	Where base64string is your username:password encoded in Base64.
+
+
+	An example:
+
+	Let's say your HTTP proxy requires a login user name of "proxyuser"
+	and a password of "proxypassword". So you need to encode
+	"proxyuser:proxypassword" in Base64. You can either use a
+	standalone utility or websites like the following:
+	http://www.motobit.com/util/base64-decoder-encoder.asp
+	http://www.opinionatedgeek.com/DotNet/Tools/Base64Encode/default.aspx
+	http://www.base64encode.org/
+
+	The result is: cHJveHl1c2VyOnByb3h5cGFzc3dvcmQ=
+
+	Then you can add the following to your vimrc:
+>
+		let twitvim_login_b64 = "cHJveHl1c2VyOnByb3h5cGFzc3dvcmQ="
+<
+	And your setup is ready.
+
+
+------------------------------------------------------------------------------
+3.3. Alternatives to cURL				*TwitVim-non-cURL*
+
+	TwitVim supports http networking through Vim's |Perl|, |Python|,
+	|Ruby|, and |Tcl| interfaces, so if you have any of those interfaces
+	compiled into your Vim program, you can use that instead of cURL.
+	
+	Generally, it is slightly faster to use one of those scripting
+	interfaces for networking because it avoids running an external
+	program. On Windows, it also avoids a brief taskbar flash when cURL
+	runs.
+
+	To find out if you have those interfaces, use the |:version| command
+	and check the |+feature-list|. Then to enable this special http
+	networking code in TwitVim, add one of the following lines to your
+	vimrc:
+>
+		let twitvim_enable_perl = 1
+		let twitvim_enable_python = 1
+		let twitvim_enable_python3 = 1
+		let twitvim_enable_ruby = 1
+		let twitvim_enable_tcl = 1
+<
+	You can enable more than one scripting language but TwitVim will only
+	use the first one it finds.
+
+
+	1. Perl interface				*twitvim_enable_perl*
+
+	To enable TwitVim's Perl networking code, add the following to your
+	vimrc:
+>
+		let twitvim_enable_perl = 1
+<
+	TwitVim requires the MIME::Base64 and LWP::UserAgent modules. If you
+	have ActivePerl, these modules are included in the default
+	installation.
+
+
+	2. Python interface				*twitvim_enable_python*
+							*twitvim_enable_python3*
+
+	To enable TwitVim's Python networking code, add the following to your
+	vimrc:
+>
+		let twitvim_enable_python = 1
+<
+	TwitVim requires the urllib, urllib2, and base64 modules. These
+	modules are in the Python standard library.
+
+	If Vim is using Python 3, add the following to your vimrc instead:
+>
+		let twitvim_enable_python3 = 1
+<
+	For Python 3, TwitVim requires the urllib, socket, and base64 modules.
+	These modules are in the Python 3 standard library.
+
+
+	3. Ruby interface				*twitvim_enable_ruby*
+
+	To enable TwitVim's Ruby networking code, add the following to your
+	vimrc:
+>
+		let twitvim_enable_ruby = 1
+<
+	TwitVim requires the net/http, uri, and Base64 modules. These modules
+	are in the Ruby standard library.
+
+	In addition, TwitVim requires Vim 7.2.360 or later to fix an if_ruby
+	problem with Windows sockets.
+
+	Alternatively, you can add the following patch to the Vim sources:
+
+	http://www.mail-archive.com/vim_dev@googlegroups.com/msg03693.html
+
+	See also Bram's correction to the patch:
+
+	http://www.mail-archive.com/vim_dev@googlegroups.com/msg03713.html
+
+
+	3. Tcl interface				*twitvim_enable_tcl*
+
+	To enable TwitVim's Tcl networking code, add the following to your
+	vimrc:
+>
+		let twitvim_enable_tcl = 1
+<
+	TwitVim requires the http, uri, and base64 packages. uri and base64
+	are in the Tcllib library so you may need to install that. See
+	http://tcllib.sourceforge.net/
+
+	If you have ActiveTcl 8.5, the default installation does not include
+	Tcllib. Run the following command from the shell to add Tcllib:
+>
+		teacup install tcllib85
+<
+
+------------------------------------------------------------------------------
+3.4. Using Twitter SSL API				*TwitVim-ssl*
+
+	On most up-to-date systems, you should be able to use SSL with no
+	problems. In case you do run into problems, I review the
+	prerequisites below.
+
+
+	1. SSL via cURL					*TwitVim-ssl-curl*
+
+	To use SSL via cURL, you need to install the SSL libraries and an
+	SSL-enabled build of cURL.
+
+							*twitvim_cert_insecure*
+	Even after you've done that, cURL may complain about certificates that
+	failed verification. If you need to override certificate checking, set
+	twitvim_cert_insecure:
+>
+		let twitvim_cert_insecure = 1
+<
+
+	2. SSL via Perl interface			*TwitVim-ssl-perl*
+
+	To use SSL via the TwitVim Perl interface (See |twitvim_enable_perl|),
+	you need to install the SSL libraries and the Crypt::SSLeay Perl
+	module.
+
+	If you are using SSL over a proxy, do not set twitvim_proxy and
+	twitvim_proxy_login. Crypt::SSLeay gets proxy information from the
+	environment, so add this to your vimrc instead:
+>
+		let $HTTPS_PROXY="http://proxyserver:proxyport"
+		let $HTTPS_PROXY_USERNAME="user"
+		let $HTTPS_PROXY_PASSWORD="password"
+<
+	Alternatively, you can set these environment variables before starting
+	Vim.
+
+
+	3. SSL via Ruby interface			*TwitVim-ssl-ruby*
+
+	To use SSL via Ruby, you need to install the SSL libraries and an
+	SSL-enabled build of Ruby.
+
+	If Ruby produces the error "`write': Bad file descriptor" in http.rb,
+	then you need to check your certificates or override certificate
+	checking. See |twitvim_cert_insecure|.
+
+	Set twitvim_proxy and twitvim_proxy_login as usual if using SSL over a
+	proxy.
+
+
+	4. SSL via Python interface			*TwitVim-ssl-python*
+
+	To use SSL via Python, you need to install the SSL libraries and an
+	SSL-enabled build of Python.
+
+	The Python interface does not yet support SSL over a proxy. This is
+	due to a missing feature in urllib2.
+
+
+	5. SSL via Tcl interface			*TwitVim-ssl-tcl*
+
+	To use SSL via Tcl, you need to install the SSL libraries and Tcllib.
+	To be more specific, TwitVim needs the tls package from Tcllib.
+
+	Versions of Vim up to 7.3.450 have a bug that prevents the tls package
+	from being loaded if you compile Vim with Tcl 8.5. This discussion
+	thread explains the problem:
+>
+	http://objectmix.com/tcl/15892-tcl-interp-inside-vim-throws-error-w-clock-format.html
+<
+	If you need to use Twitter SSL with the Tcl interface, you can try one
+	of the following workarounds:
+
+	a. Upgrade Vim to version 7.3.451 or later.
+	b. Downgrade Tcl to Tcl 8.4.
+	c. Edit if_tcl.c in the Vim source code to remove the redefinition of
+	catch. Then rebuild Vim.
+
+
+------------------------------------------------------------------------------
+3.5. Hide the header in timeline and info buffers	*TwitVim-hide-header*
+
+	In the timeline and info buffers, the first two lines are header
+	lines. The first line tells you the type of buffer it is (e.g.
+	friends, user, replies, direct messages, search in the timeline
+	buffer; friends, followers, user profile in the info buffer) and other
+	relevant buffer information. (e.g. user name, search terms, page
+	number) The second line is a separator line.
+
+	If you wish to suppress the header display, set twitvim_show_header
+	to 0:
+
+							*twitvim_show_header*
+>
+		let twitvim_show_header = 0
+<
+	If twitvim_show_header is unset, it defaults to 1, i.e. show the
+	header.
+
+	Note: Setting twitvim_show_header does not change the timeline buffer
+	immediately. Use |:RefreshTwitter| to refresh the timeline (or
+	|:RefreshInfoTwitter| to refresh the info buffer) to see the
+	effect. Also, twitvim_show_header does not retroactively alter
+	previous timelines in the timeline stack.
+
+
+------------------------------------------------------------------------------
+3.6. Timeline filtering					*TwitVim-filter*
+
+	TwitVim allows you to filter your timeline buffer to hide tweets
+	containing a pattern.
+
+	To enable timeline filtering, set twitvim_filter_enable to 1:
+
+							*twitvim_filter_enable*
+>
+		let twitvim_filter_enable = 1
+<
+	Then set twitvim_filter_regex to the pattern you wish to filter out of
+	the timeline. For example, to hide GetGlue tweets and tweets
+	containing Youtube URLs, use the following:
+
+							*twitvim_filter_regex*
+>
+		let twitvim_filter_regex = '@GetGlue\|/youtu\.be/'
+<
+	The filter is a regular expression. See |pattern| for patterns that
+	are accepted. The |'ignorecase'| option sets the ignore-caseness of
+	the pattern. |'smartcase'| is not used. The matching is always done
+	like 'magic' is set and 'cpoptions' is empty. (Essentially, this is
+	the same as |match()| because that is what it uses.)
+
+	Be as specific as possible when setting the filter. For example, if
+	you filter on "youtube", you are potentially also filtering out
+	conversations about Youtube in addition to Youtube status updates.
+
+	Timeline filtering removes tweets from your timeline, so the timeline
+	display may be shorter than usual. Increase |twitvim_count| to
+	compensate, if necessary.
+
+
+------------------------------------------------------------------------------
+3.7. Preventing Loading					*TwitVim-noload*
+
+	If you have TwitVim installed but for some reason don't wish to run
+	it, then you can avoid loading the plugin by adding the following
+	to your vimrc:
+>
+		let loaded_twitvim = 1
+<
+
+==============================================================================
+4. TwitVim Manual					*TwitVim-manual*
+
+------------------------------------------------------------------------------
+4.1. TwitVim's Buffers					*TwitVim-buffers*
+
+	TwitVim has 2 buffers, a timeline buffer and an info buffer.
+
+	Commands such as |:FriendsTwitter|, |:MentionsTwitter|, |:DMTwitter|,
+	and |:ListTwitter| bring up a timeline buffer. This buffer consists of
+	a list of tweets or messages. See |TwitVim-mappings| for a list of
+	mappings that are local to this buffer.
+
+	Commands such as |:ProfileTwitter|, |:FollowingTwitter|,
+	|:FollowersTwitter|, and |:OwnedListsTwitter| bring up an info buffer.
+	This buffer may consist of a list of users or a list of Twitter lists.
+	In the case of |:ProfileTwitter|, it is a list of fields from one user
+	profile. Only a subset of the mappings in |:TwitVim-mappings| will
+	work in the info buffer.
+
+	TwitVim splits the window and opens a new timeline buffer only if one
+	does not already exist. Otherwise, it reuses the existing timeline
+	buffer. The same behavior applies to the info buffer.
+
+						*twitvim_timestamp_format*
+	You can customize the timestamp format in a timeline buffer by setting
+	twitvim_timestamp_format. For example, to show only the time, add this
+	to your vimrc:
+>
+		let twitvim_timestamp_format = '%I:%M %p'
+<
+	TwitVim uses |strftime()| to format timestamps, so you will need to
+	check the manual page of the C function strftime() to see what
+	formatting codes you can use here.
+
+
+------------------------------------------------------------------------------
+4.2. Update Commands				*TwitVim-update-commands*
+
+	These commands post an update to your Twitter account. If the friends,
+	user, or public timeline is visible, TwitVim will insert the update
+	into the timeline view after posting it.
+
+	Note: If you are replying to a tweet, use the <Leader>r mapping in the
+	timeline buffer instead. See |TwitVim-reply|. That mapping will set
+	the in-reply-to field, which :PosttoTwitter can't handle.
+
+	:PosttoTwitter					*:PosttoTwitter*
+
+	This command will prompt you for a message and post it to Twitter.
+
+	Note: Since this command uses input(), command-line editing and
+	history features are available here. In particular, you can use
+	<Up> and <Down> to recall previous tweets. See |history|.
+
+	:CPosttoTwitter					*:CPosttoTwitter*
+
+	This command posts the current line in the current buffer to Twitter.
+
+	:BPosttoTwitter					*:BPosttoTwitter*
+
+	This command posts the contents of the current buffer to Twitter.
+
+	:SendDMTwitter {username}			*:SendDMTwitter*
+
+	This command will prompt you for a direct message to send to user
+	{username}.
+
+	Note: If you get a "403 Forbidden" error when you try to send a direct
+	message, check if the user you're messaging is following you. That is
+	the most common reason for this error when sending a direct message.
+
+------------------------------------------------------------------------------
+4.3. Timeline Commands				*TwitVim-timeline-commands*
+
+	These commands retrieve a Twitter timeline and display it in a special
+	Twitter buffer. TwitVim applies syntax highlighting to highlight
+	certain elements in the timeline view. See |TwitVim-highlight| for a
+	list of highlighting groups it uses.
+
+
+	:UserTwitter					*:UserTwitter*
+	:UserTwitter {username}
+
+	This command displays your Twitter timeline.
+
+	If you specify a {username}, this command displays the timeline for
+	that user.
+
+							*twitvim_count*
+	You can configure the number of tweets returned by :UserTwitter by
+	setting twitvim_count. For example,
+>
+		let twitvim_count = 50
+<
+	will make :UserTwitter return 50 tweets instead of the default of 20.
+	You can set twitvim_count to any integer from 1 to 200.
+
+
+	:FriendsTwitter					*:FriendsTwitter*
+
+	This command displays your Twitter timeline with updates from friends
+	merged in.
+
+	You can configure the number of tweets returned by :FriendsTwitter by
+	setting |twitvim_count|.
+
+
+	:MentionsTwitter				*:MentionsTwitter*
+	:RepliesTwitter					*:RepliesTwitter*
+
+	This command displays a timeline of mentions (updates containing
+	@username) that you've received from other Twitter users.
+
+	:RepliesTwitter is the old name for :MentionsTwitter.
+
+	You can configure the number of tweets returned by :MentionsTwitter by
+	setting |twitvim_count|.
+
+
+	:DMTwitter					*:DMTwitter*
+
+	This command displays direct messages that you've received.
+
+
+	:DMSentTwitter					*:DMSentTwitter*
+
+	This command displays direct messages that you've sent.
+
+
+	:ListTwitter {list}				*:ListTwitter*
+	:ListTwitter {user} {list}
+
+	This command displays a Twitter list timeline.
+
+	In the first form, {user} is assumed to be you so the command will
+	display a list of yours named {list}.
+
+	In the second form, the command displays list {list} from user
+	{user}.
+
+
+	:RetweetedToMeTwitter				*:RetweetedToMeTwitter*
+
+	This command displays a timeline of retweets by others to you.
+
+
+	:RetweetedByMeTwitter				*:RetweetedByMeTwitter*
+
+	This command displays a timeline of retweets by you.
+
+
+	:FavTwitter					*:FavTwitter*
+
+	This command displays a timeline of your favorites.
+
+
+	:FollowingTwitter				*:FollowingTwitter*
+	:FollowingTwitter {user}
+
+	This command displays a list of people you're following.
+
+	If {user} is specified, this command displays a list of people that
+	user is following.
+
+	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
+	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
+	:FollowersTwitter				*:FollowersTwitter*
+	:FollowersTwitter {user}
+
+	This command displays a list of people who follow you.
+
+	If {user} is specified, this command displays a list of people
+	following that user.
+
+	You can use Ctrl-PageUp and Ctrl-PageDown to page back and forth in
+	this list. See |TwitVim-previous| and |TwitVim-next|.
+
+
+	:ListInfoTwitter {list}				*:ListInfoTwitter*
+	:ListInfoTwitter {user} {list}
+
+	This command displays summary information on the Twitter list {list}
+	owned by user {user}. If not specified, {user} is the currently
+	logged-in user.
+
+
+	:MembersOfListTwitter {list}			*:MembersOfListTwitter*
+	:MembersOfListTwitter {user} {list}
+
+	This command displays members of the Twitter list {list} owned by 
+	user {user}. If not specified, {user} is the currently logged-in user.
+
+
+	:SubsOfListTwitter {list}			*:SubsOfListTwitter*
+	:SubsOfListTwitter {user} {list}
+
+	This command displays subscribers to the Twitter list {list} owned by 
+	user {user}. If not specified, {user} is the currently logged-in user.
+
+
+	:OwnedListsTwitter				*:OwnedListsTwitter*
+	:OwnedListsTwitter {user}
+
+	This command displays the lists owned by {user}. If not specified,
+	{user} is the currently logged-in user.
+
+
+	:MemberListsTwitter				*:MemberListsTwitter*
+	:MemberListsTwitter {user}
+
+	This command displays the lists following {user}. If not specified,
+	{user} is the currently logged-in user.
+
+
+	:SubsListsTwitter				*:SubsListsTwitter*
+	:SubsListsTwitter {user}
+
+	This command displays the lists followed by {user}. If not specified,
+	{user} is the currently logged-in user.
+
+
+	:FollowListTwitter {user} {list}		*:FollowListTwitter*
+
+	Start following the list {list} owned by {user}.
+
+
+	:UnfollowListTwitter {user} {list}		*:UnfollowListTwitter*
+
+	Stop following the list {list} owned by {user}.
+
+
+	:BackTwitter					*:BackTwitter*
+
+	This command takes you back to the previous timeline in the timeline
+	stack. TwitVim saves a limited number of timelines. This command
+	will display a warning if you attempt to go beyond the oldest saved
+	timeline. See |TwitVim-C-o|.
+
+
+	:BackInfoTwitter				*:BackInfoTwitter*
+
+	This command is similar to |:BackTwitter| but takes you to the
+	previous display in the info buffer stack instead. See |TwitVim-C-o|.
+
+
+	:ForwardTwitter					*:ForwardTwitter*
+
+	This command takes you to the next timeline in the timeline stack.
+	It will display a warning if you attempt to go past the newest saved
+	timeline so this command can only be used after :BackTwitter.
+	See |TwitVim-C-i|.
+	
+
+	:ForwardInfoTwitter				*:ForwardInfoTwitter*
+
+	This command is similar to |:ForwardTwitter| but takes you to the
+	next display in the info buffer stack instead. See |TwitVim-C-o|.
+
+
+	:RefreshTwitter					*:RefreshTwitter*
+
+	This command refreshes the timeline. See |TwitVim-Leader-Leader|.
+
+
+	:RefreshInfoTwitter				*:RefreshInfoTwitter*
+
+	This command refreshes the info buffer. See |TwitVim-Leader-Leader|.
+
+
+	:NextTwitter					*:NextTwitter*
+
+	This command loads the next (older) page in the timeline.
+	See |TwitVim-C-PageDown|.
+
+
+	:NextInfoTwitter				*:NextInfoTwitter*
+
+	This command loads the next page in the info buffer.
+	See |TwitVim-C-PageDown|.
+
+
+	:PreviousTwitter				*:PreviousTwitter*
+
+	This command returns to the first (newest) page in the timeline. If
+	the timeline is already on the first page, this command issues a
+	warning and doesn't do anything. See |TwitVim-C-PageUp|.
+
+
+	:PreviousInfoTwitter				*:PreviousInfoTwitter*
+
+	This command loads the previous page in the info buffer. If the info
+	buffer is on the first page, this command issues a warning and doesn't
+	do anything. See |TwitVim-C-PageUp|.
+
+
+	:SetLoginTwitter				*:SetLoginTwitter*
+
+	This command initiates an OAuth login handshake. 
+
+	Use this command if you need to log in as another Twitter user.
+	When the authentication web page comes up, use the "Sign Out" link
+	to log in as a different user and grant TwitVim access to that
+	user.
+	
+	When you use SetLoginTwitter, TwitVim does not discard the previous
+	access token. So you can switch back to the previous user using
+	|:SwitchLoginTwitter|.
+
+
+	:SwitchLoginTwitter				*:SwitchLoginTwitter*
+	:SwitchLoginTwitter {username},{service}
+
+	Switch to another user from the list of saved logins. If
+	{username},{service} is not specified, SwitchLoginTwitter will display
+	a list of logins and prompt you to select one of those.
+
+	Tab completion is available for this command, so you can enter
+	:SwitchLoginTwitter, the space key, and then the tab key to pick from
+	a list of saved logins.
+
+	SwitchLoginTwitter knows only about user accounts to which you have
+	logged in previously. To switch to a new user account, use
+	|:SetLoginTwitter| instead.
+
+
+	:DeleteLoginTwitter				*:DeleteLoginTwitter*
+	:DeleteLoginTwitter {username},{service}
+
+	Deletes a user from the list of saved logins. If {username},{service}
+	is not specified, DeleteLoginTwitter will display a list of logins and
+	prompt you to select one of those.
+
+	Tab completion is available for this command, so you can enter
+	:DeleteLoginTwitter, the space key, and then the tab key to pick from
+	a list of saved logins.
+
+	DeleteLoginTwitter knows only about user accounts to which you have
+	logged in previously.
+	
+	Note: You cannot delete the currently active user. If you need to do
+	so, use :SwitchLoginTwitter to switch to another user first.
+
+
+	:ResetLoginTwitter				*:ResetLoginTwitter*
+
+	This command discards the current OAuth access token and all saved
+	tokens. The next TwitVim command that needs authentication will
+	initiate an OAuth handshake.
+
+	After using ResetLoginTwitter, you won't be able to switch to any
+	users using |:SwitchLoginTwitter| because ResetLoginTwitter discards
+	all saved access tokens. Use |:DeleteLoginTwitter| instead if you only
+	wish to discard one saved token.
+
+
+	:FollowTwitter {username}			*:FollowTwitter*
+
+	Start following user {username}'s timeline. If the user's timeline is
+	protected, this command makes a request to follow that user.
+
+	Note: This command does not enable notifications for the target user.
+	If you need that, you'll have to do that separately through the web
+	interface.
+
+
+	:UnfollowTwitter {username}			*:UnfollowTwitter*
+
+	Stop following user {username}'s timeline.
+
+
+	:BlockTwitter {username}			*:BlockTwitter*
+
+	Block user {username}.
+
+
+	:UnblockTwitter {username}			*:UnblockTwitter*
+
+	Unblock user {username}.
+
+
+	:ReportSpamTwitter {username}			*:ReportSpamTwitter*
+
+	Reports user {username} for spam. This command will also block the
+	user.
+
+
+	:EnableRetweetsTwitter {username}	*:EnableRetweetsTwitter*
+
+	Start showing retweets from user {username} in friends timeline.
+	
+	Note: This option may not take effect immediately since Twitter uses
+	cached data to construct the timeline.
+
+
+	:DisableRetweetsTwitter {username}	*:DisableRetweetsTwitter*
+
+	Stop showing retweets from user {username} in friends timeline.
+	
+	Note: This option may not take effect immediately since Twitter uses
+	cached data to construct the timeline.
+
+
+	:AddToListTwitter {listname} {username}		*:AddToListTwitter*
+
+	Adds user {username} to list {listname}.
+
+
+	:RemoveFromListTwitter {listname} {username}	*:RemoveFromListTwitter*
+
+	Removes user {username} from list {listname}.
+
+
+------------------------------------------------------------------------------
+4.4. Mappings						*TwitVim-mappings*
+
+	Alt-T						*TwitVim-A-t*
+	Ctrl-T						*TwitVim-C-t*
+
+	In visual mode, Alt-T posts the highlighted text to Twitter.
+
+	Ctrl-T is an alternative to the Alt-T mapping. In GUI Vim on
+	certain platforms like Windows, if the menu bar is enabled, Alt-T
+	pulls down the Tools menu. So use Ctrl-T instead.
+
+
+							*TwitVim-reply*
+	Alt-R						*TwitVim-A-r*
+	<Leader>r					*TwitVim-Leader-r*
+
+	This mapping is local to the timeline buffer. In the timeline buffer,
+	it starts composing an @-reply on the command line to the author of
+	the tweet on the current line.
+
+	Under Cygwin, Alt-R is not recognized so you can use <Leader>r as an
+	alternative. The <Leader> character defaults to \ (backslash) but see
+	|mapleader| for information on customizing that.
+
+	Note: Since this command uses input(), command-line editing and
+	history features are available here. In particular, you can use
+	<Up> and <Down> to recall previous tweets. See |history|.
+
+
+							*TwitVim-reply-all*
+	<Leader>Ctrl-R					*TwitVim-Leader-C-r*
+
+	This mapping is local to the timeline buffer. It starts composing a
+	reply to all, i.e. a reply to the tweet author and also to everyone
+	mentioned in @-replies on the current line.
+
+
+							*TwitVim-retweet*
+	<Leader>R					*TwitVim-Leader-S-r*
+
+	This mapping (Note: uppercase 'R' instead of 'r'.) is local to the
+	timeline buffer. It is similar to the retweet feature in popular
+	Twitter clients. In the timeline buffer, it retweets the current line.
+
+
+							*twitvim_old_retweet*
+	If you prefer old-style retweets, add this to your vimrc:
+>
+		let twitvim_old_retweet = 1
+<	
+	The difference is an old-style retweet does not use the retweet API.
+	Instead, it copies the current line to the command line so that you
+	can repost it as a new tweet and optionally edit it or add your own
+	comments. Note that an old-style retweet may end up longer than 140
+	characters. If you have problems posting a retweet, try editing it to
+	make it shorter.
+
+						    *twitvim_retweet_format*
+	If you use old-style retweets, you can configure the retweet format.
+	By default, TwitVim retweets tweets in the following format:
+
+		RT @user: text of the tweet
+
+	You can customize the retweet format by adding the following to your
+	vimrc, for example:
+>
+		let twitvim_retweet_format = 'Retweet from %s: %t'
+
+		let twitvim_retweet_format = '%t (retweeted from %s)'
+<
+	When you retweet a tweet, TwitVim will replace "%s" in
+	twitvim_retweet_format with the user name of the original poster and
+	"%t" with the text of the tweet.
+
+	The default setting of twitvim_retweet_format is "RT %s: %t"
+
+
+							*TwitVim-direct-message*
+	Alt-D						*TwitVim-A-d*
+	<Leader>d					*TwitVim-Leader-d*
+
+	This mapping is local to the timeline buffer. In the timeline buffer,
+	it starts composing a direct message on the command line to the author
+	of the tweet on the current line.
+
+	Under Cygwin, Alt-D is not recognized so you can use <Leader>d as an
+	alternative. The <Leader> character defaults to \ (backslash) but see
+	|mapleader| for information on customizing that.
+
+	Note: If you get a "403 Forbidden" error when you try to send a direct
+	message, check if the user you're messaging is following you. That is
+	the most common reason for this error when sending a direct message.
+
+
+							*TwitVim-goto*
+	Alt-G						*TwitVim-A-g*
+	<Leader>g					*TwitVim-Leader-g*
+
+	This mapping is local to the timeline and info buffers. It
+	launches the web browser with the URL at the cursor position. If you
+	visually select text before invoking this mapping, it launches the web
+	browser with the selected text as is.
+
+	Special cases:
+
+	- If the cursor is on a word of the form @user or in the user: portion
+	  at the beginning of a line, TwitVim displays that user's
+	  timeline.
+
+	- If the cursor is on a Name: line in the info buffer, TwitVim
+	  displays that user's timeline.
+
+	- If the cursor is on a word of the form #hashtag, TwitVim does a
+	  Twitter Search for that #hashtag.
+
+	- In a trending topics buffer, TwitVim does a Twitter Search for the
+	  phrase on the cursor line.
+
+
+							*twitvim_browser_cmd*
+	Before using this command, you need to tell TwitVim how to launch your
+	browser. For example, you can add the following to your vimrc:
+>
+		let twitvim_browser_cmd = 'firefox.exe'
+<
+	Of course, replace firefox.exe with the browser of your choice.
+
+	Under Mac OS X, the following will use the default browser:
+>
+		let twitvim_browser_cmd = 'open'
+<
+
+							*TwitVim-LongURL*
+	<Leader>e					*TwitVim-Leader-e*
+
+	This mapping is local to the timeline and info buffers. It
+	calls the LongURL API (see http://longurl.org/) to expand the short
+	URL at the cursor position. A short URL is a URL from a URL shortening
+	service such as TinyURL, SnipURL, etc. Use this feature if you wish to
+	preview a URL before browsing to it with |TwitVim-goto|.
+
+	If you visually select text before invoking this mapping, it calls the
+	LongURL API with the selected text as is.
+
+	If successful, TwitVim will display the result from LongURL in the
+	message area.
+
+
+							*TwitVim-profile*
+	<Leader>p					*TwitVim-Leader-p*
+
+	This mapping is local to the timeline and info buffers. It retrieves
+	user profile information (e.g. name, location, bio, update count) for
+	the user name at the cursor position. It displays the profile
+	information in an info buffer.
+
+	If you visually select text before invoking this mapping, it uses the
+	selected text for the user name.
+
+	See also |:ProfileTwitter|.
+
+
+							*TwitVim-inreplyto*
+	<Leader>@					*TwitVim-Leader-@*
+
+	This mapping is local to the timeline buffer. If the current line is
+	an @-reply tweet, it retrieves the tweet to which this one is
+	replying. Then it will display that predecessor tweet below the
+	current one.
+	
+	If there is no in-reply-to information, it will show a warning and do
+	nothing.
+
+	This mapping is useful in the replies timeline. See |:RepliesTwitter|.
+
+
+							*TwitVim-delete*
+	<Leader>X					*TwitVim-Leader-X*
+
+	This mapping is local to the timeline buffer. The 'X' in the mapping
+	is uppercase. It deletes the tweet or direct message on the current
+	line.
+
+	Note: You have to be the author of the tweet in order to delete it.
+	However, you can delete direct messages that you sent or received.
+
+
+							*TwitVim-fave*
+							*TwitVim-Leader-f*
+	<Leader>f
+
+	This mapping is local to the timeline buffer. It adds the tweet on the
+	current line to your favorites.
+
+
+							*TwitVim-unfave*
+							*TwitVim-Leader-C-f*
+	<Leader>Ctrl-F
+
+	This mapping is local to the timeline buffer. It removes the tweet on
+	the current line from your favorites.
+
+
+	Ctrl-O						*TwitVim-C-o*
+
+	This mapping takes you to the previous timeline in the timeline stack.
+	See |:BackTwitter|.
+
+	This mapping also works in the info buffer but uses a separate history
+	stack. See |:BackInfoTwitter|.
+
+
+	Ctrl-I						*TwitVim-C-i*
+
+	This mapping takes you to the next timeline in the timeline stack.
+	See |:ForwardTwitter|.
+
+	This mapping also works in the info buffer but uses a separate history
+	stack. See |:ForwardInfoTwitter|.
+
+
+							*TwitVim-refresh*
+	<Leader><Leader> 				*TwitVim-Leader-Leader*
+
+	This mapping refreshes the timeline. See |:RefreshTwitter|.
+
+	This mapping also works in the info buffer but is of limited utility
+	there because that info shouldn't change as often as a timeline.
+	See |:RefreshInfoTwitter|.
+
+
+							*TwitVim-next*
+	Ctrl-PageDown					*TwitVim-C-PageDown*
+
+	This mapping loads the next (older) page in the timeline.
+	See |:NextTwitter|.
+
+	This mapping also works in the info buffer but only if the list is
+	long enough to use more than one page. It does nothing in the user
+	profile display. See |:NextInfoTwitter|.
+
+	
+							*TwitVim-previous*
+	Ctrl-PageUp					*TwitVim-C-PageUp*
+
+	This mapping returns to the first (newest) page in the timeline. If
+	the timeline is already on the first page, it issues a warning and
+	doesn't do anything. See |:PreviousTwitter|.
+
+	This mapping also works in the info buffer but only if the list is
+	long enough to use more than one page. It does nothing in the user
+	profile display. See |:PreviousInfoTwitter|.
+
+
+------------------------------------------------------------------------------
+4.5. Utility Commands					*TwitVim-utility*
+
+	Note: You do not need these URL shortening services to post to
+	Twitter. Simply add the full URL to your tweet and Twitter will use
+	its own URL wrapper.
+
+
+	:BitLy						*:BitLy*
+	:BitLy {url}
+
+	bit.ly is a URL forwarding and shortening service. See
+	https://bitly.com/
+
+	This command calls the bit.ly API to get a short URL in place of
+	{url}. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	The bit.ly API requires bit.ly access token. A default
+	access token is provided with TwitVim and no configuration is
+	needed.
+	
+	However, if you wish to supply your own access token to track
+	your bit.ly history and stats:
+	- Go to https://bitly.com/a/oauth_apps
+	- Enter your password and click on "Generate Token".
+	- Copy the string below "Generic Access Token" and then add the
+	  following to your vimrc:
+
+							*twitvim_bitly_key*
+>
+		let twitvim_bitly_key = "accesstoken"
+<
+	Where accesstoken is the string you obtained from bit.ly.
+
+	Note: The bit.ly access token is not the same as the bit.ly API key
+	used in TwitVim 0.8 and earlier. If you are upgrading TwitVim and
+	have a bit.ly API key in your vimrc, you'll need to replace it with
+	a bit.ly access token.
+
+	:ABitLy						*:ABitLy*
+	:ABitLy {url}
+
+	Same as :BitLy but appends, i.e. inserts after the current
+	position instead of at the current position, the short URL instead.
+
+	:PBitLy						*:PBitLy*
+	:PBitLy {url}
+	
+	Same as :BitLy but prompts for a tweet on the command line with
+	the short URL already inserted.
+
+
+	:IsGd						*:IsGd*
+	:IsGd {url}
+
+	is.gd is a URL forwarding and shortening service. See
+	http://is.gd
+
+	This command calls the is.gd API to get a short URL in place of <url>.
+	If {url} is not provided on the command line, the command will prompt
+	you to enter a URL. The short URL is then inserted into the current
+	buffer at the current position.
+
+	:AIsGd						*:AIsGd*
+	:AIsGd {url}
+
+	Same as :IsGd but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PIsGd						*:PIsGd*
+	:PIsGd {url}
+	
+	Same as :IsGd but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
+	:Googl						*:Googl*
+	:Googl {url}
+
+	Goo.gl is Google's URL forwarding and shortening service.
+	See http://goo.gl/
+
+	This command calls the goo.gl API to get a short URL in place of
+	<url>. If {url} is not provided on the command line, the command will
+	prompt you to enter a URL. The short URL is then inserted into the
+	current buffer at the current position.
+
+	:AGoogl						*:AGoogl*
+	:AGoogl {url}
+
+	Same as :Googl but appends, i.e. inserts after the current position
+	instead of at the current position, the short URL instead.
+
+	:PGoogl						*:PGoogl*
+	:PGoogl {url}
+	
+	Same as :Googl but prompts for a tweet on the command line with the
+	short URL already inserted.
+
+
+	:SearchTwitter					*:SearchTwitter*
+	:SearchTwitter {query}
+	
+	This command calls the Search API to search for {query}. If {query} is
+	not provided on the command line, the command will prompt you for it.
+	Search results are then displayed in the timeline buffer.
+
+	All of the Twitter Search operators are supported implicitly. For a
+	list of search operators, see:
+	https://support.twitter.com/groups/31-twitter-basics/topics/110-search/articles/71577-how-to-use-advanced-twitter-search
+
+	You can configure the number of tweets returned by :SearchTwitter by
+	setting |twitvim_count|.
+
+
+	:RateLimitTwitter				*:RateLimitTwitter*
+
+	This command retrieves rate limit information. It shows the current
+	limit, how many API calls you have remaining, and when your quota will
+	be reset. You can use it to check if you have been temporarily locked
+	out of Twitter for hitting the rate limit.
+
+	As of Twitter API 1.1, rate limits are per API endpoint. This
+	command displays one line per API endpoint and is very verbose.
+
+
+	:ProfileTwitter					*:ProfileTwitter*
+	:ProfileTwitter {username}
+
+	This command retrieves user profile information (e.g. name, location,
+	bio, update count) for the specified user {username}. It displays the
+	information in an info buffer.
+
+	If {username} is not specified, this command will retrieve
+	information for the currently logged-in user.
+
+	See also |TwitVim-Leader-p|.
+
+
+	:LocationTwitter {location}			*:LocationTwitter*
+
+	This command sets the location field in your profile. There is no
+	mandatory format for the location. It could be a zip code, a town,
+	coordinates, or pretty much anything.
+
+	For example:
+>
+	:LocationTwitter 10027
+	:LocationTwitter New York, NY, USA
+	:LocationTwitter 40.811583, -73.954486
+<
+
+	:TrendTwitter					*:TrendTwitter*
+
+	This command retrieves a list of Twitter trending topics and displays
+	them in the timeline buffer.
+
+	In trending topics, |TwitVim-Leader-g| does a Twitter search for the
+	phrase on the cursor line.
+
+	By default, this command shows worldwide trends. To show regional
+	trends, use |:SetTrendLocationTwitter| or set |twitvim_woeid|.
+
+
+	:SetTrendLocationTwitter		 *:SetTrendLocationTwitter*
+
+	This command displays a menu of trend locations by country and by
+	town. It sets the region for |:TrendTwitter|.
+	
+
+							*twitvim_woeid*
+	If you wish to set the default location for |:TrendTwitter| to
+	something other than worldwide, set twitvim_woeid in your vimrc.
+	
+	For example:
+>
+		let twitvim_woeid = 2357024
+<
+	sets the location to Atlanta.
+	
+	You can find out what number to use for a location by checking the
+	message displayed after |:SetTrendLocationTwitter| or by checking
+	twitvim_woeid after |:SetTrendLocationTwitter|.
+
+
+==============================================================================
+5. Timeline Highlighting				*TwitVim-highlight*
+
+	TwitVim uses a number of highlighting groups to highlight certain
+	elements in the Twitter timeline views. See |:highlight| for details
+	on how to customize these highlighting groups.
+
+	twitterUser					*hl-twitterUser*
+	
+	The Twitter user name at the beginning of each line.
+
+	twitterTime					*hl-twitterTime*
+
+	The time a Twitter update was posted.
+
+	twitterTitle					*hl-twitterTitle*
+
+	The header at the top of the timeline view.
+
+	twitterLink					*hl-twitterLink*
+
+	Link URLs and #hashtags in a Twitter status.
+
+	twitterReply					*hl-twitterReply*
+
+	@-reply in a Twitter status.
+
+
+==============================================================================
+6. Tips and Tricks					*TwitVim-tips*
+
+	Here are a few tips for using TwitVim more efficiently.
+
+
+------------------------------------------------------------------------------
+6.1. Timeline Hotkeys					*TwitVim-hotkeys*
+
+	TwitVim does not autorefresh. However, you can make refreshing your
+	timeline easier by mapping keys to the timeline commands. For example,
+	I use the <F8> key for that:
+>
+		nnoremap <F8> :FriendsTwitter<cr>
+		nnoremap <S-F8> :UserTwitter<cr>
+		nnoremap <A-F8> :RepliesTwitter<cr>
+		nnoremap <C-F8> :DMTwitter<cr>
+<
+
+------------------------------------------------------------------------------
+6.2. Line length in status line				*TwitVim-line-length*
+
+	Add the following to your |'statusline'| to display the length of the
+	current line:
+>
+		%{strlen(getline('.'))}
+<	
+	This is useful if you compose tweets in a separate buffer and post
+	them with |:CPosttoTwitter|. With the line length in your status line,
+	you will know when you've reached the 140-character boundary.
+
+
+------------------------------------------------------------------------------
+6.3. Network timeout				*TwitVim-network-timeout*
+
+	TwitVim may have problems connecting to Twitter sometimes. The system
+	default for socket timeouts may be as long as a few minutes, so
+	TwitVim will appear to hang for that length of time before displaying
+	an error message.
+
+							*twitvim_net_timeout*
+	You can set twitvim_net_timeout to reduce this timeout interval. For
+	example, add the following to your vimrc:
+>
+		let twitvim_net_timeout = 30
+<
+	to set the network timeout to 30 seconds.
+
+	Note: This option does not seem to work correctly if you are using
+	|twitvim_enable_perl|. It may take longer than that number of seconds
+	to time out.
+
+
+==============================================================================
+7. TwitVim History					*TwitVim-history*
+
+	0.9.0 : 2015-04-10 * Removed identi.ca support and legacy code.
+                           * Removed support for old token file formats.
+                           * Removed old Twitter search code.
+                           * Removed some obscure URL shortening services.
+                           * Updated to bit.ly v3 API.
+                           * Removed old goo.gl URL shortening code.
+                           * Removed services menu because we only have
+                             Twitter now.
+                           * Removed public timeline command.
+                           * Moved most of the plugin code to an autoload
+                             file.
+                           * Search header fix in UTF-8 encoding. (@mattn_jp)
+                           * Don't use curl -p for HTTP. (@mattn_jp)
+                           * Handle surrogate pairs. (@mattn_jp)
+	0.8.2 : 2014-03-26 * Change Twitter API URLs to https. Twitter no
+			     longer supports non-SSL.
+			   * Added support for highlighting $stocksymbol
+		             and jumping to searches for $stocksymbol.
+			   * Perform zero-length message check before
+			     get_cur_service() so a non-logged-in user can
+			     cancel.
+			   * Made a proper folder structure and added a
+			     vimball packing script.
+	0.8.1 : 2013-08-12 * Fix for suspended users in followers list.
+			   * Rewrote URL regex for new regex engine in Vim 7.4.
+	0.8.0 : 2013-01-02 * Support for Twitter API 1.1.
+			   * Support for identi.ca OAuth and switching between
+			     Twitter OAuth and identi.ca OAuth logins.
+			   * Added |twitvim_force_ssl|.
+			   * Added |:DeleteLoginTwitter|.
+			   * Add in-reply-to status to old-style retweets.
+			     (@mattn_jp)
+			   * Fix for old-style retweets with '&' characters.
+			   * Some fixes for https proxy support.
+	0.7.5 : 2012-08-10 * Partial support for identi.ca search.
+			   * Tightened up |TwitVim-Leader-g| URL matching to
+			     omit extraneous trailing characters.
+	0.7.4 : 2012-05-04 * Allow users to customize timestamp format in
+			     timeline displays. |twitvim_timestamp_format|
+			   * Take Twitter's URL-wrapping into account when
+			     counting characters in tweets. You do not have to
+			     shorten URLs manually any more. Just post to
+			     Twitter with the original URLs and TwitVim will
+			     ensure that the tweet fits the 140-character
+			     limit after Twitter's t.co link-wrapping.
+			   * Added network timeout option.
+			     |twitvim_net_timeout|
+			   * Added Python 3 networking and OAuth code.
+			     |twitvim_enable_python3|
+			   * Switched from page-style pagination to
+			     max_id-style pagination because page-style
+			     pagination has been deprecated. As a result, all
+			     timeline commands will cease to accept [count]
+			     parameters and |:PreviousTwitter| will return to
+			     the top page regardless of current page number.
+			   * Switched to new API for |:FollowingTwitter| and
+			     |:FollowersTwitter| because the old API was
+			     deprecated.
+			   * |:FollowTwitter| now stops you from following a
+			     user that you are already following. This is to
+			     avoid triggering a Twitter bug where the
+			     following flag reverts to 'follow request sent'
+			     if the subject's timeline is protected.
+	0.7.3 : 2012-01-17 * Switched to JSON API for Twitter Search so that
+			     TwitVim can support t.co URL expansion and
+			     in-reply-to in search results.
+			   * Made the URL-matching pattern more accurate.
+	0.7.2 : 2011-11-16 * Allow users to use their own consumer key and
+			     secret. |twitvim_consumer_key|
+			     |twitvim_consumer_secret|
+			   * Added t.co URL expansion for media URLs too.
+			   * Added confirmation prompt before new-style
+			     retweet.
+			   * Request trends in JSON format. XML format no
+			     longer works.
+			   * Read token file before |:SwitchLoginTwitter|
+			     (@mattn_jp)
+	0.7.1 : 2011-09-21 * Added trending topics. |:TrendTwitter| and
+			     |:SetTrendLocationTwitter|
+			   * Some fixes for browser-launching issues.
+			   * Fix for quoting issue when doing goo.gl URL
+			     shortening with cURL network interface under
+			     Windows.
+			   * Support for HTML hex entities.
+			   * Show 'follow request sent' in user profile
+			     display if that is the case.
+	0.7.0 : 2011-07-06 * Replaced many deprecated Twitter API calls with
+			     updated versions.
+			   * Improved XML parsing speed for high
+			     |twitvim_count|.
+			   * Added |:SwitchLoginTwitter| and other code to
+			     support multiple saved OAuth logins.
+	0.6.3 : 2011-05-13 * Expand t.co URLs in timeline displays.
+			   * Added timeline filtering. |TwitVim-filter|
+	0.6.2 : 2011-02-21 * Added more user relationship info to
+			     |:ProfileTwitter|.
+			   * Added |:EnableRetweetsTwitter| and
+			     |:DisableRetweetsTwitter|.
+			   * Switch to new (documented) goo.gl API.
+			   * Added |:ListInfoTwitter|.
+	0.6.1 : 2011-01-06 * Fix for buffer stack bug if user closes
+			     a window manually.
+			   * Use https OAuth endpoints if user has set up
+			     https API root.
+			   * Match a URL even if prefix is in mixed case.
+	0.6.0 : 2010-10-27 * Added |:FollowingTwitter|, |:FollowersTwitter|.
+			   * Added |:MembersOfListTwitter|,
+			     |:SubsOfListTwitter|, |:OwnedListsTwitter|,
+			     |:MemberListsTwitter|, |:SubsListsTwitter|,
+			     |:FollowListTwitter|, |:UnfollowListTwitter|.
+			   * Added support for goo.gl |:Googl| and Rga.la.
+			     |:Rgala|
+			   * Extended |TwitVim-Leader-g| to support Name: lines
+			     in user profile and following/followers lists.
+			   * Added history stack for info buffer.
+			   * Added |:BackInfoTwitter|, |:ForwardInfoTwitter|,
+			     |:RefreshInfoTwitter|, |:NextInfoTwitter|,
+			     |:PreviousInfoTwitter| for the info buffer. Also
+			     added support for |TwitVim-C-PageDown| and
+			     |TwitVim-C-PageUp| in info buffer.
+			   * Added twitvim filetype for user customization
+			     via autocommands.
+			   * Changed display of retweets to show the full
+			     version instead of the truncated version
+			     when the retweeted status is near the 
+			     character limit.
+			   * |:ProfileTwitter| with no argument now shows
+			     info on logged-in user.
+			   * Make |TwitVim-Leader-@| work on new-style
+			     retweets by showing the retweeted status
+			     as the parent.
+	0.5.6 : 2010-09-19 * Exception handling for Python net interface.
+			   * Added converter functions for non-UTF8 encoding
+			     by @mattn_jp.
+			   * Convert entities in profile name, bio, and
+			     location. (Suggested by code933k)
+			   * Fix for posting foreign chars when encoding is
+			     not UTF8 and net method is not Curl.
+			   * Support |twitvim_count| in |:DMTwitter| and
+			     |:DMSentTwitter|.
+			   * Added |:FavTwitter|.
+			   * Added mappings to favorite and unfavorite tweets.
+			     |TwitVim-Leader-f| |TwitVim-Leader-C-f|
+	0.5.5 : 2010-08-16 * Added support for computing HMAC-SHA1 digests
+			     using the openssl command line tool from the
+			     OpenSSL toolkit. |TwitVim-OpenSSL|
+	0.5.4 : 2010-08-11 * Added Ruby and Tcl versions of HMAC-SHA1 digest
+			     code.
+			   * Improved error messages for cURL users.
+			   * Fix to keep |'nomodifiable'| setting from leaking
+			     out into other buffers.
+			   * Support Twitter SSL via Tcl interface.
+			     |TwitVim-ssl-tcl|
+	0.5.3 : 2010-06-23 * Improved error messages for most commands if 
+			     using Perl, Python, Ruby, or Tcl interfaces.
+			   * Added |:FollowTwitter|, |:UnfollowTwitter|,
+			     |:BlockTwitter|, |:UnblockTwitter|,
+			     |:ReportSpamTwitter|, |:AddToListTwitter|,
+			     |:RemoveFromListTwitter|.
+	0.5.2 : 2010-06-22 * More fixes for Twitter OAuth.
+	0.5.1 : 2010-06-19 * Shorten auth URL with is.gd/Bitly if we need
+			     to ask the user to visit it manually.
+			   * Fixed the |:PublicTwitter| invalid request error.
+			   * Include new-style retweets in user timeline.
+	0.5.0 : 2010-06-16 * Switched to OAuth for user authentication on 
+			     Twitter. |TwitVim-OAuth|
+			   * Improved |:ProfileTwitter|.
+	0.4.7 : 2010-03-13 * Added |:MentionsTwitter| as an alias for
+			     |:RepliesTwitter|.
+			   * Support |twitvim_count| in |:MentionsTwitter|.
+			   * Fixed |twitvim_count| bug in |:ListTwitter|.
+			   * Fixed Ruby interface problem with
+			     Vim patch 7.2.374.
+			   * Fixed |:BackTwitter| behavior when timeline
+			     window is hidden by user.
+			   * Handle SocketError exception in Ruby code.
+	0.4.6 : 2010-02-05 * Added option to hide header in timeline buffer.
+			     |TwitVim-hide-header|
+	0.4.5 : 2009-12-20 * Prompt for login info if not configured.
+			     |:SetLoginTwitter| |:ResetLoginTwitter|
+			   * Reintroduced old-style retweet via
+			     |twitvim_old_retweet|.
+	0.4.4 : 2009-12-13 * Upgraded bit.ly API support to version 2.0.1
+			     with configurable user login and key.
+			   * Added support for Zima. |:Zima|
+			   * Fixed :BackTwitter behavior when browsing
+			     multiple lists.
+			   * Added support for displaying retweets in
+			     friends timeline.
+			   * Use Twitter Retweet API to retweet.
+			   * Added commands to display retweets to you or
+			     by you. |:RetweetedToMeTwitter|
+			     |:RetweetedByMeTwitter|
+	0.4.3 : 2009-11-27 * Fixed some minor breakage in LongURL support.
+			   * Added |:ListTwitter|
+			   * Omit author's name from the list when doing a
+			     reply to all. |TwitVim-reply-all|
+	0.4.2 : 2009-06-22 * Bugfix: Reset syntax items in Twitter window.
+			   * Bugfix: Show progress message before querying
+			     for in-reply-to tweet.
+			   * Added reply to all feature. |TwitVim-reply-all|
+	0.4.1 : 2009-03-30 * Fixed a problem with usernames and search terms
+			     that begin with digits.
+	0.4.0 : 2009-03-09 * Added |:SendDMTwitter| to send direct messages
+			     through API without relying on the "d user ..."
+			     syntax.
+			   * Modified Alt-D mapping in timeline to use
+			     the :SendDMTwitter code.
+			   * Added |:BackTwitter| and |:ForwardTwitter|
+			     commands, Ctrl-O and Ctrl-I mappings to move back
+			     and forth in the timeline stack.
+			   * Improvements in window handling. TwitVim commands
+			     will restore the cursor to the original window
+			     when possible.
+			   * Wrote some notes on using TwitVim with Twitter
+			     SSL API.
+			   * Added mapping to show predecessor tweet for an
+			     @-reply. |TwitVim-inreplyto|
+			   * Added mapping to delete a tweet or message.
+			     |TwitVim-delete|
+			   * Added commands and mappings to refresh the
+			     timeline and load the next or previous page.
+			     |TwitVim-refresh|, |TwitVim-next|,
+			     |TwitVim-previous|.
+	0.3.5 : 2009-01-30 * Added support for pagination and page length to
+			     :SearchTwitter.
+			   * Shortened default retweet prefix to "RT".
+	0.3.4 : 2008-11-11 * Added |twitvim_count| option to allow user to
+			     configure the number of tweets returned by
+			     :FriendsTwitter and :UserTwitter.
+	0.3.3 : 2008-10-06 * Added support for Cligs. |:Cligs|
+	                   * Fixed a problem with not being able to unset
+			     the proxy if using Tcl http.
+	0.3.2 : 2008-09-30 * Added command to display rate limit info.
+			     |:RateLimitTwitter|
+			   * Improved error reporting for :UserTwitter.
+			   * Added command and mapping to display user
+			     profile information. |:ProfileTwitter|
+			     |TwitVim-Leader-p|
+			   * Added command for updating location.
+			     |:LocationTwitter|
+			   * Added support for tr.im. |:Trim|
+			   * Fixed error reporting in Tcl http code.
+	0.3.1 : 2008-09-18 * Added support for LongURL. |TwitVim-LongURL|
+			   * Added support for posting multibyte/Unicode
+			     tweets in cURL mode.
+			   * Remove newlines from text before retweeting.
+	0.3.0 : 2008-09-12 * Added support for http networking through Vim's
+			     Perl, Python, Ruby, and Tcl interfaces, as
+			     alternatives to cURL. |TwitVim-non-cURL|
+			   * Removed UrlTea support.
+	0.2.24 : 2008-08-28 * Added retweet feature. See |TwitVim-retweet|
+	0.2.23 : 2008-08-25 * Support in_reply_to_status_id parameter.
+			    * Added tip on line length in statusline.
+			    * Report browser launch errors.
+			    * Set syntax highlighting on every timeline refresh.
+	0.2.22 : 2008-08-13 * Rewrote time conversion code in Vim script
+			      so we don't need Perl or Python any more.
+			    * Do not URL-encode digits 0 to 9.
+	0.2.21 : 2008-08-12 * Added tips section to documentation.
+			    * Use create_or_reuse instead of create in UrlBorg
+			      API so that it will always generate the same
+			      short URL for the same long URL.
+			    * Added support for highlighting #hashtags and
+			      jumping to Twitter Searches for #hashtags.
+			    * Added Python code to convert Twitter timestamps
+			      to local time and simplify them.
+	0.2.20 : 2008-07-24 * Switched from Summize to Twitter Search.
+			      |:SearchTwitter|
+	0.2.19 : 2008-07-23 * Added support for non-Twitter servers
+			      implementing the Twitter API. This is for
+			      identi.ca support. See |twitvim-identi.ca|.
+	0.2.18 : 2008-07-14 * Added support for urlBorg API. |:UrlBorg|
+	0.2.17 : 2008-07-11 * Added command to show DM Sent Timeline.
+	                      |:DMSentTwitter|
+			    * Added support for pagination in Friends, User,
+			      Replies, DM, and DM Sent timelines.
+			    * Added support for bit.ly API and is.gd API.
+			      |:BitLy| |:IsGd|
+	0.2.16 : 2008-05-16 * Removed quotes around browser launch URL.
+			    * Escape ! character in browser launch URL.
+	0.2.15 : 2008-05-13 * Extend :UserTwitter and :FriendsTwitter to show
+			      another user's timeline if argument supplied.
+			    * Extend Alt-G mapping to jump to another user's
+			      timeline if invoked over @user or user:
+			    * Escape special Vim shell characters in URL when
+			      launching web browser.
+	0.2.14 : 2008-05-12 * Added support for Summize search API.
+	0.2.13 : 2008-05-07 * Added mappings to launch web browser on URLs in
+			      timeline.
+	0.2.12 : 2008-05-05 * Allow user to specify Twitter login info and
+			      proxy login info preencoded in base64.
+			      |twitvim_login_b64| |twitvim_proxy_login_b64|
+	0.2.11 : 2008-05-02 * Scroll to top in timeline window after adding
+			      an update line.
+			    * Add <Leader>r and <Leader>d mappings as
+			      alternative to Alt-R and Alt-D because the
+			      latter are not valid key combos under Cygwin.
+	0.2.10 : 2008-04-25 * Shortened snipurl.com to snipr.com
+			    * Added support for proxy authentication.
+			      |twitvim_proxy_login|
+			    * Handle Perl module load failure. Not that I
+			      expect those modules to ever be missing.
+	0.2.9 : 2008-04-23 * Added some status messages.
+			   * Added menu items under Plugin menu.
+			   * Allow Ctrl-T as an alternative to Alt-T to avoid
+			     conflict with the menu bar.
+			   * Added support for UrlTea API.
+			   * Generalize URL encoding to all non-alpha chars.
+	0.2.8 : 2008-04-22 * Encode URLs sent to URL-shortening services.
+	0.2.7 : 2008-04-21 * Add support for TinyURL API. |:TinyURL|
+			   * Add quick direct message feature.
+			     |TwitVim-direct-message|
+	0.2.6 : 2008-04-15 * Delete Twitter buffer to the blackhole register
+			     to avoid stepping on registers unnecessarily.
+			   * Quote login and proxy arguments before sending to
+			     cURL.
+			   * Added support for SnipURL API and Metamark API.
+			     |:Snipurl| |:Metamark|
+	0.2.5 : 2008-04-14 * Escape the "+" character in sent tweets.
+			   * Added Perl code to convert Twitter timestamps to
+			     local time and simplify them.
+			   * Fix for timestamp highlight when the "|"
+			     character appears in a tweet.
+	0.2.4 : 2008-04-13 * Use <q-args> in Tweetburner commands.
+			   * Improve XML parsing so that order of elements
+			     does not matter.
+			   * Changed T mapping to Alt-T to avoid overriding
+			     the |T| command.
+	0.2.3 : 2008-04-12 * Added more Tweetburner commands.
+	0.2.2 : 2008-04-11 * Added quick reply feature.
+			   * Added Tweetburner support. |:Tweetburner|
+			   * Changed client ident to "from twitvim".
+	0.2.1 : 2008-04-10 * Bug fix for Chinese characters in timeline.
+			     Thanks to Leiyue.
+			   * Scroll up to newest tweet after refreshing
+			     timeline.
+			   * Changed Twitter window name to avoid unsafe
+			     special characters and clashes with file names.
+	0.2.0 : 2008-04-09 * Added views for public, friends, user timelines,
+			     replies, and direct messages. 
+			   * Automatically insert user's posts into
+			     public, friends, or user timeline, if visible.
+			   * Added syntax highlighting for timeline view.
+	0.1.2 : 2008-04-03 * Make plugin conform to guidelines in
+    			    |write-plugin|.
+			   * Add help documentation.
+	0.1.1 : 2008-04-01 * Add error reporting for cURL problems.
+	0.1   : 2008-03-28 * Initial release.
+
+
+==============================================================================
+8. TwitVim Credits					*TwitVim-credits*
+
+	Thanks to Travis Jeffery, the author of the original VimTwitter script
+	(vimscript #2124), who came up with the idea of running cURL from Vim
+	to access the Twitter API.
+
+	Techniques for managing the Twitter buffer were adapted from the NERD
+	Tree plugin (vimscript #1658) by Marty Grenfell.
+
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
