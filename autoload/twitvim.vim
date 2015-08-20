@@ -16,6 +16,8 @@ let s:user_agent = 'TwitVim '.g:loaded_twitvim_autoload
 " case. So 140 is now the hard limit.
 let s:char_limit = 140
 
+" Twitter character limit for DMs. Longer limits were rolled out in mid-August, 2015.
+let s:dm_char_limit = 10000
 
 " Info on OAuth-based service providers.
 let s:service_info = {
@@ -3250,6 +3252,9 @@ function! s:Direct_Messages(mode, page, max_id)
     " Include entities to get URL expansions for t.co.
     let parms.include_entities = 'true'
 
+    " Get long DMs.
+    let parms.full_text = 'true'
+
     " Support count parameter.
     let tcount = s:get_count()
     if tcount > 0
@@ -3666,8 +3671,8 @@ function! s:do_send_dm(user, mesg)
     " Check message length. Note that the message length should be checked
     " before URL-encoding the special characters because URL-encoding increases
     " the string length.
-    if mesglen > s:char_limit
-        call s:warnmsg("Your message has ".(mesglen - s:char_limit)." too many characters. It was not sent.")
+    if mesglen > s:dm_char_limit
+        call s:warnmsg("Your message has ".(mesglen - s:dm_char_limit)." too many characters. It was not sent.")
     elseif mesglen < 1
         call s:warnmsg("Your message was empty. It was not sent.")
     else
