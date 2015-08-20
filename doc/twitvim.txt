@@ -772,6 +772,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command will prompt you for a direct message to send to user
 	{username}.
 
+        Note: As of mid-August, 2015, Twitter raised the character limit for
+        direct messages to 10,000. However, the 140-character limit still
+        applies to the regular tweets.
+
 	Note: If you get a "403 Forbidden" error when you try to send a direct
 	message, check if the user you're messaging is following you. That is
 	the most common reason for this error when sending a direct message.
@@ -1645,6 +1649,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
+        0.9.1 : 2015-08-19 * Support higher char limit for DMs.
 	0.9.0 : 2015-04-10 * Removed identi.ca support and legacy code.
                            * Removed support for old token file formats.
                            * Removed old Twitter search code.

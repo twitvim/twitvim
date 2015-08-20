@@ -2,7 +2,7 @@
 if exists('g:loaded_twitvim_autoload')
     finish
 endif
-let g:loaded_twitvim_autoload = '0.9.0 2015-04-10'
+let g:loaded_twitvim_autoload = '0.9.1 2015-08-19'
 
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
