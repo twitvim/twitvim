@@ -33,6 +33,6 @@ Install with :PluginInstall
 
 Open the vmb file and then source it.
 
-    vim twitvim-0.9.0.vmb
+    vim twitvim-0.9.1.vmb
     :so %
 
