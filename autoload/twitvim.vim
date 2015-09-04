@@ -2,7 +2,7 @@
 if exists('g:loaded_twitvim_autoload')
     finish
 endif
-let g:loaded_twitvim_autoload = '0.9.1 2015-08-19'
+let g:loaded_twitvim_autoload = '0.9.1 2015-09-04'
 
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
@@ -2467,16 +2467,23 @@ function! s:launch_browser(url)
     " Discard unnecessary output from UNIX browsers. So far, this is known to
     " happen only in the Linux version of Google Chrome when it opens a tab in
     " an existing browser window.
+    " Firefox appears to output to stderr as well, so the '2&>1' redirect is
+    " needed.
     let endcmd = has('unix') ? '> /dev/null 2&>1 &' : ''
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
 
-    " Escape the '&' character under Unix. This character is valid in URLs but
-    " causes the shell to background the process and cut off the URL at that
-    " point.
-    " Also escape '?' as under some unix shells (notably zsh) this causes the
-    " URL to trigger a 'command not found'.
+    " shellescape() surrounds the URL with single quotes. We need this so that
+    " certain characters won't be treated by the shell as meta-characters.
+    " In URLs, the following characters are common:
+    " - '&': This character separates fields in a URL query string. However, it
+    "   causes the shell to background the process and cut off the URL at that
+    "   point.
+    " - '?': This character separates the query string from the path in a URL.
+    "   However, it is also a shell glob character. sh, bash, ksh will pass on
+    "   this character if there is no match in the filesystem. However, zsh
+    "   will complain that it found no matches and it won't run the command.
     if has('unix')
         let url = shellescape(url)
     endif
