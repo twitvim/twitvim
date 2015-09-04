@@ -2467,7 +2467,7 @@ function! s:launch_browser(url)
     " Discard unnecessary output from UNIX browsers. So far, this is known to
     " happen only in the Linux version of Google Chrome when it opens a tab in
     " an existing browser window.
-    let endcmd = has('unix') ? '> /dev/null &' : ''
+    let endcmd = has('unix') ? '> /dev/null 2&>1 &' : ''
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
@@ -2475,8 +2475,10 @@ function! s:launch_browser(url)
     " Escape the '&' character under Unix. This character is valid in URLs but
     " causes the shell to background the process and cut off the URL at that
     " point.
+    " Also escape '?' as under some unix shells (notably zsh) this causes the
+    " URL to trigger a 'command not found'.
     if has('unix')
-        let url = substitute(url, '&', '\\&', 'g')
+        let url = shellescape(url)
     endif
 
     redraw
