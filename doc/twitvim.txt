@@ -704,6 +704,22 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 		let loaded_twitvim = 1
 <
 
+------------------------------------------------------------------------------
+3.8. Override system() call                             *twitvim_system_func*
+
+        By default, TwitVim calls the builtin system() function to run cURL
+        and OpenSSL. (if none of the scripting interfaces are enabled) You can
+        override this behavior and have TwitVim call a different function to
+        run those programs by setting the twitvim_system_func global variable.
+
+        For example, under Windows, the system() call results in a CMD window
+        opening. To avoid that, one can instead use vimproc#system from the
+        vimproc plugin (https://github.com/Shougo/vimproc.vim), like so:
+>
+               let g:twitvim_system_func = 'vimproc#system'
+<
+
+
 ==============================================================================
 4. TwitVim Manual					*TwitVim-manual*
 

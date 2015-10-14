@@ -171,6 +171,16 @@ function! s:get_net_timeout()
     return get(g:, 'twitvim_net_timeout', 0)
 endfunction
 
+" Allow user to override the system() function call.
+" Default is "system", which will simply call system().
+function! s:get_system_func()
+    return get(g:, 'twitvim_system_func', 'system')
+endfunction
+
+function! s:system(...)
+    return call(s:get_system_func(), a:000)
+endfunction
+
 " Display an error message in the message area.
 function! s:errormsg(msg)
     redraw
@@ -808,7 +818,7 @@ endfunction
 
 " Compute HMAC-SHA1 digest by running openssl command line utility.
 function! s:openssl_hmac_sha1_digest(key, str)
-    let output = system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
+    let output = s:system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
     if v:shell_error != 0
         call s:errormsg("Error running openssl command: ".output)
         return ""
@@ -1210,7 +1220,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 
     let curlcmd .= '"'.a:url.'"'
 
-    let output = system(curlcmd)
+    let output = s:system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
     if v:shell_error != 0
         let error = output
