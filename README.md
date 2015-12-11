@@ -43,13 +43,13 @@ further instructions.
 Use the following commands:
 
     cd ~/.vim/bundle
-    git clone https://bitbucket.org/mortonfox/twitvim
+    git clone https://github.com/twitvim/twitvim.git
 
 ### Vundle
 
 Add the following to your vimrc:
 
-    Plugin 'https://bitbucket.org/mortonfox/twitvim'
+    Plugin 'https://github.com/twitvim/twitvim.git'
 
 Install with ```:PluginInstall```.
 
