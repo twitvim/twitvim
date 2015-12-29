@@ -1665,21 +1665,23 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 ==============================================================================
 7. TwitVim History					*TwitVim-history*
 
-        0.9.1 : 2015-08-19 * Support higher char limit for DMs.
+	0.9.1 : 2015-08-19 * Support higher char limit for DMs.
+			   * Removed |twitvim_system_func|. Use vimproc
+			     automatically if user install vimproc.
 	0.9.0 : 2015-04-10 * Removed identi.ca support and legacy code.
-                           * Removed support for old token file formats.
-                           * Removed old Twitter search code.
-                           * Removed some obscure URL shortening services.
-                           * Updated to bit.ly v3 API.
-                           * Removed old goo.gl URL shortening code.
-                           * Removed services menu because we only have
-                             Twitter now.
-                           * Removed public timeline command.
-                           * Moved most of the plugin code to an autoload
-                             file.
-                           * Search header fix in UTF-8 encoding. (@mattn_jp)
-                           * Don't use curl -p for HTTP. (@mattn_jp)
-                           * Handle surrogate pairs. (@mattn_jp)
+			   * Removed support for old token file formats.
+			   * Removed old Twitter search code.
+			   * Removed some obscure URL shortening services.
+			   * Updated to bit.ly v3 API.
+			   * Removed old goo.gl URL shortening code.
+			   * Removed services menu because we only have
+			     Twitter now.
+			   * Removed public timeline command.
+			   * Moved most of the plugin code to an autoload
+			     file.
+			   * Search header fix in UTF-8 encoding. (@mattn_jp)
+			   * Don't use curl -p for HTTP. (@mattn_jp)
+			   * Handle surrogate pairs. (@mattn_jp)
 	0.8.2 : 2014-03-26 * Change Twitter API URLs to https. Twitter no
 			     longer supports non-SSL.
 			   * Added support for highlighting $stocksymbol

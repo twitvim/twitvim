@@ -171,14 +171,28 @@ function! s:get_net_timeout()
     return get(g:, 'twitvim_net_timeout', 0)
 endfunction
 
-" Allow user to override the system() function call.
-" Default is "system", which will simply call system().
-function! s:get_system_func()
-    return get(g:, 'twitvim_system_func', 'system')
-endfunction
+" If user install vimproc, prefer to use vimproc.
+try
+  call vimproc#version()
+  let s:has_vimproc = 1
+catch
+  let s:has_vimproc = 0
+endtry
 
 function! s:system(...)
-    return call(s:get_system_func(), a:000)
+    if s:has_vimproc
+       return call('vimproc#system', a:000)
+    else
+       return call('system', a:000)
+    endif
+endfunction
+
+function! s:shell_error()
+    if s:has_vimproc
+       return vimproc#get_last_status()
+    else
+       return v:shell_error
+    endif
 endfunction
 
 " Display an error message in the message area.
