@@ -1308,7 +1308,7 @@ try:
 
     proxy = vim.eval("a:proxy")
     if proxy != "":
-        req.set_proxy(proxy, 'http')
+        urllib2.install_opener(urllib2.build_opener(urllib2.ProxyHandler({'http': proxy, 'https': proxy})))
 
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
@@ -1403,6 +1403,7 @@ try:
     proxy = vim.eval("a:proxy")
     if proxy != "":
         req.set_proxy(proxy, 'http')
+        req.set_proxy(proxy, 'https')
 
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
