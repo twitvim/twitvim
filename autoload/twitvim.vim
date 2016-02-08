@@ -168,7 +168,7 @@ endfunction
 " Allow user to customize network timeout in seconds.
 " Default is 0 for no timeout, which defers to the system socket timeout.
 function! s:get_net_timeout()
-    return get(g:, 'twitvim_net_timeout', 0)
+    return get(g:, 'twitvim_net_timeout', 10)
 endfunction
 
 " If user install vimproc, prefer to use vimproc.
@@ -792,7 +792,7 @@ require 'base64'
 key = VIM.evaluate('a:key')
 str = VIM.evaluate('a:str')
 
-digest = OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), key, str)
+digest = OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha1'), key, str)
 signature = Base64.encode64(digest).chomp
 
 VIM.command("let signature='#{signature}'")
