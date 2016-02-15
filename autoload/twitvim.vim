@@ -168,7 +168,7 @@ endfunction
 " Allow user to customize network timeout in seconds.
 " Default is 0 for no timeout, which defers to the system socket timeout.
 function! s:get_net_timeout()
-    return get(g:, 'twitvim_net_timeout', 0)
+    return get(g:, 'twitvim_net_timeout', 10)
 endfunction
 
 " If user install vimproc, prefer to use vimproc.
@@ -792,7 +792,7 @@ require 'base64'
 key = VIM.evaluate('a:key')
 str = VIM.evaluate('a:str')
 
-digest = OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), key, str)
+digest = OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha1'), key, str)
 signature = Base64.encode64(digest).chomp
 
 VIM.command("let signature='#{signature}'")
@@ -1308,7 +1308,7 @@ try:
 
     proxy = vim.eval("a:proxy")
     if proxy != "":
-        req.set_proxy(proxy, 'http')
+        urllib2.install_opener(urllib2.build_opener(urllib2.ProxyHandler({'http': proxy, 'https': proxy})))
 
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
@@ -1403,6 +1403,7 @@ try:
     proxy = vim.eval("a:proxy")
     if proxy != "":
         req.set_proxy(proxy, 'http')
+        req.set_proxy(proxy, 'https')
 
     proxylogin = vim.eval("a:proxylogin")
     if proxylogin != "":
