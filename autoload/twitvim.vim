@@ -833,12 +833,12 @@ endfunction
 " Compute HMAC-SHA1 digest by running openssl command line utility.
 function! s:openssl_hmac_sha1_digest(key, str)
     let output = s:system('openssl dgst -binary -sha1 -hmac "'.a:key.'"', a:str)
-    if v:shell_error != 0
+    if s:shell_error() != 0
         call s:errormsg("Error running openssl command: ".output)
         return ""
     endif
     let output = s:system('openssl base64', output)
-    if v:shell_error != 0
+    if s:shell_error() != 0
         call s:errormsg("Error running openssl command: ".output)
         return ""
     endif
@@ -1241,7 +1241,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 
     let output = s:system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
-    if v:shell_error != 0
+    if s:shell_error() != 0
         let error = output
     elseif errormsg != ''
         let error = errormsg
