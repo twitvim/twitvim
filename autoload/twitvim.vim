@@ -171,6 +171,12 @@ function! s:get_net_timeout()
     return get(g:, 'twitvim_net_timeout', 10)
 endfunction
 
+" Don't strip newlines from tweets being posted
+" Default is 0 so newlines will get replaced by single spaces
+function! s:get_allow_multiline()
+    return get(g:, 'twitvim_allow_multiline', 0)
+endfunction
+
 " If user install vimproc, prefer to use vimproc.
 try
   call vimproc#version()
@@ -2127,8 +2133,10 @@ function! s:post_twitter(mesg, inreplyto)
     " line. Don't let it count towards the tweet length.
     let mesg = substitute(mesg, '\n$', '', "")
 
-    " Convert internal newlines to spaces.
-    let mesg = substitute(mesg, '\n', ' ', "g")
+    if !s:get_allow_multiline()
+      " Convert internal newlines to spaces.
+      let mesg = substitute(mesg, '\n', ' ', "g")
+    endif
 
     let mesglen = s:mbstrlen(mesg)
     " Check for zero-length tweets or user cancel at prompt.

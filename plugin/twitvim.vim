@@ -95,7 +95,7 @@ nnoremenu Plugin.TwitVim.Post\ current\ line :call twitvim#post_twitter(getline(
 
 " Post entire buffer to Twitter.
 if !exists(":BPosttoTwitter")
-    command BPosttoTwitter :call twitvim#post_twitter(join(getline(1, "$")), 0)
+    command BPosttoTwitter :call twitvim#post_twitter(join(getline(1, "$"), "\n"), 0)
 endif
 
 " Post visual selection to Twitter.
