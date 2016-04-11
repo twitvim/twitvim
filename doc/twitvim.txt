@@ -166,6 +166,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	6.1. Timeline Hotkeys.....................: |TwitVim-hotkeys|
 	6.2. Line length in status line...........: |TwitVim-line-length|
 	6.3. Network timeout......................: |TwitVim-network-timeout|
+	6.4. Post Tweets including newlines.......: |TwitVim-allow-multiline|
 	7. History................................: |TwitVim-history|
 	8. Credits................................: |TwitVim-credits|
 
@@ -1660,6 +1661,20 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	Note: This option does not seem to work correctly if you are using
 	|twitvim_enable_perl|. It may take longer than that number of seconds
 	to time out.
+
+
+------------------------------------------------------------------------------
+6.4. Post Tweets including newlines		*TwitVim-allow-multiline*
+
+	By default TwitVim will strip newlines from tweets. This is apparent
+	when posting from a buffer.
+
+						*twitvim_allow_multiline*
+	You can set twitvim_allow_multiline to allow posting multiline
+	messages. Just add the following to your vimrc:
+>
+		let twitvim_allow_multiline = 1
+<
 
 
 ==============================================================================
