@@ -2477,7 +2477,7 @@ function! s:fave_tweet(unfave)
     let [error, output] = s:run_curl_oauth_post(url, { 'id' : id })
     let result = s:parse_json(output)
     if error != ''
-        let errormsg = get(result, 'error', '')
+        let errormsg = join(map(get(result, 'errors', []), 'get(v:val, "message", "")'), ",")
         call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".(errormsg != '' ? errormsg : error))
         return
     endif
