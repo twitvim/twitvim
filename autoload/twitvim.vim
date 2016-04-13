@@ -171,6 +171,12 @@ function! s:get_net_timeout()
     return get(g:, 'twitvim_net_timeout', 10)
 endfunction
 
+" Don't strip newlines from tweets being posted
+" Default is 0 so newlines will get replaced by single spaces
+function! s:get_allow_multiline()
+    return get(g:, 'twitvim_allow_multiline', 0)
+endfunction
+
 " If user install vimproc, prefer to use vimproc.
 try
   call vimproc#version()
@@ -832,10 +838,18 @@ endfunction
 
 " Compute HMAC-SHA1 digest by running openssl command line utility.
 function! s:openssl_hmac_sha1_digest(key, str)
-    let output = s:system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
-    if s:shell_error() != 0
-        call s:errormsg("Error running openssl command: ".output)
-        return ""
+    if has('win32unix')
+        let output = system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
+        if v:shell_error != 0
+            call s:errormsg("Error running openssl command: ".output)
+            return ""
+        endif
+    else
+        let output = s:system('openssl dgst -binary -sha1 -hmac "'.a:key.'" | openssl base64', a:str)
+        if s:shell_error() != 0
+            call s:errormsg("Error running openssl command: ".output)
+            return ""
+        endif
     endif
 
     " Remove trailing newlines.
@@ -2119,8 +2133,10 @@ function! s:post_twitter(mesg, inreplyto)
     " line. Don't let it count towards the tweet length.
     let mesg = substitute(mesg, '\n$', '', "")
 
-    " Convert internal newlines to spaces.
-    let mesg = substitute(mesg, '\n', ' ', "g")
+    if !s:get_allow_multiline()
+      " Convert internal newlines to spaces.
+      let mesg = substitute(mesg, '\n', ' ', "g")
+    endif
 
     let mesglen = s:mbstrlen(mesg)
     " Check for zero-length tweets or user cancel at prompt.
@@ -2469,7 +2485,7 @@ function! s:fave_tweet(unfave)
     let [error, output] = s:run_curl_oauth_post(url, { 'id' : id })
     let result = s:parse_json(output)
     if error != ''
-        let errormsg = get(result, 'error', '')
+        let errormsg = join(map(get(result, 'errors', []), 'get(v:val, "message", "")'), ",")
         call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".(errormsg != '' ? errormsg : error))
         return
     endif
