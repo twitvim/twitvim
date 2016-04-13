@@ -1174,7 +1174,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let error = ""
     let output = ""
 
-    let curlcmd = "curl -s -S "
+    let curlcmd = "curl -s -S --http1.1 "
 
     if s:get_twitvim_cert_insecure()
         let curlcmd .= "-k "
