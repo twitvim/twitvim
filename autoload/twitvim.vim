@@ -4833,7 +4833,7 @@ function! s:call_isgd(url)
     redraw
     echo "Sending request to is.gd..."
 
-    let url = 'http://is.gd/api.php?longurl='.s:url_encode(a:url)
+    let url = 'https://is.gd/api.php?longurl='.s:url_encode(a:url)
     let [error, output] = s:run_curl(url, '', s:get_proxy(), s:get_proxy_login(), {})
 
     if !empty(error)
