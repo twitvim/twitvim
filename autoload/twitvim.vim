@@ -2691,8 +2691,8 @@ function! s:launch_url_cword(infobuf)
 
     " Handle #-hashtags by showing the Twitter Search for that hashtag.
     " A #-hashtag must be preceded by a non-word character and ends at a
-    " non-word character.
-    let matchres = matchlist(s, '\w\@<!\(#\w\+\)')
+    " non-word character or punctuation, blank.
+    let matchres = matchlist(s, '\w\@<!\(#[^[:blank:][:punct:]]\+\)')
     if matchres != []
         call s:get_summize(matchres[1], 1, 0)
         return
@@ -2869,8 +2869,8 @@ function! s:twitter_win_syntax(wintype)
         syntax match twitterReply "\w\@<!@\w\+"
 
         " A #-hashtag must be preceded by a non-word character and ends at a
-        " non-word character.
-        syntax match twitterLink "\w\@<!#\w\+"
+        " non-word character or punctuation, blank.
+        syntax match twitterLink "\w\@<!#[^[:blank:][:punct:]]\+"
 
         " $-stocksymbols are like $-hashtags but only alphabetic.
         syntax match twitterLink "\w\@<!$\a\+"
