@@ -84,14 +84,18 @@ if !exists(":PosttoTwitter")
     command PosttoTwitter :call twitvim#CmdLine_Twitter('', 0)
 endif
 
-nnoremenu Plugin.TwitVim.Post\ from\ cmdline :call twitvim#CmdLine_Twitter('', 0)<cr>
+if get(g:, 'twitvim_enable_menu', 1)
+  nnoremenu Plugin.TwitVim.Post\ from\ cmdline :call twitvim#CmdLine_Twitter('', 0)<cr>
+endif
 
 " Post current line to Twitter.
 if !exists(":CPosttoTwitter")
     command CPosttoTwitter :call twitvim#post_twitter(getline('.'), 0)
 endif
 
-nnoremenu Plugin.TwitVim.Post\ current\ line :call twitvim#post_twitter(getline('.'), 0)<cr>
+if get(g:, 'twitvim_enable_menu', 1)
+  nnoremenu Plugin.TwitVim.Post\ current\ line :call twitvim#post_twitter(getline('.'), 0)<cr>
+endif
 
 " Post entire buffer to Twitter.
 if !exists(":BPosttoTwitter")
@@ -109,7 +113,9 @@ if !hasmapto('<Plug>TwitvimVisual')
     vmap <unique> <C-t> <Plug>TwitvimVisual
 endif
 
-vmenu Plugin.TwitVim.Post\ selection <Plug>TwitvimVisual
+if get(g:, 'twitvim_enable_menu', 1)
+  vmenu Plugin.TwitVim.Post\ selection <Plug>TwitvimVisual
+endif
 
 if !exists(":SetTrendLocationTwitter")
     command SetTrendLocationTwitter :call twitvim#pick_woeid()
@@ -150,16 +156,18 @@ if !exists(":FavTwitter")
     command FavTwitter :call twitvim#get_timeline('favorites', '', 1, 0)
 endif
 
-nnoremenu Plugin.TwitVim.-Sep1- :
-nnoremenu Plugin.TwitVim.&Friends\ Timeline :call twitvim#get_timeline("friends", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.&User\ Timeline :call twitvim#get_timeline("user", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call twitvim#get_timeline("replies", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.&Direct\ Messages :call twitvim#Direct_Messages("dmrecv", 1, 0)<cr>
-nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call twitvim#Direct_Messages("dmsent", 1, 0)<cr>
+if get(g:, 'twitvim_enable_menu', 1)
+  nnoremenu Plugin.TwitVim.-Sep1- :
+  nnoremenu Plugin.TwitVim.&Friends\ Timeline :call twitvim#get_timeline("friends", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.&User\ Timeline :call twitvim#get_timeline("user", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.&Mentions\ Timeline :call twitvim#get_timeline("replies", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.&Direct\ Messages :call twitvim#Direct_Messages("dmrecv", 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.Direct\ Messages\ &Sent :call twitvim#Direct_Messages("dmsent", 1, 0)<cr>
 
-nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call twitvim#get_timeline("retweeted_by_me", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call twitvim#get_timeline("retweeted_to_me", '', 1, 0)<cr>
-nnoremenu Plugin.TwitVim.Fa&vorites :call twitvim#get_timeline("favorites", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.Retweeted\ &By\ Me :call twitvim#get_timeline("retweeted_by_me", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.Retweeted\ &To\ Me :call twitvim#get_timeline("retweeted_to_me", '', 1, 0)<cr>
+  nnoremenu Plugin.TwitVim.Fa&vorites :call twitvim#get_timeline("favorites", '', 1, 0)<cr>
+endif
 
 if !exists(":RefreshTwitter")
     command RefreshTwitter :call twitvim#RefreshTimeline()
@@ -184,9 +192,11 @@ if !exists(':DeleteLoginTwitter')
     command -nargs=? -complete=custom,twitvim#name_list_tokens_for_del DeleteLoginTwitter :call twitvim#delete_twitvim_login(<q-args>)
 endif
 
-nnoremenu Plugin.TwitVim.-Sep2- :
-nnoremenu Plugin.TwitVim.Set\ Twitter\ Login :call twitvim#prompt_twitvim_login()<cr>
-nnoremenu Plugin.TwitVim.Reset\ Twitter\ Login :call twitvim#reset_twitvim_login()<cr>
+if get(g:, 'twitvim_enable_menu', 1)
+  nnoremenu Plugin.TwitVim.-Sep2- :
+  nnoremenu Plugin.TwitVim.Set\ Twitter\ Login :call twitvim#prompt_twitvim_login()<cr>
+  nnoremenu Plugin.TwitVim.Reset\ Twitter\ Login :call twitvim#reset_twitvim_login()<cr>
+endif
 
 if !exists(":SendDMTwitter")
     command -nargs=1 SendDMTwitter :call twitvim#send_dm(<q-args>, '')
