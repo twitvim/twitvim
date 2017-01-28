@@ -4,6 +4,8 @@ if exists('g:loaded_twitvim_autoload')
 endif
 let g:loaded_twitvim_autoload = '0.9.1 2015-09-04'
 
+scriptencoding utf-8
+
 " Avoid side-effects from cpoptions setting.
 let s:save_cpo = &cpo
 set cpo&vim
@@ -2692,7 +2694,7 @@ function! s:launch_url_cword(infobuf)
     " Handle #-hashtags by showing the Twitter Search for that hashtag.
     " A #-hashtag must be preceded by a non-word character and ends at a
     " non-word character or punctuation, blank.
-    let matchres = matchlist(s, '\w\@<!\(#[^[:blank:][:punct:]\u3000\u3001]\+\)')
+    let matchres = matchlist(s, '[一-龠ぁ-んァ-ヴーａ-ｚＡ-Ｚa-zA-Z0-9]\@<!#\([一-龠_ぁ-んァ-ヴーａ-ｚＡ-Ｚa-zA-Z0-9]\+\|[a-zA-Z0-9_]\+\|[a-zA-Z0-9_]*\)')
     if matchres != []
         call s:get_summize(matchres[1], 1, 0)
         return
@@ -2870,7 +2872,7 @@ function! s:twitter_win_syntax(wintype)
 
         " A #-hashtag must be preceded by a non-word character and ends at a
         " non-word character or punctuation, blank.
-        syntax match twitterLink "\w\@<!#[^[:blank:][:punct:]\u3000\u3001]\+"
+        syntax match twitterLink "[一-龠ぁ-んァ-ヴーａ-ｚＡ-Ｚa-zA-Z0-9]\@<!#\([一-龠_ぁ-んァ-ヴーａ-ｚＡ-Ｚa-zA-Z0-9]\+\|[a-zA-Z0-9_]\+\|[a-zA-Z0-9_]*\)"
 
         " $-stocksymbols are like $-hashtags but only alphabetic.
         syntax match twitterLink "\w\@<!$\a\+"
