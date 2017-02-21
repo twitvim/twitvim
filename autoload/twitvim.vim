@@ -1240,7 +1240,7 @@ endfunction
 
 function! s:quote(v)
     let v = a:v
-    return escape(v, '"%\\^@<>()')
+    return escape(v, '"\\^@<>()')
 endfunction
 
 " Use curl to fetch a web page.
