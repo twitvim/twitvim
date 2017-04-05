@@ -2912,6 +2912,7 @@ function! s:twitter_win(wintype)
         setlocal foldcolumn=0
         setlocal nobuflisted
         setlocal nospell
+        setlocal nowrap
 
         " Launch browser with URL in visual selection or at cursor position.
         nnoremap <buffer> <silent> <A-g> :call <SID>launch_url_cword(0)<cr>
