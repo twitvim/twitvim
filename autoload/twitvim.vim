@@ -2562,9 +2562,9 @@ function! s:launch_browser(url)
     " Discard unnecessary output from UNIX browsers. So far, this is known to
     " happen only in the Linux version of Google Chrome when it opens a tab in
     " an existing browser window.
-    " Firefox appears to output to stderr as well, so the '2&>1' redirect is
+    " Firefox appears to output to stderr as well, so the '2>&1' redirect is
     " needed.
-    let endcmd = has('unix') ? '> /dev/null 2&>1 &' : ''
+    let endcmd = has('unix') ? '> /dev/null 2>&1 &' : ''
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
