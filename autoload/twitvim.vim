@@ -68,6 +68,10 @@ function! s:get_disp_name(service)
     return get(s:service_info, a:service, { 'dispname' : a:service })['dispname']
 endfunction
 
+function! s:get_use_job()
+    return get(g:, 'twitvim_use_job', 0) && exists('*job_start')
+endfunction
+
 " Allow user to set the format for retweets.
 function! s:get_retweet_fmt()
     return get(g:, 'twitvim_retweet_format', 'RT %s: %t')
@@ -177,39 +181,38 @@ function! s:get_allow_multiline()
     return get(g:, 'twitvim_allow_multiline', 0)
 endfunction
 
-function! s:system(...)
-    if exists('*job_start')
-        let [out, err] = ['', '']
-        let job = job_start(printf('%s %s %s', &shell, &shellcmdflag, a:1), {
-        \    'out_cb': {id,x->[execute('let out .= x'), out]},
-        \    'err_cb': {id,x->[execute('let err .= x'), err]},
-        \})
-        if a:0 > 1
-            let ch = job_getchannel(job)
-            call ch_sendraw(ch, a:2)
-            call ch_close_in(ch)
-            while ch_status(ch) != 'closed'
-                sleep 10m
-            endwhile
-        else
-            while job_status(job) == 'run'
-                sleep 10m
-            endwhile
-        endif
-        sleep 10m
-        call job_stop(job)
-        let s:job_shell_error = job_info(job).exitval
-        if s:job_shell_error
-            return iconv(err, 'char', &encoding)
-        endif
-        return out
-    else
+function! s:system(...) abort
+    if !s:get_use_job()
         return call('system', a:000)
     endif
+    let [out, err] = ['', '']
+    let job = job_start(printf('%s %s %s', &shell, &shellcmdflag, a:1), {
+    \    'out_cb': {id,x->[execute('let out .= x'), out]},
+    \    'err_cb': {id,x->[execute('let err .= x'), err]},
+    \})
+    if a:0 > 1
+        let ch = job_getchannel(job)
+        call ch_sendraw(ch, a:2)
+        call ch_close_in(ch)
+        while ch_status(ch) != 'closed'
+            sleep 10m
+        endwhile
+    else
+        while job_status(job) == 'run'
+            sleep 10m
+        endwhile
+    endif
+    sleep 10m
+    call job_stop(job)
+    let s:job_shell_error = job_info(job).exitval
+    if s:job_shell_error
+        return iconv(err, 'char', &encoding)
+    endif
+    return out
 endfunction
 
 function! s:shell_error()
-    if exists('*job_start')
+    if s:get_use_job()
         return s:job_shell_error
     else
         return v:shell_error
