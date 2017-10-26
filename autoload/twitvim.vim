@@ -68,6 +68,10 @@ function! s:get_disp_name(service)
     return get(s:service_info, a:service, { 'dispname' : a:service })['dispname']
 endfunction
 
+function! s:get_use_job()
+    return get(g:, 'twitvim_use_job', 0) && exists('*job_start')
+endfunction
+
 " Allow user to set the format for retweets.
 function! s:get_retweet_fmt()
     return get(g:, 'twitvim_retweet_format', 'RT %s: %t')
@@ -177,27 +181,41 @@ function! s:get_allow_multiline()
     return get(g:, 'twitvim_allow_multiline', 0)
 endfunction
 
-" If user install vimproc, prefer to use vimproc.
-try
-  call vimproc#version()
-  let s:has_vimproc = 1
-catch
-  let s:has_vimproc = 0
-endtry
-
-function! s:system(...)
-    if s:has_vimproc
-       return call('vimproc#system', a:000)
-    else
-       return call('system', a:000)
+function! s:system(...) abort
+    if !s:get_use_job()
+        return call('system', a:000)
     endif
+    let [out, err] = ['', '']
+    let job = job_start(printf('%s %s %s', &shell, &shellcmdflag, a:1), {
+    \    'out_cb': {id,x->[execute('let out .= x'), out]},
+    \    'err_cb': {id,x->[execute('let err .= x'), err]},
+    \})
+    if a:0 > 1
+        let ch = job_getchannel(job)
+        call ch_sendraw(ch, a:2)
+        call ch_close_in(ch)
+        while ch_status(ch) != 'closed'
+            sleep 10m
+        endwhile
+    else
+        while job_status(job) == 'run'
+            sleep 10m
+        endwhile
+    endif
+    sleep 10m
+    call job_stop(job)
+    let s:job_shell_error = job_info(job).exitval
+    if s:job_shell_error
+        return iconv(err, 'char', &encoding)
+    endif
+    return out
 endfunction
 
 function! s:shell_error()
-    if s:has_vimproc
-       return vimproc#get_last_status()
+    if s:get_use_job()
+        return s:job_shell_error
     else
-       return v:shell_error
+        return v:shell_error
     endif
 endfunction
 
@@ -1223,6 +1241,11 @@ function! s:url_decode(str)
     return s
 endfunction
 
+function! s:quote(v)
+    let v = a:v
+    return escape(v, '"\\^@<>()')
+endfunction
+
 " Use curl to fetch a web page.
 function! s:curl_curl(url, login, proxy, proxylogin, parms)
     let error = ""
@@ -1257,11 +1280,11 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
 
     if a:login != ""
         if a:login =~ "^OAuth "
-            let curlcmd .= '-H "Authorization: '.a:login.'" '
+            let curlcmd .= '-H "'.s:quote('Authorization: '.a:login).'" '
         elseif stridx(a:login, ':') != -1
-            let curlcmd .= '-u "'.a:login.'" '
+            let curlcmd .= '-u "'.s:quote(a:login).'" '
         else
-            let curlcmd .= '-H "Authorization: Basic '.a:login.'" '
+            let curlcmd .= '-H "'.s:quote('Authorization: Basic '.a:login).'" '
         endif
     endif
 
@@ -1269,12 +1292,7 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
     for [k, v] in items(a:parms)
         if k == '__json'
             let got_json = 1
-            let vsub = substitute(v, '"', '\\"', 'g')
-            if  has('win32') || has('win64')
-                " Under Windows only, we need to quote some special characters.
-                let vsub = substitute(vsub, '[\\&|><^]', '"&"', 'g')
-            endif
-            let curlcmd .= '-d "'.vsub.'" '
+            let curlcmd .= '-d "'.s:quote(v).'" '
         else
             let curlcmd .= '-d "'.s:url_encode(k).'='.s:url_encode(v).'" '
         endif
@@ -1284,9 +1302,9 @@ function! s:curl_curl(url, login, proxy, proxylogin, parms)
         let curlcmd .= '-H "Content-Type: application/json" '
     endif
 
-    let curlcmd .= '-H "User-Agent: '.s:user_agent.'" '
+    let curlcmd .= '-H "User-Agent: '.s:quote(s:user_agent).'" '
 
-    let curlcmd .= '"'.a:url.'"'
+    let curlcmd .= '"'.s:quote(a:url).'"'
 
     let output = s:system(curlcmd)
     let errormsg = s:xml_get_element(output, 'error')
