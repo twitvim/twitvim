@@ -773,6 +773,9 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	This command will prompt you for a direct message to send to user
 	{username}.
 
+        Note: As of mid-November, 2017, Twitter raised the character limit for
+        status messages to 280-character.
+
         Note: As of mid-August, 2015, Twitter raised the character limit for
         direct messages to 10,000. However, the 140-character limit still
         applies to the regular tweets.
