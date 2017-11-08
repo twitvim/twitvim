@@ -13,8 +13,8 @@ let s:user_agent = 'TwitVim '.g:loaded_twitvim_autoload
 
 " Twitter character limit. Twitter used to accept tweets up to 246 characters
 " in length and display those in truncated form, but that is no longer the
-" case. So 140 is now the hard limit.
-let s:char_limit = 140
+" case. So 280 is now the hard limit.
+let s:char_limit = 280
 
 " Twitter character limit for DMs. Longer limits were rolled out in mid-August, 2015.
 let s:dm_char_limit = 10000
