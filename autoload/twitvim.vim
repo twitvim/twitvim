@@ -202,7 +202,8 @@ function! s:system(...) abort
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            throw 'canceled'
+            call s:errormsg('canceled')
+            return 'canceled'
         endtry
     else
         try
@@ -212,7 +213,8 @@ function! s:system(...) abort
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            throw 'canceled'
+            call s:errormsg('canceled')
+            return 'canceled'
         endtry
     endif
     sleep 10m
@@ -1007,6 +1009,9 @@ function! s:getOauthResponse(url, method, parms, token_secret)
     let signature_base_str = a:method . "&" . s:url_encode(a:url) . "&" . s:url_encode(content)
     let hmac_sha1_key = s:url_encode(s:get_consumer_secret()) . "&" . s:url_encode(a:token_secret)
     let signature = s:hmac_sha1_digest(hmac_sha1_key, signature_base_str)
+    if signature == ""
+        return ""
+    endif
 
     " Add padding character to make a multiple of 4 per the
     " requirement of OAuth.
@@ -1217,6 +1222,9 @@ function! s:run_curl_oauth(method, url, parms)
     let parms = copy(a:parms)
     let parms.oauth_token = s:access_token
     let oauth_hdr = s:getOauthResponse(url, a:method, parms, s:access_token_secret)
+    if oauth_hdr == ""
+        return ["error", ""]
+    endif
 
     return s:run_curl(runurl, oauth_hdr, s:get_proxy(), s:get_proxy_login(), runparms)
 endfunction
