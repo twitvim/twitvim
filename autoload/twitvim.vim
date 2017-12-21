@@ -186,6 +186,7 @@ function! s:system(...) abort
         return call('system', a:000)
     endif
     let [out, err] = ['', '']
+    redraw
     let job = job_start(printf('%s %s %s', &shell, &shellcmdflag, a:1), {
     \    'out_cb': {id,x->[execute('let out .= x'), out]},
     \    'err_cb': {id,x->[execute('let err .= x'), err]},
@@ -197,24 +198,26 @@ function! s:system(...) abort
         call ch_close_in(ch)
         try
             while ch_status(ch) != 'closed'
-                call getchar(0)
+                silent call getchar(0)
+                silent sleep 10m
             endwhile
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            call s:errormsg('canceled')
-            return 'canceled'
+            call s:errormsg(v:exception)
+            return ''
         endtry
     else
         try
             while job_status(job) == 'run'
-                call getchar(0)
+                silent call getchar(0)
+                silent sleep 10m
             endwhile
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            call s:errormsg('canceled')
-            return 'canceled'
+            call s:errormsg(v:exception)
+            return ''
         endtry
     endif
     sleep 10m
