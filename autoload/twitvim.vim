@@ -190,17 +190,30 @@ function! s:system(...) abort
     \    'out_cb': {id,x->[execute('let out .= x'), out]},
     \    'err_cb': {id,x->[execute('let err .= x'), err]},
     \})
+    let s:job_shell_error = 0
     if a:0 > 1
         let ch = job_getchannel(job)
         call ch_sendraw(ch, a:2)
         call ch_close_in(ch)
-        while ch_status(ch) != 'closed'
-            sleep 10m
-        endwhile
+        try
+            while ch_status(ch) != 'closed'
+                call getchar(0)
+            endwhile
+        catch
+            let s:job_shell_error = -1
+            call job_stop(job)
+            throw 'canceled'
+        endtry
     else
-        while job_status(job) == 'run'
-            sleep 10m
-        endwhile
+        try
+            while job_status(job) == 'run'
+                call getchar(0)
+            endwhile
+        catch
+            let s:job_shell_error = -1
+            call job_stop(job)
+            throw 'canceled'
+        endtry
     endif
     sleep 10m
     call job_stop(job)
