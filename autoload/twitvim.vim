@@ -198,22 +198,40 @@ function! s:system(...) abort
         call ch_close_in(ch)
         try
             while ch_status(ch) != 'closed'
-                call getchar(0)
+                if has('gui_running')
+                    sleep 10m
+                else
+                    call getchar(1)
+                endif
             endwhile
+            redraw
         catch
             let s:job_shell_error = -1
             call job_stop(job)
+            if has('gui_running')
+                call getchar()
+                redraw
+            endif
             call s:errormsg(v:exception)
             return ''
         endtry
     else
         try
             while job_status(job) == 'run'
-                call getchar(0)
+                if has('gui_running')
+                    sleep 10m
+                else
+                    call getchar(1)
+                endif
             endwhile
+            redraw
         catch
             let s:job_shell_error = -1
             call job_stop(job)
+            if has('gui_running')
+                call getchar()
+                redraw
+            endif
             call s:errormsg(v:exception)
             return ''
         endtry
