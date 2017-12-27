@@ -198,8 +198,7 @@ function! s:system(...) abort
         call ch_close_in(ch)
         try
             while ch_status(ch) != 'closed'
-                silent call getchar(0)
-                silent sleep 10m
+                call getchar(0)
             endwhile
         catch
             let s:job_shell_error = -1
@@ -210,8 +209,7 @@ function! s:system(...) abort
     else
         try
             while job_status(job) == 'run'
-                silent call getchar(0)
-                silent sleep 10m
+                call getchar(0)
             endwhile
         catch
             let s:job_shell_error = -1
