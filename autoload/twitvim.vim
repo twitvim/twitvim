@@ -213,7 +213,7 @@ function! s:system(...) abort
                 redraw
             endif
             call s:errormsg(v:exception)
-            return ''
+            return 'canceled'
         endtry
     else
         try
@@ -233,7 +233,7 @@ function! s:system(...) abort
                 redraw
             endif
             call s:errormsg(v:exception)
-            return ''
+            return 'canceled'
         endtry
     endif
     sleep 10m
@@ -1057,6 +1057,9 @@ function! s:do_oauth()
     let parms = { "oauth_callback": "oob", "dummy" : "1" }
     let req_url = s:service_info[s:cur_service]['req_url']
     let oauth_hdr = s:getOauthResponse(req_url, "POST", parms, "")
+    if oauth_hdr == ""
+        return ["error", ""]
+    endif
 
     let [error, output] = s:run_curl(req_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : "1" })
     if !empty(error)
@@ -1121,6 +1124,9 @@ function! s:do_oauth()
     let parms = { "dummy" : 1, "oauth_token" : request_token, "oauth_verifier" : pin }
     let access_url = s:service_info[s:cur_service]['access_url']
     let oauth_hdr = s:getOauthResponse(access_url, "POST", parms, token_secret)
+    if oauth_hdr == ""
+        return ["error", ""]
+    endif
 
     let [error, output] = s:run_curl(access_url, oauth_hdr, s:get_proxy(), s:get_proxy_login(), { "dummy" : 1 })
     if !empty(error)
