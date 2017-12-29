@@ -187,7 +187,10 @@ function! s:system(...) abort
     endif
     let [out, err] = ['', '']
     redraw
-    let job = job_start(printf('%s %s %s', &shell, &shellcmdflag, a:1), {
+    let arg = has("win32") || has("win64") ?
+    \    printf('%s %s %s', &shell, &shellcmdflag, a:1) :
+    \    [&shell, &shellcmdflag, a:1]
+    let job = job_start(arg, {
     \    'out_cb': {id,x->[execute('let out .= x'), out]},
     \    'err_cb': {id,x->[execute('let err .= x'), err]},
     \})
