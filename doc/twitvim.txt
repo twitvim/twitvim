@@ -109,6 +109,7 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	     <Leader>r............................: |TwitVim-Leader-r|
 	     Reply to all Feature.................: |TwitVim-reply-all|
 	     <Leader>Ctrl-R.......................: |TwitVim-Leader-C-r|
+	     <Leader>Q............................: |TwitVim-Leader-Q|
 	     Retweet Feature......................: |TwitVim-retweet|
 	     <Leader>R............................: |TwitVim-Leader-S-r|
 	     Old-style retweets...................: |twitvim_old_retweet|
@@ -1164,6 +1165,10 @@ License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	reply to all, i.e. a reply to the tweet author and also to everyone
 	mentioned in @-replies on the current line.
 
+	<Leader>Q					*TwitVim-Leader-Q*
+
+	This mapping is local to the timeline buffer. It starts composing a
+	tweet with tweet URL.
 
 							*TwitVim-retweet*
 	<Leader>R					*TwitVim-Leader-S-r*
