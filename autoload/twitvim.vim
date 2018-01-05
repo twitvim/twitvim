@@ -2463,6 +2463,18 @@ function! s:Retweet_2()
     echo "Retweeted."
 endfunction
 
+" Make quote tweet.
+function! s:Quote_Tweet()
+    let status = get(s:curbuffer.statuses, line('.'))
+    if status == 0
+        return
+    endif
+
+    let user = substitute(s:curbuffer.buffer[line('.')-1], ':.*', '', '')
+    let url = 'http://twitter.com/'.user.'/statuses/'.status
+    call s:CmdLine_Twitter(url, status)
+endfunction
+
 " Show which tweet this one is replying to below the current line.
 function! s:show_inreplyto()
     let lineno = line('.')
@@ -3026,6 +3038,9 @@ function! s:twitter_win(wintype)
 
             " Retweet feature for replicating another user's tweet.
             nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet_2()<cr>
+
+            " Retweet feature for replicating another user's tweet.
+            nnoremap <buffer> <silent> <Leader>q :call <SID>Quote_Tweet()<cr>
 
             " Reply to all feature.
             nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
