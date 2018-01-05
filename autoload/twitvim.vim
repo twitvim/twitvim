@@ -2472,7 +2472,13 @@ function! s:Quote_Tweet()
 
     let user = substitute(s:curbuffer.buffer[line('.')-1], ':.*', '', '')
     let url = 'http://twitter.com/'.user.'/statuses/'.status
-    call s:CmdLine_Twitter(url, status)
+
+    if has('patch-8.0.1427')
+        call timer_start(0, {x-> feedkeys(' ' . url . "\<home>", 'nt') })
+        call feedkeys("\<plug>(twitvim-PosttoTwitter)")
+    else
+        call s:CmdLine_Twitter(url, 0)
+    endif
 endfunction
 
 " Show which tweet this one is replying to below the current line.

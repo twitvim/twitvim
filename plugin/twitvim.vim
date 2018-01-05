@@ -333,6 +333,8 @@ if !exists(":SearchTwitter")
     command -nargs=? SearchTwitter :call twitvim#Summize(<q-args>, 1)
 endif
 
+nnoremap <plug>(twitvim-PosttoTwitter) :call twitvim#CmdLine_Twitter('', 0)<cr>
+
 let &cpo = s:save_cpo
 finish
 
