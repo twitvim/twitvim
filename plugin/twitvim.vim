@@ -230,6 +230,13 @@ if !exists(":UnblockTwitter")
     command -nargs=1 UnblockTwitter :call twitvim#block_user(<q-args>, 1)
 endif
 
+if !exists(":MuteTwitter")
+    command -nargs=1 MuteTwitter :call twitvim#mute_user(<q-args>, 0)
+endif
+if !exists(":UnmuteTwitter")
+    command -nargs=1 UnmuteTwitter :call twitvim#mute_user(<q-args>, 1)
+endif
+
 if !exists(":ReportSpamTwitter")
     command -nargs=1 ReportSpamTwitter :call twitvim#report_spam(<q-args>)
 endif
