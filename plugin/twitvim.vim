@@ -230,6 +230,13 @@ if !exists(":UnblockTwitter")
     command -nargs=1 UnblockTwitter :call twitvim#block_user(<q-args>, 1)
 endif
 
+if !exists(":MuteTwitter")
+    command -nargs=1 MuteTwitter :call twitvim#mute_user(<q-args>, 0)
+endif
+if !exists(":UnmuteTwitter")
+    command -nargs=1 UnmuteTwitter :call twitvim#mute_user(<q-args>, 1)
+endif
+
 if !exists(":ReportSpamTwitter")
     command -nargs=1 ReportSpamTwitter :call twitvim#report_spam(<q-args>)
 endif
@@ -332,6 +339,8 @@ endif
 if !exists(":SearchTwitter")
     command -nargs=? SearchTwitter :call twitvim#Summize(<q-args>, 1)
 endif
+
+nnoremap <plug>(twitvim-PosttoTwitter) :call twitvim#CmdLine_Twitter('', 0)<cr>
 
 let &cpo = s:save_cpo
 finish

@@ -2463,6 +2463,24 @@ function! s:Retweet_2()
     echo "Retweeted."
 endfunction
 
+" Make quote tweet.
+function! s:Quote_Tweet()
+    let status = get(s:curbuffer.statuses, line('.'))
+    if status == 0
+        return
+    endif
+
+    let user = substitute(s:curbuffer.buffer[line('.')-1], ':.*', '', '')
+    let url = 'http://twitter.com/'.user.'/statuses/'.status
+
+    if has('patch-8.0.1427')
+        call timer_start(0, {x-> feedkeys(' ' . url . "\<home>", 'nt') })
+        call feedkeys("\<plug>(twitvim-PosttoTwitter)")
+    else
+        call s:CmdLine_Twitter(url, 0)
+    endif
+endfunction
+
 " Show which tweet this one is replying to below the current line.
 function! s:show_inreplyto()
     let lineno = line('.')
@@ -3026,6 +3044,9 @@ function! s:twitter_win(wintype)
 
             " Retweet feature for replicating another user's tweet.
             nnoremap <buffer> <silent> <Leader>R :call <SID>Retweet_2()<cr>
+
+            " Retweet feature for replicating another user's tweet.
+            nnoremap <buffer> <silent> <Leader>q :call <SID>Quote_Tweet()<cr>
 
             " Reply to all feature.
             nnoremap <buffer> <silent> <Leader><C-r> :call <SID>Reply_All()<cr>
@@ -4039,6 +4060,25 @@ function! twitvim#block_user(user, unblock)
     echo "User ".a:user." is now ".(a:unblock ? "unblocked" : "blocked")."."
 endfunction
 
+" Mute a user.
+function! twitvim#mute_user(user, unmute)
+    redraw
+    echo (a:unmute ? "Unmuting" : "Muting")." user ".a:user."..."
+
+    let url = s:get_api_root()."/mutes/".(a:unmute ? "destroy" : "create").".json"
+    let [error, output] = s:run_curl_oauth_post(url, { 'screen_name' : a:user })
+    if !empty(error)
+        call s:errormsg("Error ".(a:unmute ? "unmuting" : "muting")." user: ".error)
+    endif
+    let result = s:parse_json(output)
+    if s:has_error(result)
+        call s:errormsg("Error ".(a:unmute ? "unmuting" : "muting")." user: ".s:get_error_message(result))
+    endif
+
+    redraw
+    echo "User ".a:user." is now ".(a:unmute ? "unmuted" : "muted")."."
+endfunction
+
 " Report user for spam.
 function! twitvim#report_spam(user)
     redraw
@@ -4192,6 +4232,7 @@ function! s:format_user_info(result, fship_result)
     let fship_source = get(get(fship_result, 'relationship', {}), 'source', {})
     call add(text, 'Followed_by: '.s:yesorno(get(fship_source, 'followed_by', '')))
     call add(text, 'Blocked: '.s:yesorno(get(fship_source, 'blocking', '')))
+    call add(text, 'Muted: '.s:yesorno(get(fship_source, 'muting', '')))
     call add(text, 'Marked_spam: '.s:yesorno(get(fship_source, 'marked_spam', '')))
     call add(text, 'Retweets: '.s:yesorno(get(fship_source, 'want_retweets', '')))
     call add(text, 'Notifications: '.s:yesorno(get(fship_source, 'notifications_enabled', '')))
