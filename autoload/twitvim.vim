@@ -3371,6 +3371,9 @@ function! s:get_list_timeline(username, listname, page, max_id)
         call s:errormsg("Error getting list timeline: ".s:get_error_message(result))
         return
     endif
+    if empty(result)
+        return
+    endif
 
     call s:save_buffer(0)
     let s:curbuffer = {}
