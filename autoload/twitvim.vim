@@ -2972,7 +2972,7 @@ function! s:twitter_win(wintype)
         execute twit_bufnr . "wincmd w"
     else
         let newwin = 1
-        execute "new " . winname
+        silent execute "new " . winname
         setlocal noswapfile
         setlocal buftype=nofile
         setlocal bufhidden=delete
@@ -3275,6 +3275,9 @@ function! s:get_timeline(tline_name, username, page, max_id)
     let result = s:parse_json(output)
     if s:has_error(result)
         call s:errormsg("Error getting ".tl_name." timeline: ".s:get_error_message(result))
+        return
+    endif
+    if empty(result)
         return
     endif
 
