@@ -430,6 +430,9 @@ function! s:get_twitvim_username()
         return ''
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return ''
+    endif
     if s:has_error(result)
         call s:errormsg('Error verifying login credentials: '.s:get_error_message(result))
         return ''
@@ -2210,6 +2213,9 @@ function! s:get_short_url_lengths()
             let s:short_url_length_https = get(result, 'short_url_length_https', 0)
             let s:last_config_query_time = now
         endif
+        if empty(result)
+            return
+        endif
     endif
     return [ s:short_url_length, s:short_url_length_https ]
 endfunction
@@ -2284,10 +2290,14 @@ function! s:post_twitter(mesg, inreplyto)
             return
         endif
         let result = s:parse_json(output)
+        if empty(result)
+            return
+        endif
         if s:has_error(result)
             call s:errormsg("Error posting your tweet: ".s:get_error_message(result))
             return
         endif
+
         call s:add_update(result)
         redraw
         echo "Your tweet was sent. You used ".mesglen." characters."
@@ -2454,10 +2464,14 @@ function! s:Retweet_2()
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error retweeting: ".s:get_error_message(result))
         return
     endif
+
     call s:add_update(result)
     redraw
     echo "Retweeted."
@@ -2502,6 +2516,9 @@ function! s:show_inreplyto()
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting in-reply-to tweet: ".s:get_error_message(result))
         return
@@ -2554,6 +2571,9 @@ function! s:do_delete_tweet()
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error deleting ".obj.": ".s:get_error_message(result))
         return
@@ -2624,6 +2644,9 @@ function! s:fave_tweet(unfave)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".(a:unfave ? 'unfavoriting' : 'favoriting')." the tweet: ".s:get_error_message(result))
         return
@@ -3294,11 +3317,11 @@ function! s:get_timeline(tline_name, username, page, max_id)
         return
     endif
     let result = s:parse_json(output)
-    if s:has_error(result)
-        call s:errormsg("Error getting ".tl_name." timeline: ".s:get_error_message(result))
+    if empty(result)
         return
     endif
-    if empty(result)
+    if s:has_error(result)
+        call s:errormsg("Error getting ".tl_name." timeline: ".s:get_error_message(result))
         return
     endif
 
@@ -3367,11 +3390,11 @@ function! s:get_list_timeline(username, listname, page, max_id)
         return
     endif
     let result = s:parse_json(output)
-    if s:has_error(result)
-        call s:errormsg("Error getting list timeline: ".s:get_error_message(result))
+    if empty(result)
         return
     endif
-    if empty(result)
+    if s:has_error(result)
+        call s:errormsg("Error getting list timeline: ".s:get_error_message(result))
         return
     endif
 
@@ -3469,6 +3492,9 @@ function! s:Direct_Messages(mode, page, max_id)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting direct messages ".s_or_r." timeline: ".s:get_error_message(result))
         return
@@ -3887,11 +3913,17 @@ function! s:do_send_dm(user, mesg)
         let [error, output] = s:run_curl_oauth_post(url, parms)
         if !empty(error)
             call s:errormsg("Error sending your message: ".error)
+            return
         endif
         let result = s:parse_json(output)
+        if empty(result)
+            return
+        endif
         if s:has_error(result)
             call s:errormsg("Error sending your message: ".s:get_error_message(result))
+            return
         endif
+
         redraw
         echo "Your message was sent to ".a:user.". You used ".mesglen." characters."
     endif
@@ -3935,6 +3967,9 @@ function! twitvim#get_rate_limit()
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting rate limit info: ".s:get_error_message(result))
         return
@@ -3969,6 +4004,9 @@ function! twitvim#set_location(loc)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error setting location: ".s:get_error_message(result))
         return
@@ -3991,6 +4029,9 @@ function! twitvim#follow_user(user)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting friendship info: ".s:get_error_message(result))
         return
@@ -4011,6 +4052,9 @@ function! twitvim#follow_user(user)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error following user: ".s:get_error_message(error))
         return
@@ -4034,10 +4078,15 @@ function! twitvim#unfollow_user(user)
     let [error, output] = s:run_curl_oauth_post(url, { "screen_name" : a:user })
     if !empty(error)
         call s:errormsg("Error unfollowing user: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error unfollowing user: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4053,10 +4102,15 @@ function! twitvim#block_user(user, unblock)
     let [error, output] = s:run_curl_oauth_post(url, { 'screen_name' : a:user })
     if !empty(error)
         call s:errormsg("Error ".(a:unblock ? "unblocking" : "blocking")." user: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".(a:unblock ? "unblocking" : "blocking")." user: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4072,10 +4126,15 @@ function! twitvim#mute_user(user, unmute)
     let [error, output] = s:run_curl_oauth_post(url, { 'screen_name' : a:user })
     if !empty(error)
         call s:errormsg("Error ".(a:unmute ? "unmuting" : "muting")." user: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".(a:unmute ? "unmuting" : "muting")." user: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4091,10 +4150,15 @@ function! twitvim#report_spam(user)
     let [error, output] = s:run_curl_oauth_post(url, { 'screen_name' : a:user })
     if !empty(error)
         call s:errormsg("Error reporting user for spam: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error reporting user for spam: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4124,10 +4188,15 @@ function! twitvim#enable_retweets(user, enable)
     let [error, output] = s:run_curl_oauth_post(url, parms)
     if !empty(error)
         call s:errormsg("Error ".msg3." retweets from user: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".msg3." retweets from user: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4161,10 +4230,15 @@ function! s:add_to_list(remove, listname, username)
     let [error, output] = s:run_curl_oauth_post(url, parms)
     if !empty(error)
         call s:errormsg("Error ".(a:remove ? "removing user from" : "adding user to")." list: ".error)
+        return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".(a:remove ? "removing user from" : "adding user to")." list: ".s:get_error_message(result))
+        return
     endif
 
     redraw
@@ -4286,6 +4360,9 @@ function! s:get_user_info(username)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting user info: ".s:get_error_message(result))
         return
@@ -4358,6 +4435,9 @@ function! s:get_list_info(username, listname)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg('Error getting information on list '.user.'/'.list.': '.s:get_error_message(result))
         return
@@ -4499,6 +4579,9 @@ function! s:get_friends_info_2(ids, index)
         return []
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return []
+    endif
     if s:has_error(result)
         call s:errormsg('Error getting friends/followers info: '.s:get_error_message(result))
         return []
@@ -4614,6 +4697,9 @@ function! s:get_list_members(cursor, user, list, subscribers)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting ".item.": ".s:get_error_message(result))
         return
@@ -4712,6 +4798,9 @@ function! s:get_user_lists(cursor, user, what)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error getting user's ".item.": ".s:get_error_message(result))
         return
@@ -4911,10 +5000,14 @@ function! twitvim#follow_list(unfollow, arg1, ...)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error ".v2." list: ".s:get_error_message(result))
         return
     endif
+
     redraw
     echo v3." list ".user."/".list."."
 endfunction
@@ -5147,6 +5240,9 @@ function! s:get_summize(query, page, max_id)
         return
     endif
     let result = s:parse_json(output)
+    if empty(result)
+        return
+    endif
     if s:has_error(result)
         call s:errormsg("Error querying Search: ".s:get_error_message(result))
         return
