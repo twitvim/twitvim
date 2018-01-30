@@ -181,6 +181,48 @@ function! s:get_allow_multiline()
     return get(g:, 'twitvim_allow_multiline', 0)
 endfunction
 
+function! s:wait_ch_status(ch)
+    try
+        while ch_status(a:ch) != 'closed'
+            if has('gui_running')
+                sleep 10m
+            else
+                call getchar(1)
+            endif
+        endwhile
+        redraw
+        return 1
+    catch
+        if has('gui_running')
+            call getchar()
+            redraw
+        endif
+        call s:errormsg(v:exception)
+    endtry
+    return 0
+endfunction
+
+function! s:wait_job_status(job)
+    try
+        while job_status(a:job) == 'run'
+            if has('gui_running')
+                sleep 10m
+            else
+                call getchar(1)
+            endif
+        endwhile
+        redraw
+        return 1
+    catch
+        if has('gui_running')
+            call getchar()
+            redraw
+        endif
+        call s:errormsg(v:exception)
+    endtry
+    return 0
+endfunction
+
 function! s:system(...) abort
     if !s:get_use_job()
         return call('system', a:000)
@@ -199,45 +241,17 @@ function! s:system(...) abort
         let ch = job_getchannel(job)
         call ch_sendraw(ch, a:2)
         call ch_close_in(ch)
-        try
-            while ch_status(ch) != 'closed'
-                if has('gui_running')
-                    sleep 10m
-                else
-                    call getchar(1)
-                endif
-            endwhile
-            redraw
-        catch
+        if !s:wait_ch_status(ch)
             let s:job_shell_error = -1
             call job_stop(job)
-            if has('gui_running')
-                call getchar()
-                redraw
-            endif
-            call s:errormsg(v:exception)
             return 'canceled'
-        endtry
+        endif
     else
-        try
-            while job_status(job) == 'run'
-                if has('gui_running')
-                    sleep 10m
-                else
-                    call getchar(1)
-                endif
-            endwhile
-            redraw
-        catch
+        if !s:wait_job_status(job)
             let s:job_shell_error = -1
             call job_stop(job)
-            if has('gui_running')
-                call getchar()
-                redraw
-            endif
-            call s:errormsg(v:exception)
             return 'canceled'
-        endtry
+        endif
     endif
     sleep 10m
     call job_stop(job)
