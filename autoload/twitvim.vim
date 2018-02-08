@@ -181,48 +181,6 @@ function! s:get_allow_multiline()
     return get(g:, 'twitvim_allow_multiline', 0)
 endfunction
 
-function! s:wait_ch_status(ch)
-    try
-        while ch_status(a:ch) != 'closed'
-            if has('gui_running')
-                sleep 10m
-            else
-                call getchar(1)
-            endif
-        endwhile
-        redraw
-        return 1
-    catch
-        if has('gui_running')
-            call getchar()
-            redraw
-        endif
-        call s:errormsg(v:exception)
-    endtry
-    return 0
-endfunction
-
-function! s:wait_job_status(job)
-    try
-        while job_status(a:job) == 'run'
-            if has('gui_running')
-                sleep 10m
-            else
-                call getchar(1)
-            endif
-        endwhile
-        redraw
-        return 1
-    catch
-        if has('gui_running')
-            call getchar()
-            redraw
-        endif
-        call s:errormsg(v:exception)
-    endtry
-    return 0
-endfunction
-
 function! s:system(...) abort
     if !s:get_use_job()
         return call('system', a:000)
@@ -241,17 +199,45 @@ function! s:system(...) abort
         let ch = job_getchannel(job)
         call ch_sendraw(ch, a:2)
         call ch_close_in(ch)
-        if !s:wait_ch_status(ch)
+        try
+            while ch_status(ch) != 'closed'
+                if has('gui_running')
+                    sleep 10m
+                else
+                    call getchar(1)
+                endif
+            endwhile
+            redraw
+        catch
             let s:job_shell_error = -1
             call job_stop(job)
+            if has('gui_running')
+                call getchar()
+                redraw
+            endif
+            call s:errormsg(v:exception)
             return 'canceled'
-        endif
+        endtry
     else
-        if !s:wait_job_status(job)
+        try
+            while job_status(job) == 'run'
+                if has('gui_running')
+                    sleep 10m
+                else
+                    call getchar(1)
+                endif
+            endwhile
+            redraw
+        catch
             let s:job_shell_error = -1
             call job_stop(job)
+            if has('gui_running')
+                call getchar()
+                redraw
+            endif
+            call s:errormsg(v:exception)
             return 'canceled'
-        endif
+        endtry
     endif
     sleep 10m
     call job_stop(job)
@@ -2222,13 +2208,13 @@ function! s:get_short_url_lengths()
         let url = s:get_api_root().'/help/configuration.json'
         let [error, output] = s:run_curl_oauth_get(url, {})
         let result = s:parse_json(output)
+        if empty(result)
+            return
+        endif
         if error == ''
             let s:short_url_length = get(result, 'short_url_length', 0)
             let s:short_url_length_https = get(result, 'short_url_length_https', 0)
             let s:last_config_query_time = now
-        endif
-        if empty(result)
-            return
         endif
     endif
     return [ s:short_url_length, s:short_url_length_https ]
