@@ -469,7 +469,7 @@ function! s:parse_json(str, ...)
             if exists('*json_decode') && get(a:000, 0) == 0
                 return json_decode(a:str)
             endif
-            if !exists('*json_decode')
+            if exists('*js_decode')
                 return js_decode(a:str)
             endif
         endif
