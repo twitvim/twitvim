@@ -462,10 +462,16 @@ function! s:surrogate_pair(n1, n2)
     return nr2char(or((a:n1 - 0xd800) * 1024, and((a:n2 - 0xdc00), 0x3ff)) + 0x10000)
 endfunction
 
-function! s:parse_json(str)
+function! s:parse_json(str, ...)
     try
         if has('patch-8.0.176')
-            return json_decode(a:str)
+            " neovim only supports json_decode
+            if exists('*json_decode') && get(a:000, 0) == 0
+                return json_decode(a:str)
+            endif
+            if !exists('*json_decode')
+                return js_decode(a:str)
+            endif
         endif
         let true = 1
         let false = 0
@@ -752,7 +758,7 @@ function! s:read_tokens()
             call s:errormsg('Old token file format is not supported. Please remove "'.tokenfile.'" and try again.')
             return
         else
-            let json_obj = s:parse_json(tokens[0])
+            let json_obj = s:parse_json(tokens[0], 1)
             let current_user = json_obj['current_user']
             let service = get(json_obj, 'current_service', s:default_service)
             let json_tokens = json_obj['tokens']
