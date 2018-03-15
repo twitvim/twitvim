@@ -2201,7 +2201,7 @@ let s:short_url_length_https = 0
 let s:last_config_query_time = 0
 
 " Get Twitter short URL lengths.
-function! s:get_short_url_lengths()
+function! s:get_short_url_lengths() abort
     let now = localtime()
     " Do the config query the first time it is needed and once a day thereafter.
     if s:short_url_length == 0 || s:short_url_length_https == 0 || now - s:last_config_query_time > 24 * 60 * 60
@@ -2221,7 +2221,7 @@ function! s:get_short_url_lengths()
 endfunction
 
 " Simulate Twitter's URL shortener by replacing any matching URLs with dummy strings.
-function! s:sim_shorten_urls(mesg)
+function! s:sim_shorten_urls(mesg) abort
     let [url_len, secure_url_len] = s:get_short_url_lengths()
     let mesg = a:mesg
     if url_len > 0 && secure_url_len > 0
