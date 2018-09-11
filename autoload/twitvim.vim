@@ -69,6 +69,9 @@ function! s:get_disp_name(service)
 endfunction
 
 function! s:get_use_job()
+    if has('win32') && !has('gui_running')
+        return 0
+    endif
     return get(g:, 'twitvim_use_job', 0) && exists('*job_start')
 endfunction
 
@@ -201,40 +204,28 @@ function! s:system(...) abort
         call ch_close_in(ch)
         try
             while ch_status(ch) != 'closed'
-                if has('gui_running')
-                    sleep 10m
-                else
-                    call getchar(1)
-                endif
+                sleep 10m
             endwhile
             redraw
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            if has('gui_running')
-                call getchar()
-                redraw
-            endif
+            call getchar()
+            redraw
             call s:errormsg(v:exception)
             return 'canceled'
         endtry
     else
         try
             while job_status(job) == 'run'
-                if has('gui_running')
-                    sleep 10m
-                else
-                    call getchar(1)
-                endif
+                sleep 10m
             endwhile
             redraw
         catch
             let s:job_shell_error = -1
             call job_stop(job)
-            if has('gui_running')
-                call getchar()
-                redraw
-            endif
+            call getchar()
+            redraw
             call s:errormsg(v:exception)
             return 'canceled'
         endtry
