@@ -684,7 +684,7 @@ function! s:switch_token(name, service)
 endfunction
 
 " Returns current logged in the user name
-function! twitvim#current_username()
+function! twitvim#get_current_username()
     return s:cached_username
 endfunction
 
