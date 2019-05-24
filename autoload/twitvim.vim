@@ -683,6 +683,11 @@ function! s:switch_token(name, service)
     endif
 endfunction
 
+" Returns current logged in the user name
+function! twitvim#get_current_username()
+    return s:cached_username
+endfunction
+
 " Returns a list of screen names. This is for prompting the user to pick a login
 " to which to switch.
 function! s:list_tokens()
