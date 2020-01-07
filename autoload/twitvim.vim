@@ -455,7 +455,7 @@ endfunction
 
 function! s:parse_json(str)
     try
-        if has('patch-8.0.171')
+        if has('patch-8.0.171') && exists('*js_decode')
             return js_decode(a:str)
         endif
         let true = 1
