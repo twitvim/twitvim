@@ -2205,7 +2205,7 @@ function! s:get_short_url_lengths() abort
         let [error, output] = s:run_curl_oauth_get(url, {})
         let result = s:parse_json(output)
         if empty(result)
-            return
+            return [0, 0]
         endif
         if error == ''
             let s:short_url_length = get(result, 'short_url_length', 0)
