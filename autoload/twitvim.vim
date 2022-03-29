@@ -830,7 +830,7 @@ key = vim.eval("a:key")
 mstr = vim.eval("a:str")
 
 digest = hmac.new(key, mstr, hashlib.sha1).digest()
-signature = base64.encodestring(digest)[0:-1]
+signature = base64.b64encode(digest)[0:-1]
 
 vim.command("let signature='%s'" % signature)
 EOF
@@ -864,7 +864,7 @@ key = vim.eval("a:key")
 mstr = vim.eval("a:str")
 
 digest = hmac.new(str.encode(key), str.encode(mstr), hashlib.sha1).digest()
-signature = base64.encodestring(digest)[0:-1]
+signature = base64.b64encode(digest)[0:-1]
 
 vim.command("let signature='%s'" % bytes.decode(signature))
 EOF
