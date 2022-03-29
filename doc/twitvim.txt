@@ -5,7 +5,9 @@
 		      ---------------------------------
 
 Author: Po Shan Cheah <morton@mortonfox.com> 
-	http://twitter.com/mortonfox
+	https://twitter.com/mortonfox
+Maintener: Yasuhiro Matsumoto <mattn.jp@gmail.com>
+	https://twitter.com/mattn_jp
 
 License: The Vim License applies to twitvim.vim and twitvim.txt (see
 	|copyright|) except use "TwitVim" instead of "Vim". No warranty,
