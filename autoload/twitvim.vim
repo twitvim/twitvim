@@ -5140,6 +5140,7 @@ function! s:get_status_text_json(item)
 
     " Remove nul characters.
     let text = substitute(text, '[\x0]', ' ', 'g')
+    let text = substitute(text, '[\u200c\u200d]', '', 'g')
 
     let entities = get(a:item, 'entities', {})
 
