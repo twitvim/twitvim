@@ -2668,7 +2668,16 @@ function! s:launch_browser(url)
     " an existing browser window.
     " Firefox appears to output to stderr as well, so the '2>&1' redirect is
     " needed.
-    let endcmd = (has('unix') && get(g:, 'twitvim_browser_fork', 1)) ? '> /dev/null 2>&1 &' : ''
+    let endcmd = ''
+    if has('unix')
+      if get(g:, 'twitvim_browser_fork', 1)
+        if has('gui_running') && &guioptions =~ '!'
+          let endcmd = '> /dev/null 2>&1'
+        else
+          let endcmd = '> /dev/null 2>&1 &'
+        endif
+      endif
+    endif
 
     " Escape characters that have special meaning in the :! command.
     let url = substitute(a:url, '!\|#\|%', '\\&', 'g')
