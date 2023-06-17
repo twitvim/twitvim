@@ -3665,7 +3665,7 @@ function! s:pick_woeid_town(country)
         elseif select == 'previous page'
             let indx -= pagelen
             if indx < 0
-                indx = 0
+                let indx = 0
             endif
         else
             let g:twitvim_woeid = s:get_woeid(a:country, select)
@@ -3708,7 +3708,7 @@ function! twitvim#pick_woeid()
         elseif select == 'previous page'
             let indx -= pagelen
             if indx < 0
-                indx = 0
+                let indx = 0
             endif
         else
             if s:woeid_list[select]['towns'] == {}
